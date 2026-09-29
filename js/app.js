@@ -28,6 +28,7 @@ const app = createApp({
     const customRestaurants = ref([]);
     const customTrails = ref([]);
     const customReservations = ref([]);
+    const customNotes = ref([]);
     const itemVotes = ref({});
     const userSenderName = ref(localStorage.getItem('ireland_user_sender_name') || 'Family Member');
 
@@ -37,6 +38,7 @@ const app = createApp({
         customRestaurants.value = JSON.parse(localStorage.getItem('ireland_custom_restaurants') || '[]');
         customTrails.value = JSON.parse(localStorage.getItem('ireland_custom_trails') || '[]');
         customReservations.value = JSON.parse(localStorage.getItem('ireland_custom_reservations') || '[]');
+        customNotes.value = JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]');
         itemVotes.value = JSON.parse(localStorage.getItem('ireland_item_votes') || '{}');
       } catch (e) {
         console.error('Error loading custom trip data from storage', e);
@@ -1370,29 +1372,34 @@ const app = createApp({
     const shareCopied = ref(false);
 
     const openShareSync = () => {
+      const baseUrl = (typeof window !== 'undefined' && window.location && window.location.href ? window.location.href.split('#')[0] : 'https://nolanshirley.github.io/ireland-trip-2026/');
       const payload = {
         v: 1,
         sender: userSenderName.value || 'Family Traveler',
         time: new Date().toISOString(),
-        activities: customActivities.value,
-        restaurants: customRestaurants.value,
-        trails: customTrails.value,
-        reservations: customReservations.value,
-        votes: itemVotes.value,
-        notes: customNotes.value,
+        activities: customActivities.value || [],
+        restaurants: customRestaurants.value || [],
+        trails: customTrails.value || [],
+        reservations: customReservations.value || [],
+        votes: itemVotes.value || {},
+        notes: customNotes.value || [],
         scratchpad: localStorage.getItem('ireland_trip_scratchpad') || ''
       };
 
       try {
         const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(payload)))));
-        const baseUrl = window.location.origin + window.location.pathname;
         const url = baseUrl + '#sync=' + encoded;
         shareSyncUrl.value = url;
         shareSyncQrUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(url)}`;
-        isShareSyncModalOpen.value = true;
-        document.body.style.overflow = 'hidden';
       } catch (e) {
         console.error('Error generating sync url', e);
+        shareSyncUrl.value = baseUrl;
+        shareSyncQrUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(baseUrl)}`;
+      }
+
+      isShareSyncModalOpen.value = true;
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.overflow = 'hidden';
       }
     };
 
