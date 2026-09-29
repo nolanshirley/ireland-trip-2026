@@ -15,6 +15,7 @@ const HikingNature = {
       regionFilter: 'all',
       statusFilter: 'all', // 'all', 'favorites', 'completed', 'Suggested', 'Planned', 'Optional'
       difficultyFilter: 'all', // 'all', 'Easy', 'Moderate', 'Strenuous'
+      sortBy: 'itinerary', // 'itinerary', 'difficulty', 'elevation', 'duration', 'completion', 'name'
       userTrailData: {} // { [trailId]: { completed: false, notes: '', favorite: false } }
     };
   },
@@ -29,7 +30,7 @@ const HikingNature = {
       return this.trails.filter(t => this.isFavorite(t)).length;
     },
     filteredTrails() {
-      return this.trails.filter(t => {
+      const list = this.trails.filter(t => {
         // Region
         if (this.regionFilter !== 'all' && t.region !== this.regionFilter) return false;
 
@@ -54,6 +55,42 @@ const HikingNature = {
           (t.rainBackup && t.rainBackup.toLowerCase().includes(q)) ||
           userNotes.includes(q)
         );
+      });
+
+      return list.sort((a, b) => {
+        if (this.sortBy === 'difficulty') {
+          const diffScore = (d) => {
+            const low = d.toLowerCase();
+            if (low.includes('strenuous')) return 3;
+            if (low.includes('moderate')) return 2;
+            return 1;
+          };
+          return diffScore(b.difficulty) - diffScore(a.difficulty);
+        }
+        if (this.sortBy === 'elevation') {
+          const parseElev = (e) => parseInt((e || '0').replace(/[^0-9]/g, '')) || 0;
+          return parseElev(b.elevGain) - parseElev(a.elevGain);
+        }
+        if (this.sortBy === 'duration') {
+          const parseDur = (d) => {
+            const matches = (d || '').match(/([0-9.]+)/g);
+            return matches ? parseFloat(matches[matches.length - 1]) : 0;
+          };
+          return parseDur(b.duration) - parseDur(a.duration);
+        }
+        if (this.sortBy === 'completion') {
+          const aComp = this.isCompleted(a) ? 1 : 0;
+          const bComp = this.isCompleted(b) ? 1 : 0;
+          if (aComp !== bComp) return aComp - bComp; // Uncompleted first
+        }
+        if (this.sortBy === 'name') {
+          return a.name.localeCompare(b.name);
+        }
+        // Default: 'itinerary' (Day 1 -> Day 13)
+        const aDay = a.dayNumber || 99;
+        const bDay = b.dayNumber || 99;
+        if (aDay !== bDay) return aDay - bDay;
+        return (a.name || '').localeCompare(b.name || '');
       });
     },
     suggestedCount() {
@@ -249,6 +286,31 @@ const HikingNature = {
             ]"
           >
             {{ diff.label }}
+          </button>
+        </div>
+
+        <!-- Filter Row 3: Sort By Controls -->
+        <div class="flex items-center gap-2 flex-wrap mb-4 pt-3 border-t border-[var(--border)]">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Sort By:</span>
+          <button
+            v-for="s in [
+              { id: 'itinerary', label: '🗓️ Route Sequence (Day 1→13)' },
+              { id: 'difficulty', label: '🔴 Difficulty (Strenuous First)' },
+              { id: 'elevation', label: '⛰️ Elevation Gain' },
+              { id: 'duration', label: '⏱️ Longest Duration' },
+              { id: 'completion', label: '⏳ To Hike First' },
+              { id: 'name', label: '🔤 A–Z' }
+            ]"
+            :key="s.id"
+            @click="sortBy = s.id"
+            :class="[
+              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
+              sortBy === s.id
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+            ]"
+          >
+            {{ s.label }}
           </button>
         </div>
 

@@ -12,7 +12,8 @@ const Reservations = {
   data() {
     return {
       searchQuery: '',
-      typeFilter: 'all', // 'all', 'dining', 'activity', 'lodging'
+      statusFilter: 'all', // 'all', 'birthdays', 'confirmed', 'strict-cancellation', 'dining', 'activity', 'lodging'
+      sortBy: 'chronological', // 'chronological', 'deadlines', 'type', 'name'
       userBookingData: {}, // { [name]: { code: '', notes: '' } }
       copiedCodeName: null
     };
@@ -24,9 +25,23 @@ const Reservations = {
     confirmedCount() {
       return this.reservations.filter(r => r.status.toLowerCase().includes('confirmed') || r.status.toLowerCase().includes('booked')).length;
     },
+    birthdayCount() {
+      return this.reservations.filter(r => r.special || (r.notes && r.notes.toLowerCase().includes('bday'))).length;
+    },
+    strictCancelCount() {
+      return this.reservations.filter(r => r.cancelPolicy && (r.cancelPolicy.includes('48hr') || r.cancelPolicy.includes('24hr') || r.cancelPolicy.toLowerCase().includes('non-refundable'))).length;
+    },
     filteredReservations() {
-      return this.reservations.filter(r => {
-        if (this.typeFilter !== 'all' && r.type !== this.typeFilter) return false;
+      const list = this.reservations.filter(r => {
+        // Status & Type Filter
+        if (this.statusFilter === 'birthdays' && !(r.special || (r.notes && r.notes.toLowerCase().includes('bday')))) return false;
+        if (this.statusFilter === 'confirmed' && !(r.status.toLowerCase().includes('confirmed') || r.status.toLowerCase().includes('booked'))) return false;
+        if (this.statusFilter === 'strict-cancellation' && !(r.cancelPolicy && (r.cancelPolicy.includes('48hr') || r.cancelPolicy.includes('24hr') || r.cancelPolicy.toLowerCase().includes('non-refundable')))) return false;
+        if (this.statusFilter === 'dining' && r.type !== 'dining') return false;
+        if (this.statusFilter === 'activity' && r.type !== 'activity') return false;
+        if (this.statusFilter === 'lodging' && r.type !== 'lodging') return false;
+
+        // Search Filter
         if (!this.searchQuery.trim()) return true;
         const q = this.searchQuery.toLowerCase();
         const userCode = this.getBookingCode(r.name).toLowerCase();
@@ -40,6 +55,47 @@ const Reservations = {
           userCode.includes(q) ||
           userNotes.includes(q)
         );
+      });
+
+      return list.sort((a, b) => {
+        if (this.sortBy === 'deadlines') {
+          const getDeadlineRank = (res) => {
+            const pol = (res.cancelPolicy || '').toLowerCase();
+            if (pol.includes('24hr')) return 1;
+            if (pol.includes('48hr')) return 2;
+            if (pol.includes('non-refundable')) return 3;
+            if (pol.includes('call') || pol.includes('modifying')) return 4;
+            if (res.type === 'lodging') return 6;
+            return 5;
+          };
+          const rankDiff = getDeadlineRank(a) - getDeadlineRank(b);
+          if (rankDiff !== 0) return rankDiff;
+        }
+
+        if (this.sortBy === 'type') {
+          const typeRank = { lodging: 1, dining: 2, activity: 3, transport: 4 };
+          const tDiff = (typeRank[a.type] || 5) - (typeRank[b.type] || 5);
+          if (tDiff !== 0) return tDiff;
+        }
+
+        if (this.sortBy === 'name') {
+          return a.name.localeCompare(b.name);
+        }
+
+        // Default: 'chronological' (Oct 2 -> Oct 14)
+        const parseDateVal = (dateStr) => {
+          const match = (dateStr || '').match(/Oct\s*(\d+)/i);
+          if (!match) return 99;
+          let val = parseInt(match[1]);
+          if (dateStr.includes('–') || dateStr.includes('-')) {
+            val += 0.05; // Lodgings span multiple days
+          }
+          return val;
+        };
+        const aVal = parseDateVal(a.date);
+        const bVal = parseDateVal(b.date);
+        if (aVal !== bVal) return aVal - bVal;
+        return (a.time || '').localeCompare(b.time || '');
       });
     }
   },
@@ -82,12 +138,12 @@ const Reservations = {
     getStatusClass(status) {
       const s = status.toLowerCase();
       if (s.includes('confirmed') || s.includes('booked')) {
-        return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+        return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold';
       }
       if (s.includes('pending') || s.includes('review') || s.includes('tentative')) {
-        return 'bg-amber-500/20 text-amber-400 border border-amber-500/40';
+        return 'bg-amber-500/20 text-amber-400 border border-amber-500/40 font-semibold';
       }
-      return 'bg-blue-500/20 text-blue-400 border border-blue-500/40';
+      return 'bg-blue-500/20 text-blue-400 border border-blue-500/40 font-medium';
     },
     getTypeIcon(type) {
       switch (type) {
@@ -150,40 +206,84 @@ const Reservations = {
             <h4 class="font-bold text-sm text-[var(--foreground)]">Cancellation Windows</h4>
           </div>
           <p class="text-xs text-[var(--muted-foreground)]">
-            Holohans Pantry & Mad Monk have <strong>48hr</strong> cutoff; Mister S has <strong>24hr</strong> cutoff.
+            Holohans & Mad Monk have <strong>48hr</strong> cutoff; Mister S has <strong>24hr</strong> cutoff.
           </p>
         </div>
       </div>
 
       <!-- Main Tracker Card -->
       <div class="card p-4 sm:p-5">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
-            <h2 class="text-xl font-bold tracking-tight">📋 Trip Bookings & Reservations</h2>
-            <p class="text-sm text-[var(--muted-foreground)]">Status, confirmation times, 1-tap navigation & cancellation deadlines</p>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">📋</span>
+              <h2 class="text-xl font-bold tracking-tight">Trip Bookings & Reservations</h2>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+              Showing {{ filteredReservations.length }} of {{ reservations.length }} entries · Status, door codes, maps & cancellation deadlines
+            </p>
           </div>
 
-          <!-- Type filter -->
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="btn in [
-                { id: 'all', label: 'All (' + reservations.length + ')' },
-                { id: 'dining', label: '🍴 Dining' },
-                { id: 'activity', label: '🎟️ Activities' },
-                { id: 'lodging', label: '🏡 Lodging' }
-              ]"
-              :key="btn.id"
-              @click="typeFilter = btn.id"
-              :class="[
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                typeFilter === btn.id
-                  ? 'bg-[var(--accent)] text-white shadow'
-                  : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)]'
-              ]"
-            >
-              {{ btn.label }}
-            </button>
+          <!-- Summary Badges -->
+          <div class="flex items-center gap-2 text-xs flex-wrap">
+            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+              ✅ {{ confirmedCount }} Confirmed / Booked
+            </span>
+            <span class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
+              ⚠️ {{ strictCancelCount }} Strict Deadlines
+            </span>
           </div>
+        </div>
+
+        <!-- Filter Row 1: Status & Type Pills -->
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Filter:</span>
+          <button
+            v-for="flt in [
+              { id: 'all', label: 'All (' + reservations.length + ')' },
+              { id: 'birthdays', label: '🎂 Birthday Anchors' },
+              { id: 'confirmed', label: '✅ Booked Only' },
+              { id: 'strict-cancellation', label: '⚠️ Strict Deadlines' },
+              { id: 'dining', label: '🍴 Dining' },
+              { id: 'activity', label: '🎟️ Activities' },
+              { id: 'lodging', label: '🏡 Lodging' }
+            ]"
+            :key="flt.id"
+            @click="statusFilter = flt.id"
+            :class="[
+              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
+              statusFilter === flt.id
+                ? 'bg-[var(--accent)] text-white shadow-sm'
+                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+              flt.id === 'birthdays' && statusFilter !== 'birthdays' ? 'text-pink-400 border border-pink-500/30' : '',
+              flt.id === 'strict-cancellation' && statusFilter !== 'strict-cancellation' ? 'text-amber-400 border border-amber-500/30' : ''
+            ]"
+          >
+            {{ flt.label }}
+          </button>
+        </div>
+
+        <!-- Filter Row 2: Sort Controls -->
+        <div class="flex items-center gap-2 flex-wrap mb-4 pt-3 border-t border-[var(--border)]">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Sort By:</span>
+          <button
+            v-for="s in [
+              { id: 'chronological', label: '🗓️ Chronological (Oct 2→14)' },
+              { id: 'deadlines', label: '⚠️ Cancellation Deadlines First' },
+              { id: 'type', label: '🏷️ Group by Type (Lodging→Dining)' },
+              { id: 'name', label: '🔤 A–Z' }
+            ]"
+            :key="s.id"
+            @click="sortBy = s.id"
+            :class="[
+              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
+              sortBy === s.id
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+            ]"
+          >
+            {{ s.label }}
+          </button>
         </div>
 
         <!-- Search Bar -->
@@ -191,7 +291,7 @@ const Reservations = {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="🔍 Search reservations by name, date, location..."
+            placeholder="🔍 Search reservations by name, date, location, door code, or notes..."
             class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
           />
         </div>

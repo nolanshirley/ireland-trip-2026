@@ -13,6 +13,7 @@ const Restaurants = {
       selectedCuisine: 'all',
       statusFilter: 'all', // 'all', 'favorites', 'birthday', 'booked', 'recommended'
       searchQuery: '',
+      sortBy: 'route', // 'route', 'birthday', 'rating', 'price-asc', 'price-desc', 'name'
       userRestaurantData: {}, // { [id]: { rating: 0, notes: '', favorite: false } }
       activeNoteRestId: null
     };
@@ -58,7 +59,9 @@ const Restaurants = {
       return ['all', ...this.cuisineStats.map(c => c.name)];
     },
     filteredRestaurants() {
-      return this.restaurants.filter(r => {
+      const cityOrder = { 'Belfast': 1, 'Galway': 2, 'Killarney': 3, 'Dingle': 4, 'Dublin': 5 };
+
+      const list = this.restaurants.filter(r => {
         // City filter
         if (this.selectedCity !== 'all' && r.city !== this.selectedCity) return false;
 
@@ -84,6 +87,42 @@ const Restaurants = {
           (r.notes && r.notes.toLowerCase().includes(q)) ||
           userNotes.includes(q)
         );
+      });
+
+      return list.sort((a, b) => {
+        if (this.sortBy === 'birthday') {
+          const aBday = a.birthdayEvent || a.special ? 1 : 0;
+          const bBday = b.birthdayEvent || b.special ? 1 : 0;
+          if (aBday !== bBday) return bBday - aBday;
+        }
+        if (this.sortBy === 'rating') {
+          const aFav = this.isFavorite(a) ? 1 : 0;
+          const bFav = this.isFavorite(b) ? 1 : 0;
+          const aRate = this.getRating(a);
+          const bRate = this.getRating(b);
+          if (aRate !== bRate) return bRate - aRate;
+          if (aFav !== bFav) return bFav - aFav;
+        }
+        if (this.sortBy === 'price-asc') {
+          const aP = (a.price || '€€').length;
+          const bP = (b.price || '€€').length;
+          return aP - bP;
+        }
+        if (this.sortBy === 'price-desc') {
+          const aP = (a.price || '€€').length;
+          const bP = (b.price || '€€').length;
+          return bP - aP;
+        }
+        if (this.sortBy === 'name') {
+          return a.name.localeCompare(b.name);
+        }
+        // Default: 'route' (Itinerary Order: Belfast -> Galway -> Killarney -> Dublin)
+        const aRank = cityOrder[a.city] || 99;
+        const bRank = cityOrder[b.city] || 99;
+        if (aRank !== bRank) return aRank - bRank;
+        const aBday = a.birthdayEvent || a.special ? 1 : 0;
+        const bBday = b.birthdayEvent || b.special ? 1 : 0;
+        return bBday - aBday;
       });
     }
   },
@@ -311,7 +350,31 @@ const Restaurants = {
           </div>
         </div>
 
-        <!-- Row 3: Search Bar & Reset -->
+        <!-- Row 3: Smart Sort By Controls -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Sort By:</span>
+          <button
+            v-for="s in [
+              { id: 'route', label: '🗓️ Route Order' },
+              { id: 'birthday', label: '🎂 Milestones First' },
+              { id: 'rating', label: '⭐ Top Rated & Favs' },
+              { id: 'price-asc', label: '💶 Price: Low → High' },
+              { id: 'name', label: '🔤 A–Z' }
+            ]"
+            :key="s.id"
+            @click="sortBy = s.id"
+            :class="[
+              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
+              sortBy === s.id
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+            ]"
+          >
+            {{ s.label }}
+          </button>
+        </div>
+
+        <!-- Row 4: Search Bar & Reset -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[var(--border)]">
           <input
             v-model="searchQuery"
@@ -321,7 +384,7 @@ const Restaurants = {
           />
 
           <button
-            v-if="selectedCity !== 'all' || selectedCuisine !== 'all' || statusFilter !== 'all' || searchQuery.trim()"
+            v-if="selectedCity !== 'all' || selectedCuisine !== 'all' || statusFilter !== 'all' || sortBy !== 'route' || searchQuery.trim()"
             @click="resetFilters"
             class="text-xs text-rose-400 hover:text-rose-300 font-semibold self-start sm:self-auto"
           >

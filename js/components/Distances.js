@@ -10,12 +10,13 @@ const Distances = {
   data() {
     return {
       searchQuery: '',
-      filterType: 'all' // 'all', 'transfers', 'daytrips', 'high'
+      filterType: 'all', // 'all', 'transfers', 'daytrips', 'high'
+      sortBy: 'route' // 'route', 'longest', 'shortest', 'alphabetical'
     };
   },
   computed: {
     filteredDistances() {
-      return this.distances.filter(d => {
+      const list = this.distances.filter(d => {
         // filter type
         if (this.filterType === 'transfers' && !d.transfer) return false;
         if (this.filterType === 'daytrips' && d.transfer) return false;
@@ -31,6 +32,20 @@ const Distances = {
           (d.time && d.time.toLowerCase().includes(q))
         );
       });
+
+      return list.sort((a, b) => {
+        if (this.sortBy === 'longest') {
+          return this.parseMinutes(b.time) - this.parseMinutes(a.time);
+        }
+        if (this.sortBy === 'shortest') {
+          return this.parseMinutes(a.time) - this.parseMinutes(b.time);
+        }
+        if (this.sortBy === 'alphabetical') {
+          return a.from.localeCompare(b.from);
+        }
+        // Default: 'route' (natural itinerary sequence)
+        return 0;
+      });
     },
     transferCount() {
       return this.distances.filter(d => d.transfer).length;
@@ -40,6 +55,15 @@ const Distances = {
     }
   },
   methods: {
+    parseMinutes(timeStr) {
+      if (!timeStr) return 0;
+      let total = 0;
+      const hMatch = timeStr.match(/(\d+)\s*h/i);
+      const mMatch = timeStr.match(/(\d+)\s*m/i);
+      if (hMatch) total += parseInt(hMatch[1]) * 60;
+      if (mMatch) total += parseInt(mMatch[1]);
+      return total;
+    },
     getUrgencyClass(urgency) {
       if (urgency === 'high') return 'bg-red-500/15 text-red-400 border border-red-500/30';
       if (urgency === 'med') return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
@@ -77,7 +101,7 @@ const Distances = {
         <div class="card p-4 flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-xl">⚠️</div>
           <div>
-            <div class="text-xs text-[var(--muted-foreground)]">Heavy Driving Days (&gt;2.5h)</div>
+            <div class="text-xs text-[var(--muted-foreground)]">Heavy Driving Days (>2.5h)</div>
             <div class="text-xl font-bold">{{ longDriveCount }} Routes</div>
           </div>
         </div>
@@ -114,13 +138,35 @@ const Distances = {
           </div>
         </div>
 
-        <!-- Search Bar -->
-        <div class="mb-2">
+        <!-- Sort Controls & Search Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--border)]">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Sort By:</span>
+            <button
+              v-for="s in [
+                { id: 'route', label: '🗓️ Route Order' },
+                { id: 'longest', label: '⏱️ Longest First' },
+                { id: 'shortest', label: '⚡ Shortest First' },
+                { id: 'alphabetical', label: '🔤 From A–Z' }
+              ]"
+              :key="s.id"
+              @click="sortBy = s.id"
+              :class="[
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
+                sortBy === s.id
+                  ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+              ]"
+            >
+              {{ s.label }}
+            </button>
+          </div>
+
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="🔍 Search by origin, destination, or notes..."
-            class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
+            placeholder="🔍 Search routes by origin, destination..."
+            class="w-full sm:max-w-xs px-3.5 py-1.5 text-xs rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
           />
         </div>
 

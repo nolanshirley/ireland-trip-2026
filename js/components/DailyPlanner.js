@@ -16,6 +16,7 @@ const DailyPlanner = {
     return {
       expandedDays: {},
       viewMode: 'calendar', // 'calendar' (Hourly) or 'agenda' (Step-by-step list)
+      activeBaseCampFilter: 'all', // 'all', 'ni', 'galway', 'kerry', 'dublin', 'birthdays', 'transfers'
       activeTypeFilter: 'all', // 'all', 'reserved', 'drive', 'dining', 'housing', 'sight'
       activeEnergyFilter: 'all', // 'all', 'chill', 'moderate', 'strenuous'
       searchQuery: '',
@@ -61,6 +62,15 @@ const DailyPlanner = {
         if (this.activeDayFilter !== null && idx !== this.activeDayFilter) {
           return false;
         }
+        if (this.activeBaseCampFilter === 'birthdays' && !day.special) {
+          return false;
+        }
+        if (this.activeBaseCampFilter === 'transfers' && !day.isTransfer) {
+          return false;
+        }
+        if (this.activeBaseCampFilter !== 'all' && this.activeBaseCampFilter !== 'birthdays' && this.activeBaseCampFilter !== 'transfers') {
+          if (day.region !== this.activeBaseCampFilter) return false;
+        }
         if (!this.searchQuery.trim() && this.activeTypeFilter === 'all' && this.activeEnergyFilter === 'all') return true;
 
         const q = this.searchQuery.toLowerCase();
@@ -95,6 +105,21 @@ const DailyPlanner = {
     }
   },
   methods: {
+    setBaseCampFilter(campId) {
+      this.activeBaseCampFilter = campId;
+      this.activeDayFilter = null;
+      if (campId !== 'all') {
+        this.timeline.forEach((day, idx) => {
+          if (
+            (campId === 'birthdays' && day.special) ||
+            (campId === 'transfers' && day.isTransfer) ||
+            (day.region === campId)
+          ) {
+            this.expandedDays[idx] = true;
+          }
+        });
+      }
+    },
     toggleDay(idx) {
       this.expandedDays[idx] = !this.expandedDays[idx];
     },
@@ -420,35 +445,66 @@ const DailyPlanner = {
           </div>
         </div>
 
-        <!-- Day Selector Quick Jump -->
-        <div class="flex flex-wrap gap-1.5 mb-4">
-          <button
-            @click="activeDayFilter = null"
-            :class="[
-              'px-2.5 py-1 rounded text-xs font-medium transition-colors',
-              activeDayFilter === null
-                ? 'bg-[var(--accent)] text-white shadow'
-                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-            ]"
-          >
-            All 13 Days
-          </button>
-          <button
-            v-for="(day, idx) in timeline"
-            :key="idx"
-            @click="filterDay(idx)"
-            :class="[
-              'px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1',
-              activeDayFilter === idx
-                ? 'bg-[var(--accent)] text-white shadow'
-                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-              day.special ? 'ring-1 ring-pink-500/60 font-bold text-pink-400' : ''
-            ]"
-          >
-            <span>D{{ day.dayNumber }}</span>
-            <span v-if="day.special">🎂</span>
-            <span v-if="day.isTransfer && !day.special">🔄</span>
-          </button>
+        <!-- Base Camp & Milestone Hub Filters -->
+        <div class="space-y-2 mb-4 pt-3 border-t border-[var(--border)]">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Base Camp:</span>
+            <button
+              v-for="camp in [
+                { id: 'all', label: 'All Bases (13 Days)' },
+                { id: 'ni', label: '🏠 Belfast Base (D1–4)' },
+                { id: 'galway', label: '🏠 Galway Base (D5–7)' },
+                { id: 'kerry', label: '🏠 Killarney Base (D8–10)' },
+                { id: 'dublin', label: '🏠 Navan / Dublin (D11–13)' },
+                { id: 'birthdays', label: '🎂 Birthday Days' },
+                { id: 'transfers', label: '🔄 Base Move Days' }
+              ]"
+              :key="camp.id"
+              @click="setBaseCampFilter(camp.id)"
+              :class="[
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
+                activeBaseCampFilter === camp.id
+                  ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]',
+                camp.id === 'birthdays' && activeBaseCampFilter !== 'birthdays' ? 'text-pink-400 border-pink-500/30' : '',
+                camp.id === 'transfers' && activeBaseCampFilter !== 'transfers' ? 'text-blue-400 border-blue-500/30' : ''
+              ]"
+            >
+              {{ camp.label }}
+            </button>
+          </div>
+
+          <!-- Day Selector Quick Jump -->
+          <div class="flex flex-wrap items-center gap-1.5 pt-1">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] mr-1">Day Jump:</span>
+            <button
+              @click="activeDayFilter = null"
+              :class="[
+                'px-2.5 py-1 rounded text-xs font-medium transition-colors',
+                activeDayFilter === null
+                  ? 'bg-[var(--accent)] text-white shadow'
+                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+              ]"
+            >
+              All
+            </button>
+            <button
+              v-for="(day, idx) in timeline"
+              :key="idx"
+              @click="filterDay(idx)"
+              :class="[
+                'px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1',
+                activeDayFilter === idx
+                  ? 'bg-[var(--accent)] text-white shadow'
+                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+                day.special ? 'ring-1 ring-pink-500/60 font-bold text-pink-400' : ''
+              ]"
+            >
+              <span>D{{ day.dayNumber }}</span>
+              <span v-if="day.special">🎂</span>
+              <span v-if="day.isTransfer && !day.special">🔄</span>
+            </button>
+          </div>
         </div>
 
         <!-- Search Input -->
