@@ -2,6 +2,40 @@
 //  IRELAND TRIP DATA  –  October 2026 Edition (Interlinked Model)
 // =============================================================
 
+function parseTimeToHour(timeStr) {
+  if (timeStr === undefined || timeStr === null) return 10;
+  if (typeof timeStr === 'number' && !isNaN(timeStr)) {
+    if (timeStr >= 0 && timeStr <= 24) return timeStr;
+  }
+  const str = timeStr.toString().trim().toUpperCase();
+  if (!str) return 10;
+
+  if (str.includes('MORNING')) return 9;
+  if (str.includes('AFTERNOON') || str.includes('LUNCH')) return 13;
+  if (str.includes('EVENING') || str.includes('DINNER')) return 18;
+  if (str.includes('NIGHT')) return 20;
+
+  const match = str.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2] ? parseInt(match[2], 10) / 60 : 0;
+    const meridian = match[3] ? match[3].toUpperCase() : null;
+
+    if (meridian === 'PM') {
+      if (hours < 12) hours += 12;
+    } else if (meridian === 'AM') {
+      if (hours === 12) hours = 0;
+    } else {
+      // If 1..7 without AM/PM, it's 1 PM..7 PM in daytime schedule (13..19)
+      if (hours >= 1 && hours <= 7) {
+        hours += 12;
+      }
+    }
+    return Math.min(24, Math.max(0, hours + minutes));
+  }
+  return 10;
+}
+
 const TRIP = {
   title: '🍀 Ireland Trip',
   subtitle: 'October 2026 · 4 Regions · 12 Nights · Autumn Weather & Nature Trails',

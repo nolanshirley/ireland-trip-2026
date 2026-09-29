@@ -200,33 +200,19 @@ const DailyPlanner = {
       return `${h - 12} PM`;
     },
     getItemStartHour(item) {
-      if (typeof item.startHour === 'number' && !isNaN(item.startHour)) {
-        return item.startHour;
-      }
+      if (!item) return this.dayStartHour;
       if (item.time) {
-        const t = item.time.toString().trim().toUpperCase();
-        const match = t.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
-        if (match) {
-          let hours = parseInt(match[1], 10);
-          const minutes = match[2] ? parseInt(match[2], 10) / 60 : 0;
-          const meridian = match[3];
-          if (meridian === 'PM' && hours < 12) hours += 12;
-          if (meridian === 'AM' && hours === 12) hours = 0;
-          return hours + minutes;
-        }
-        if (t.includes('MORNING')) return 9;
-        if (t.includes('AFTERNOON') || t.includes('LUNCH')) return 13;
-        if (t.includes('EVENING') || t.includes('DINNER')) return 18;
-        if (t.includes('NIGHT')) return 20;
+        return parseTimeToHour(item.time);
+      }
+      if (item.startHour !== undefined && item.startHour !== null && !isNaN(Number(item.startHour))) {
+        return Number(item.startHour);
       }
       return this.dayStartHour;
     },
     getItemEndHour(item) {
-      if (typeof item.endHour === 'number' && !isNaN(item.endHour)) {
-        return item.endHour;
-      }
+      if (!item) return this.dayStartHour + 1.5;
       const start = this.getItemStartHour(item);
-      let dur = typeof item.durHours === 'number' ? item.durHours : 1.5;
+      let dur = typeof item.durHours === 'number' && !isNaN(item.durHours) ? item.durHours : 1.5;
       if (item.dur && typeof item.dur === 'string') {
         const dMatch = item.dur.match(/([\d.]+)\s*hr/i);
         if (dMatch) dur = parseFloat(dMatch[1]);
@@ -265,12 +251,18 @@ const DailyPlanner = {
           return { label: '🟢 Chill / Accessible', class: 'energy-chill' };
       }
     },
-    getItemsInHour(day, hour) {
+    getItemsStartingInHour(day, hour) {
+      if (!day || !day.items) return [];
       return day.items.filter(item => {
         const start = this.getItemStartHour(item);
-        const end = this.getItemEndHour(item);
-        return hour >= Math.floor(start) && hour < Math.ceil(end);
+        return Math.floor(start) === hour;
       });
+    },
+    hasItemsInHour(day, hour) {
+      return this.getItemsStartingInHour(day, hour).length > 0;
+    },
+    getItemsInHour(day, hour) {
+      return this.getItemsStartingInHour(day, hour);
     },
     isFirstHourOfItem(item, hour) {
       const start = this.getItemStartHour(item);
@@ -876,9 +868,8 @@ const DailyPlanner = {
                 <!-- Events within this hour slot -->
                 <div class="hour-events-slot">
                   <div
-                    v-for="(item, itIdx) in getItemsInHour(activeDay, hour)"
-                    :key="itIdx"
-                    v-show="isFirstHourOfItem(item, hour)"
+                    v-for="(item, itIdx) in getItemsStartingInHour(activeDay, hour)"
+                    :key="item.id || itIdx"
                     @click="onItemClick(item, activeDay)"
                     :class="[
                       'p-2.5 rounded-lg border text-xs transition-all cursor-pointer hover:shadow-sm hover:scale-[1.005]',
@@ -1011,7 +1002,7 @@ const DailyPlanner = {
                   </div>
 
                   <!-- Empty state marker if nothing in hour -->
-                  <div v-if="getItemsInHour(activeDay, hour).length === 0" class="h-4"></div>
+                  <div v-if="!hasItemsInHour(activeDay, hour)" class="h-4"></div>
                 </div>
               </div>
             </div>
@@ -1439,9 +1430,8 @@ const DailyPlanner = {
                   <!-- Events within this hour slot -->
                   <div class="hour-events-slot">
                     <div
-                      v-for="(item, itIdx) in getItemsInHour(day, hour)"
-                      :key="itIdx"
-                      v-show="isFirstHourOfItem(item, hour)"
+                      v-for="(item, itIdx) in getItemsStartingInHour(day, hour)"
+                      :key="item.id || itIdx"
                       @click="onItemClick(item, day)"
                       :class="[
                         'p-2.5 rounded-lg border text-xs transition-all cursor-pointer hover:shadow-sm hover:scale-[1.005]',
@@ -1540,7 +1530,7 @@ const DailyPlanner = {
                     </div>
 
                     <!-- Empty state marker if nothing in hour -->
-                    <div v-if="getItemsInHour(day, hour).length === 0" class="h-4"></div>
+                    <div v-if="!hasItemsInHour(day, hour)" class="h-4"></div>
                   </div>
                 </div>
               </div>

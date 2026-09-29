@@ -65,38 +65,18 @@ const app = createApp({
       localStorage.setItem('ireland_user_sender_name', name);
     };
 
-    const parseTimeStartHour = (timeStr) => {
-      if (!timeStr) return 10;
-      const str = timeStr.toString().trim().toUpperCase();
-      const match = str.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
-      if (match) {
-        let hours = parseInt(match[1], 10);
-        const minutes = match[2] ? parseInt(match[2], 10) / 60 : 0;
-        const meridian = match[3];
-        if (meridian === 'PM' && hours < 12) hours += 12;
-        if (meridian === 'AM' && hours === 12) hours = 0;
-        return hours + minutes;
-      }
-      if (str.includes('MORNING')) return 9;
-      if (str.includes('AFTERNOON') || str.includes('LUNCH')) return 13;
-      if (str.includes('EVENING') || str.includes('DINNER')) return 18;
-      if (str.includes('NIGHT')) return 20;
-      return 10;
-    };
-
     // ── Dynamic Computed Merged Lists ─────────────────────────
     const timelineList = computed(() => {
       const baseTimeline = JSON.parse(JSON.stringify(timeline));
       customActivities.value.forEach(act => {
-        const dIdx = act.dayIndex !== undefined ? act.dayIndex : (act.dayNumber ? act.dayNumber - 1 : 0);
+        const dIdx = act.dayIndex !== undefined ? parseInt(act.dayIndex) : (act.dayNumber ? parseInt(act.dayNumber) - 1 : 0);
         if (baseTimeline[dIdx]) {
           const actCopy = { ...act };
-          if (actCopy.startHour === undefined || isNaN(actCopy.startHour)) {
-            actCopy.startHour = parseTimeStartHour(actCopy.time);
-          }
-          if (actCopy.endHour === undefined || isNaN(actCopy.endHour)) {
-            actCopy.endHour = actCopy.startHour + (parseFloat(actCopy.durHours) || 1.5);
-          }
+          const startH = parseTimeToHour(actCopy.time || actCopy.startHour);
+          const dur = parseFloat(actCopy.durHours) || (parseFloat(actCopy.dur) || 1.5);
+          actCopy.startHour = startH;
+          actCopy.endHour = startH + Math.max(0.5, dur);
+
           const existingIdx = baseTimeline[dIdx].items.findIndex(i => i.id === actCopy.id);
           if (existingIdx >= 0) {
             baseTimeline[dIdx].items[existingIdx] = actCopy;
@@ -109,8 +89,8 @@ const app = createApp({
       // Sort items within each day chronologically by startHour
       baseTimeline.forEach(day => {
         day.items.sort((a, b) => {
-          const aStart = a.startHour !== undefined && !isNaN(a.startHour) ? a.startHour : parseTimeStartHour(a.time);
-          const bStart = b.startHour !== undefined && !isNaN(b.startHour) ? b.startHour : parseTimeStartHour(b.time);
+          const aStart = parseTimeToHour(a.time || a.startHour);
+          const bStart = parseTimeToHour(b.time || b.startHour);
           return aStart - bStart;
         });
       });
@@ -1081,7 +1061,7 @@ const app = createApp({
       const timeStr = newScheduleForm.value.time || '10:00 AM';
       const dayIdx = parseInt(newScheduleForm.value.dayIndex) || 0;
       const durH = parseFloat(newScheduleForm.value.durHours) || 1.5;
-      const startH = parseTimeStartHour(timeStr);
+      const startH = parseTimeToHour(timeStr);
       const endH = startH + durH;
 
       const newStop = {
@@ -1530,12 +1510,12 @@ const app = createApp({
       if (mode === 'replace') {
         if (p.activities && Array.isArray(p.activities)) {
           customActivities.value = p.activities.map(act => {
-            const startH = (typeof act.startHour === 'number' && !isNaN(act.startHour)) ? act.startHour : parseTimeStartHour(act.time);
-            const endH = (typeof act.endHour === 'number' && !isNaN(act.endHour)) ? act.endHour : (startH + (parseFloat(act.durHours) || 1.5));
-            return { ...act, startHour: startH, endHour: endH };
+            const startH = parseTimeToHour(act.time || act.startHour);
+            const dur = parseFloat(act.durHours) || (parseFloat(act.dur) || 1.5);
+            return { ...act, startHour: startH, endHour: startH + Math.max(0.5, dur) };
           });
           if (customActivities.value.length > 0 && customActivities.value[0].dayIndex !== undefined) {
-            firstMergedDayIndex = customActivities.value[0].dayIndex;
+            firstMergedDayIndex = parseInt(customActivities.value[0].dayIndex);
           }
           mergedStopsCount = customActivities.value.length;
         } else {
@@ -1555,14 +1535,15 @@ const app = createApp({
         if (p.activities && Array.isArray(p.activities)) {
           const current = [...customActivities.value];
           p.activities.forEach(incoming => {
-            const startH = (typeof incoming.startHour === 'number' && !isNaN(incoming.startHour)) ? incoming.startHour : parseTimeStartHour(incoming.time);
-            const endH = (typeof incoming.endHour === 'number' && !isNaN(incoming.endHour)) ? incoming.endHour : (startH + (parseFloat(incoming.durHours) || 1.5));
+            const startH = parseTimeToHour(incoming.time || incoming.startHour);
+            const dur = parseFloat(incoming.durHours) || (parseFloat(incoming.dur) || 1.5);
             const preparedIncoming = {
               ...incoming,
+              dayIndex: incoming.dayIndex !== undefined ? parseInt(incoming.dayIndex) : (incoming.dayNumber ? parseInt(incoming.dayNumber) - 1 : 0),
               startHour: startH,
-              endHour: endH
+              endHour: startH + Math.max(0.5, dur)
             };
-            const idx = current.findIndex(a => a.id === preparedIncoming.id || (a.activity === preparedIncoming.activity && a.dayIndex === preparedIncoming.dayIndex));
+            const idx = current.findIndex(a => a.id === preparedIncoming.id || (a.activity === preparedIncoming.activity && parseInt(a.dayIndex) === preparedIncoming.dayIndex));
             if (idx >= 0) {
               current[idx] = { ...current[idx], ...preparedIncoming };
             } else {
