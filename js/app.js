@@ -1076,6 +1076,9 @@ const app = createApp({
       // Initialize vote
       voteItem(newStop.id, 'up');
 
+      const savedActivityName = newStop.activity;
+      const targetDay = dayIdx + 1;
+
       // Reset form
       newScheduleForm.value.activity = '';
       newScheduleForm.value.desc = '';
@@ -1085,6 +1088,7 @@ const app = createApp({
 
       closeCreator();
       handleSwitchTab({ tab: 'planner', dayIndex: dayIdx });
+      alert(`🎉 Successfully added "${savedActivityName}" to Day ${targetDay} schedule!`);
     };
 
     const saveDiningSpot = () => {
@@ -1112,12 +1116,15 @@ const app = createApp({
       saveCustomRestaurants();
       voteItem(newRest.id, 'up');
 
+      const savedRestName = newRest.name;
+
       newDiningForm.value.name = '';
       newDiningForm.value.mustOrder = '';
       newDiningForm.value.notes = '';
 
       closeCreator();
       handleSwitchTab({ tab: 'restaurants' });
+      alert(`🎉 Successfully added "${savedRestName}" to Food & Pubs directory!`);
     };
 
     const saveHikingTrail = () => {
@@ -1149,12 +1156,15 @@ const app = createApp({
       saveCustomTrails();
       voteItem(newTrail.id, 'up');
 
+      const savedTrailName = newTrail.name;
+
       newTrailForm.value.name = '';
       newTrailForm.value.highlights = '';
       newTrailForm.value.parkingTip = '';
 
       closeCreator();
       handleSwitchTab({ tab: 'hiking' });
+      alert(`🎉 Successfully added "${savedTrailName}" to Hiking & Nature guide!`);
     };
 
     const saveBookingPass = () => {
@@ -1182,11 +1192,14 @@ const app = createApp({
       saveCustomReservations();
       voteItem(newBooking.id, 'up');
 
+      const savedBookingName = newBooking.name;
+
       newBookingForm.value.name = '';
       newBookingForm.value.notes = '';
 
       closeCreator();
       handleSwitchTab({ tab: 'reservations' });
+      alert(`🎉 Successfully added "${savedBookingName}" to Bookings tracker!`);
     };
 
     // ── Bulk Smart Importer Engine ─────────────────────────────
