@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🍀 Ireland Trip — October 2026 Interactive Travel Dashboard</title>
+  
+  <!-- Local Tailwind CSS Runtime (no internet needed) -->
+  <script src="lib/tailwind.min.js"></script>
+
+  <!-- Local Custom Styles & Theme Variables -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen font-sans antialiased transition-colors duration-200">
+
+  <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Top Navigation / Header Bar -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
+      <div class="space-y-1">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🍀</span>
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">{{ trip.title }}</h1>
+            <p class="text-sm text-[var(--muted-foreground)]">{{ trip.subtitle }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right controls: Dark mode toggle & Version badge -->
+      <div class="flex items-center gap-3 self-start md:self-auto">
+        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          Vue 3 Powered
+        </span>
+        <button
+          @click="toggleDark"
+          class="px-3.5 py-2 rounded-xl text-xs font-medium bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] transition-all flex items-center gap-2 shadow-sm"
+          :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+        >
+          <span>{{ isDark ? '☀️' : '🌙' }}</span>
+          <span>{{ isDark ? 'Light' : 'Dark' }}</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Overview Stat Cards -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="card p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-xl">🗓️</div>
+        <div>
+          <div class="text-xs text-[var(--muted-foreground)]">Trip Dates</div>
+          <div class="text-base sm:text-lg font-bold">Oct 2 – 14 (12 Nts)</div>
+        </div>
+      </div>
+      <div class="card p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl">🌦️</div>
+        <div>
+          <div class="text-xs text-[var(--muted-foreground)]">October Weather</div>
+          <div class="text-base sm:text-lg font-bold">8°C – 15°C (Autumn)</div>
+        </div>
+      </div>
+      <div class="card p-4 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-xl">🥾</div>
+        <div>
+          <div class="text-xs text-[var(--muted-foreground)]">Nature & Trails</div>
+          <div class="text-base sm:text-lg font-bold">{{ trailList.length }} Scenic Routes</div>
+        </div>
+      </div>
+      <div class="card p-4 flex items-center gap-3 border-l-4 border-pink-500">
+        <div class="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-xl">🎂</div>
+        <div>
+          <div class="text-xs text-[var(--muted-foreground)]">Birthdays & Celebrations</div>
+          <div class="text-xs sm:text-sm font-bold text-pink-400">Dad & Erin (10/7) · Mom (10/13)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[var(--border)] no-scrollbar">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        @click="activeTab = tab.id"
+        :class="[
+          'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-2',
+          activeTab === tab.id
+            ? 'bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20'
+            : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] border border-[var(--border)]'
+        ]"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+
+    <!-- Tab Content Panels -->
+    <main>
+      <!-- Daily Planner & Time Blocking Tab -->
+      <section v-show="activeTab === 'planner'">
+        <daily-planner :timeline="timelineList" />
+      </section>
+
+      <!-- Weather & Packing Outfits Tab -->
+      <section v-show="activeTab === 'weather'">
+        <weather-packing :weather-data="weatherInfo" :outfit-guides="outfitList" />
+      </section>
+
+      <!-- Hiking & Nature Trails Tab -->
+      <section v-show="activeTab === 'hiking'">
+        <hiking-nature :trails="trailList" />
+      </section>
+
+      <!-- Heat Map Tab -->
+      <section v-show="activeTab === 'heatmap'">
+        <heat-map :regions="regionList" :attractions="attractionMap" />
+      </section>
+
+      <!-- Distances Tab -->
+      <section v-show="activeTab === 'distances'">
+        <distances-view :distances="distanceList" />
+      </section>
+
+      <!-- Restaurants Tab -->
+      <section v-show="activeTab === 'restaurants'">
+        <restaurants-view :restaurants="restaurantList" />
+      </section>
+
+      <!-- Reservations Tab -->
+      <section v-show="activeTab === 'reservations'">
+        <reservations-view :reservations="reservationList" />
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="pt-8 pb-4 border-t border-[var(--border)] text-center text-xs text-[var(--muted-foreground)] flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>🍀 Ireland October 2–14, 2026 · Interactive Travel Dashboard</div>
+      <div>Built with Vue 3 (No-Build Standalone) · Self-contained & shareable</div>
+    </footer>
+
+  </div>
+
+  <!-- Local Vue 3 Runtime -->
+  <script src="lib/vue.global.prod.js"></script>
+
+  <!-- Data Constants -->
+  <script src="js/data.js"></script>
+
+  <!-- Vue Components -->
+  <script src="js/components/HeatMap.js"></script>
+  <script src="js/components/Distances.js"></script>
+  <script src="js/components/DailyPlanner.js"></script>
+  <script src="js/components/WeatherPacking.js"></script>
+  <script src="js/components/HikingNature.js"></script>
+  <script src="js/components/Restaurants.js"></script>
+  <script src="js/components/Reservations.js"></script>
+
+  <!-- App Bootstrap -->
+  <script src="js/app.js"></script>
+</body>
+</html>
