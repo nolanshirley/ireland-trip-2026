@@ -80,14 +80,15 @@ const app = createApp({
           const el = document.getElementById(targetId) ||
                      (dayNumber ? document.getElementById('day-card-' + dayNumber) : null) ||
                      (dayIndex !== undefined ? document.getElementById('day-' + dayIndex) : null) ||
-                     document.getElementById('trail-' + targetId) ||
-                     document.getElementById('restaurant-' + targetId);
+                     document.getElementById('active-day-focus-card') ||
+                     (targetId ? document.getElementById('trail-' + targetId) : null) ||
+                     (targetId ? document.getElementById('restaurant-' + targetId) : null);
           if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             el.classList.add('card-highlight');
             setTimeout(() => el.classList.remove('card-highlight'), 2200);
           }
-        }, 180);
+        }, 120);
       });
     };
 

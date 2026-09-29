@@ -664,9 +664,17 @@ body {
   to { transform: translateY(0); }
 }
 
-/* ── Card Flash Highlight ────────────────────────────────────── */
+/* ── Card Flash Highlight & Smooth Scroll Margins ────────────── */
 .card-highlight {
   animation: highlightGlow 2s ease-out;
+}
+
+[id^="day-card-"],
+#active-day-focus-card,
+[id^="trail-"],
+[id^="restaurant-"],
+.card {
+  scroll-margin-top: 5rem;
 }
 
 @keyframes highlightGlow {

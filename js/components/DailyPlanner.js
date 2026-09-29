@@ -119,7 +119,7 @@ const DailyPlanner = {
       this.$nextTick(() => {
         const el = document.getElementById('active-day-focus-card');
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
     },
