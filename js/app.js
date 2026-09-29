@@ -454,15 +454,23 @@ const app = createApp({
       }
     };
 
-    // ── Universal Trip Scratchpad & Notes Backup / Export ────
+    // ── Universal Trip Notes & Local Storage CRUD Manager ─────────
     const isScratchpadOpen = ref(false);
-    const tripScratchpad = ref('');
-    const isCopiedScratchpad = ref(false);
-    const backupStats = ref({ daily: 0, bookings: 0, restaurants: 0, trails: 0 });
+    const notesModalTab = ref('all'); // 'all', 'general', 'planner', 'reservations', 'hiking', 'restaurants', 'custom'
+    const notesSearchQuery = ref('');
+    const allNotesList = ref([]);
+    const isAddingNewNote = ref(false);
+    const newNoteForm = ref({
+      tab: 'general',
+      targetName: '',
+      content: '',
+      code: ''
+    });
+    const copiedNoteId = ref(null);
+    const backupStats = ref({ daily: 0, bookings: 0, restaurants: 0, trails: 0, custom: 0, total: 0 });
 
     const openScratchpad = () => {
-      loadTripScratchpad();
-      calculateBackupStats();
+      loadAllNotesFromStorage();
       isScratchpadOpen.value = true;
       document.body.style.overflow = 'hidden';
     };
@@ -472,41 +480,329 @@ const app = createApp({
       document.body.style.overflow = '';
     };
 
-    const loadTripScratchpad = () => {
-      const saved = localStorage.getItem('ireland_trip_scratchpad');
-      tripScratchpad.value = saved || '';
+    const loadAllNotesFromStorage = () => {
+      const list = [];
+
+      // 1. General Scratchpad
+      const scratchpadText = localStorage.getItem('ireland_trip_scratchpad') || '';
+      if (scratchpadText.trim()) {
+        list.push({
+          id: 'scratchpad-main',
+          type: 'scratchpad',
+          tab: 'general',
+          tabLabel: 'General Scratchpad',
+          targetName: 'Universal Travel Clipboard & Notes',
+          targetId: null,
+          date: 'Trip-wide',
+          content: scratchpadText,
+          code: '',
+          isEditing: false,
+          editBuffer: scratchpadText,
+          codeBuffer: ''
+        });
+      }
+
+      // 2. Daily Schedule Notes (Day 1 to 13)
+      try {
+        const daily = JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}');
+        Object.entries(daily).forEach(([dayIdxStr, text]) => {
+          if (text && text.trim()) {
+            const idx = parseInt(dayIdxStr);
+            const dayObj = timeline[idx] || { dayNumber: idx + 1, date: 'Oct ' + (idx + 2), title: 'Day ' + (idx + 1) };
+            list.push({
+              id: 'daily-' + idx,
+              type: 'daily',
+              key: idx,
+              tab: 'planner',
+              tabLabel: 'Daily Schedule',
+              targetName: `Day ${dayObj.dayNumber}: ${dayObj.title}`,
+              targetId: 'day-card-' + dayObj.dayNumber,
+              dayNumber: dayObj.dayNumber,
+              date: dayObj.date,
+              content: text,
+              code: '',
+              isEditing: false,
+              editBuffer: text,
+              codeBuffer: ''
+            });
+          }
+        });
+      } catch (e) {
+        console.error('Error loading daily notes', e);
+      }
+
+      // 3. Reservation Notes & Confirmation Codes
+      try {
+        const bookings = JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}');
+        Object.entries(bookings).forEach(([resName, data]) => {
+          if ((data.notes && data.notes.trim()) || (data.code && data.code.trim())) {
+            const resObj = reservations.find(r => r.name.toLowerCase() === resName.toLowerCase()) || { location: 'Ireland', date: 'Oct 2–14' };
+            list.push({
+              id: 'reservation-' + resName,
+              type: 'reservation',
+              key: resName,
+              tab: 'reservations',
+              tabLabel: 'Bookings & Lodgings',
+              targetName: resName,
+              targetId: resObj.restaurantId ? 'restaurant-' + resObj.restaurantId : 'tab-btn-reservations',
+              date: resObj.date || 'Booking',
+              location: resObj.location,
+              content: data.notes || '',
+              code: data.code || '',
+              isEditing: false,
+              editBuffer: data.notes || '',
+              codeBuffer: data.code || ''
+            });
+          }
+        });
+      } catch (e) {
+        console.error('Error loading reservation notes', e);
+      }
+
+      // 4. Trail & Hiking Notes
+      try {
+        const trails = JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}');
+        Object.entries(trails).forEach(([trailId, data]) => {
+          if (data && ((data.notes && data.notes.trim()) || data.completed || data.favorite)) {
+            const trailObj = hikingTrails.find(t => t.id === trailId || t.name === trailId) || { name: trailId, regionName: 'Ireland' };
+            list.push({
+              id: 'trail-' + trailId,
+              type: 'trail',
+              key: trailId,
+              tab: 'hiking',
+              tabLabel: 'Trails & Nature',
+              targetName: trailObj.name,
+              targetId: 'trail-' + trailId,
+              trailId: trailObj.id,
+              date: trailObj.date || 'Hike',
+              content: data.notes || (data.completed ? 'Marked as completed.' : ''),
+              isCompleted: Boolean(data.completed),
+              isFavorite: Boolean(data.favorite),
+              code: '',
+              isEditing: false,
+              editBuffer: data.notes || '',
+              codeBuffer: ''
+            });
+          }
+        });
+      } catch (e) {
+        console.error('Error loading trail notes', e);
+      }
+
+      // 5. Restaurant & Dining Notes & Ratings
+      try {
+        const rest = JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}');
+        Object.entries(rest).forEach(([restId, data]) => {
+          if (data && ((data.notes && data.notes.trim()) || data.rating > 0 || data.favorite)) {
+            const restObj = restaurants.find(r => r.id === restId || r.name === restId) || { name: restId, city: 'Ireland' };
+            list.push({
+              id: 'restaurant-' + restId,
+              type: 'restaurant',
+              key: restId,
+              tab: 'restaurants',
+              tabLabel: 'Dining & Pubs',
+              targetName: restObj.name,
+              targetId: 'restaurant-' + restId,
+              restaurantId: restObj.id,
+              date: restObj.city || 'Dining',
+              rating: data.rating || 0,
+              isFavorite: Boolean(data.favorite),
+              content: data.notes || (data.rating > 0 ? `Rated ${data.rating} ★` : ''),
+              code: '',
+              isEditing: false,
+              editBuffer: data.notes || '',
+              codeBuffer: ''
+            });
+          }
+        });
+      } catch (e) {
+        console.error('Error loading restaurant notes', e);
+      }
+
+      // 6. Custom User Standalone Notes
+      try {
+        const custom = JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]');
+        custom.forEach((item) => {
+          list.push({
+            id: item.id || ('custom-' + Math.random()),
+            type: 'custom',
+            key: item.id,
+            tab: item.tab || 'custom',
+            tabLabel: 'Custom Note',
+            targetName: item.title || 'Personal Note',
+            targetId: null,
+            date: item.date || new Date().toLocaleDateString(),
+            content: item.content || item.text || '',
+            code: item.code || '',
+            isEditing: false,
+            editBuffer: item.content || item.text || '',
+            codeBuffer: item.code || ''
+          });
+        });
+      } catch (e) {
+        console.error('Error loading custom notes', e);
+      }
+
+      allNotesList.value = list;
+
+      // Update backup stats
+      backupStats.value = {
+        daily: list.filter(n => n.tab === 'planner').length,
+        bookings: list.filter(n => n.tab === 'reservations').length,
+        trails: list.filter(n => n.tab === 'hiking').length,
+        restaurants: list.filter(n => n.tab === 'restaurants').length,
+        custom: list.filter(n => n.tab === 'custom' || n.tab === 'general').length,
+        total: list.length
+      };
     };
 
-    const saveTripScratchpad = (val) => {
-      tripScratchpad.value = val;
-      localStorage.setItem('ireland_trip_scratchpad', val);
-      calculateBackupStats();
+    const filteredNotesList = computed(() => {
+      return allNotesList.value.filter(n => {
+        // Tab grouping filter
+        if (notesModalTab.value !== 'all' && n.tab !== notesModalTab.value) {
+          return false;
+        }
+        // Search query filter
+        if (!notesSearchQuery.value.trim()) return true;
+        const q = notesSearchQuery.value.toLowerCase();
+        return (
+          (n.targetName && n.targetName.toLowerCase().includes(q)) ||
+          (n.content && n.content.toLowerCase().includes(q)) ||
+          (n.code && n.code.toLowerCase().includes(q)) ||
+          (n.date && n.date.toLowerCase().includes(q)) ||
+          (n.tabLabel && n.tabLabel.toLowerCase().includes(q))
+        );
+      });
+    });
+
+    // CRUD: Create Note
+    const createNewNote = () => {
+      const form = newNoteForm.value;
+      if (!form.content.trim() && !form.targetName.trim()) {
+        alert('Please enter some note content or a title.');
+        return;
+      }
+
+      if (form.tab === 'general') {
+        const existing = localStorage.getItem('ireland_trip_scratchpad') || '';
+        const updated = existing ? existing + '\n\n' + (form.targetName ? `[${form.targetName}]\n` : '') + form.content : form.content;
+        localStorage.setItem('ireland_trip_scratchpad', updated);
+      } else {
+        const custom = JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]');
+        custom.unshift({
+          id: 'note-' + Date.now(),
+          tab: form.tab,
+          title: form.targetName || 'Note (' + new Date().toLocaleDateString() + ')',
+          content: form.content,
+          code: form.code || '',
+          date: new Date().toLocaleDateString()
+        });
+        localStorage.setItem('ireland_custom_notes', JSON.stringify(custom));
+      }
+
+      newNoteForm.value = { tab: 'general', targetName: '', content: '', code: '' };
+      isAddingNewNote.value = false;
+      loadAllNotesFromStorage();
     };
 
-    const copyScratchpad = () => {
-      if (!tripScratchpad.value) return;
-      navigator.clipboard.writeText(tripScratchpad.value).then(() => {
-        isCopiedScratchpad.value = true;
+    // CRUD: Update Note
+    const saveNoteEdit = (note) => {
+      const newText = note.editBuffer;
+      const newCode = note.codeBuffer;
+
+      if (note.type === 'scratchpad') {
+        localStorage.setItem('ireland_trip_scratchpad', newText);
+      } else if (note.type === 'daily') {
+        const daily = JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}');
+        daily[note.key] = newText;
+        localStorage.setItem('ireland_daily_notes', JSON.stringify(daily));
+      } else if (note.type === 'reservation') {
+        const bookings = JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}');
+        if (!bookings[note.key]) bookings[note.key] = { code: '', notes: '' };
+        bookings[note.key].notes = newText;
+        bookings[note.key].code = newCode;
+        localStorage.setItem('ireland_reservation_notes', JSON.stringify(bookings));
+      } else if (note.type === 'trail') {
+        const trails = JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}');
+        if (!trails[note.key]) trails[note.key] = { completed: false, notes: '', favorite: false };
+        trails[note.key].notes = newText;
+        localStorage.setItem('ireland_trail_user_data', JSON.stringify(trails));
+      } else if (note.type === 'restaurant') {
+        const rest = JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}');
+        if (!rest[note.key]) rest[note.key] = { rating: 0, notes: '', favorite: false };
+        rest[note.key].notes = newText;
+        localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(rest));
+      } else if (note.type === 'custom') {
+        const custom = JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]');
+        const idx = custom.findIndex(c => c.id === note.key);
+        if (idx !== -1) {
+          custom[idx].content = newText;
+          custom[idx].code = newCode;
+          localStorage.setItem('ireland_custom_notes', JSON.stringify(custom));
+        }
+      }
+
+      note.content = newText;
+      note.code = newCode;
+      note.isEditing = false;
+      loadAllNotesFromStorage();
+    };
+
+    // CRUD: Delete Note
+    const deleteNote = (note) => {
+      if (!confirm(`Are you sure you want to delete this note for "${note.targetName}"?`)) return;
+
+      if (note.type === 'scratchpad') {
+        localStorage.removeItem('ireland_trip_scratchpad');
+      } else if (note.type === 'daily') {
+        const daily = JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}');
+        delete daily[note.key];
+        localStorage.setItem('ireland_daily_notes', JSON.stringify(daily));
+      } else if (note.type === 'reservation') {
+        const bookings = JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}');
+        delete bookings[note.key];
+        localStorage.setItem('ireland_reservation_notes', JSON.stringify(bookings));
+      } else if (note.type === 'trail') {
+        const trails = JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}');
+        if (trails[note.key]) {
+          trails[note.key].notes = '';
+          localStorage.setItem('ireland_trail_user_data', JSON.stringify(trails));
+        }
+      } else if (note.type === 'restaurant') {
+        const rest = JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}');
+        if (rest[note.key]) {
+          rest[note.key].notes = '';
+          localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(rest));
+        }
+      } else if (note.type === 'custom') {
+        let custom = JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]');
+        custom = custom.filter(c => c.id !== note.key);
+        localStorage.setItem('ireland_custom_notes', JSON.stringify(custom));
+      }
+
+      loadAllNotesFromStorage();
+    };
+
+    const copyNoteContent = (note) => {
+      const fullText = (note.code ? `Code: ${note.code}\n` : '') + note.content;
+      navigator.clipboard.writeText(fullText).then(() => {
+        copiedNoteId.value = note.id;
         setTimeout(() => {
-          isCopiedScratchpad.value = false;
+          if (copiedNoteId.value === note.id) copiedNoteId.value = null;
         }, 1800);
       });
     };
 
-    const calculateBackupStats = () => {
-      try {
-        const daily = JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}');
-        const bookings = JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}');
-        const rest = JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}');
-        const trails = JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}');
-        backupStats.value = {
-          daily: Object.values(daily).filter(v => v && v.trim()).length,
-          bookings: Object.values(bookings).filter(v => (v.code && v.code.trim()) || (v.notes && v.notes.trim())).length,
-          restaurants: Object.values(rest).filter(v => v.rating > 0 || (v.notes && v.notes.trim()) || v.favorite).length,
-          trails: Object.values(trails).filter(v => v.completed || (v.notes && v.notes.trim()) || v.favorite).length
-        };
-      } catch (e) {
-        console.error('Error calculating backup stats', e);
+    const jumpFromNoteToTarget = (note) => {
+      closeScratchpad();
+      if (note.tab === 'planner') {
+        handleSwitchTab({ tab: 'planner', dayNumber: note.dayNumber });
+      } else if (note.tab === 'reservations') {
+        handleSwitchTab({ tab: 'reservations', targetId: note.targetId });
+      } else if (note.tab === 'hiking') {
+        handleSwitchTab({ tab: 'hiking', targetId: note.trailId });
+      } else if (note.tab === 'restaurants') {
+        handleSwitchTab({ tab: 'restaurants', targetId: note.restaurantId });
       }
     };
 
@@ -519,6 +815,7 @@ const app = createApp({
         reservationNotes: JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}'),
         restaurantUserData: JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}'),
         trailUserData: JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}'),
+        customNotes: JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]'),
         packingChecklist: JSON.parse(localStorage.getItem('ireland_packing_checklist_v2') || '[]'),
         theme: localStorage.getItem('ireland_theme') || 'dark',
         palette: localStorage.getItem('ireland_palette') || 'emerald',
@@ -528,7 +825,7 @@ const app = createApp({
       const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute('href', dataStr);
-      downloadAnchor.setAttribute('download', `ireland_trip_backup_${new Date().toISOString().slice(0, 10)}.json`);
+      downloadAnchor.setAttribute('download', `ireland_trip_notes_backup_${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
@@ -547,6 +844,7 @@ const app = createApp({
           if (data.reservationNotes) localStorage.setItem('ireland_reservation_notes', JSON.stringify(data.reservationNotes));
           if (data.restaurantUserData) localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(data.restaurantUserData));
           if (data.trailUserData) localStorage.setItem('ireland_trail_user_data', JSON.stringify(data.trailUserData));
+          if (data.customNotes) localStorage.setItem('ireland_custom_notes', JSON.stringify(data.customNotes));
           if (data.packingChecklist) localStorage.setItem('ireland_packing_checklist_v2', JSON.stringify(data.packingChecklist));
           if (data.palette) setPalette(data.palette);
           if (data.fontScale) setFontScale(data.fontScale);
@@ -562,7 +860,7 @@ const app = createApp({
 
     onMounted(() => {
       initTheme();
-      loadTripScratchpad();
+      loadAllNotesFromStorage();
     });
 
     return {
@@ -609,7 +907,8 @@ const app = createApp({
       triggerRoute,
       triggerCalendar,
       selectProvider,
-      setProviderPreference,
+      // Provider Settings
+      openProviderSettings,
       // Top Dashboard Lens & Dynamic Stats
       topDashboardLens,
       setTopDashboardLens,
@@ -618,15 +917,23 @@ const app = createApp({
       confirmedBookingsCount,
       strictDeadlinesCount,
       totalDriveHours,
-      // Scratchpad & Backup
+      // Notes & Storage CRUD Manager
       isScratchpadOpen,
-      tripScratchpad,
-      isCopiedScratchpad,
-      backupStats,
       openScratchpad,
       closeScratchpad,
-      saveTripScratchpad,
-      copyScratchpad,
+      notesModalTab,
+      notesSearchQuery,
+      allNotesList,
+      filteredNotesList,
+      isAddingNewNote,
+      newNoteForm,
+      copiedNoteId,
+      createNewNote,
+      saveNoteEdit,
+      deleteNote,
+      copyNoteContent,
+      jumpFromNoteToTarget,
+      backupStats,
       exportAllTripNotes,
       importNotesFromFile
     };

@@ -974,20 +974,25 @@
       </div>
     </div>
 
-    <!-- Universal Trip Scratchpad & Offline Backup Bottom Sheet / Modal -->
+    <!-- Universal Trip Notes & Offline Storage CRUD Modal -->
     <div
       v-if="isScratchpadOpen"
       class="modal-backdrop"
       @click="closeScratchpad"
     >
-      <div class="modal-sheet space-y-4" @click.stop>
+      <div class="modal-sheet space-y-4 max-w-3xl mx-auto" @click.stop>
         <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-[var(--border)] pb-3">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5">
             <span class="text-2xl">📝</span>
             <div>
-              <h3 class="text-lg font-bold text-[var(--foreground)]">Trip Scratchpad & Notes Backup</h3>
-              <p class="text-xs text-[var(--muted-foreground)]">Universal offline clipboard and whole-trip data manager</p>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-bold text-[var(--foreground)]">Trip Notes & Storage Manager</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30">
+                  {{ allNotesList.length }} Saved Notes
+                </span>
+              </div>
+              <p class="text-xs text-[var(--muted-foreground)]">Check, search, edit, create and manage all notes across all tabs</p>
             </div>
           </div>
           <button
@@ -998,72 +1003,285 @@
           </button>
         </div>
 
-        <!-- Offline Storage Stats Summary -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-            <div class="text-[10px] text-[var(--muted-foreground)]">Daily Journal Notes</div>
-            <div class="font-bold text-[var(--accent)] text-sm">{{ backupStats.daily }} Days Saved</div>
+        <!-- Search & Add Note Toolbar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div class="flex-1">
+            <input
+              v-model="notesSearchQuery"
+              type="text"
+              placeholder="🔍 Search all notes (e.g. 'PIN', 'parking', 'Mister S', 'gate code', 'boots')..."
+              class="w-full text-xs px-3 py-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-2 focus:ring-[var(--accent)] focus:outline-none"
+            />
           </div>
-          <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-            <div class="text-[10px] text-[var(--muted-foreground)]">Confirmation Codes</div>
-            <div class="font-bold text-emerald-400 text-sm">{{ backupStats.bookings }} Bookings</div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-            <div class="text-[10px] text-[var(--muted-foreground)]">Restaurants Rated/Saved</div>
-            <div class="font-bold text-amber-400 text-sm">{{ backupStats.restaurants }} Places</div>
-          </div>
-          <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)]">
-            <div class="text-[10px] text-[var(--muted-foreground)]">Hikes Completed/Notes</div>
-            <div class="font-bold text-purple-400 text-sm">{{ backupStats.trails }} Trails</div>
-          </div>
+
+          <button
+            @click="isAddingNewNote = !isAddingNewNote"
+            class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+            :class="isAddingNewNote ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' : 'bg-[var(--accent)] text-white shadow'"
+          >
+            <span>{{ isAddingNewNote ? '✕ Cancel' : '➕ Add New Note' }}</span>
+          </button>
         </div>
 
-        <!-- Universal Multi-line Scratchpad Area -->
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Quick Notes / Shared Clipboard:
-            </label>
+        <!-- Inline Note Creation Form -->
+        <div
+          v-if="isAddingNewNote"
+          class="p-4 rounded-xl border-2 border-[var(--accent)]/50 bg-[var(--accent)]/[0.04] space-y-3 animate-fadeIn shadow-md"
+        >
+          <div class="flex items-center justify-between text-xs font-bold text-[var(--foreground)]">
+            <span class="flex items-center gap-1.5">
+              <span>✨</span>
+              <span>Create New Trip Note</span>
+            </span>
+            <span class="text-[10px] text-[var(--muted-foreground)]">Saved directly into your browser storage</span>
+          </div>
+
+          <!-- Select Note Category / Tab -->
+          <div class="space-y-1">
+            <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Category / Tab:</label>
+            <div class="flex flex-wrap gap-1.5">
+              <button
+                v-for="c in [
+                  { id: 'general', label: '📝 General / Clipboard' },
+                  { id: 'planner', label: '📅 Daily Schedule' },
+                  { id: 'reservations', label: '🏡 Bookings & Codes' },
+                  { id: 'hiking', label: '🥾 Hiking & Trails' },
+                  { id: 'restaurants', label: '🍴 Dining & Pubs' },
+                  { id: 'custom', label: '⭐ Custom / Other' }
+                ]"
+                :key="c.id"
+                @click="newNoteForm.tab = c.id"
+                :class="[
+                  'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
+                  newNoteForm.tab === c.id
+                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+                ]"
+              >
+                {{ c.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Note Title & Optional Code -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              v-model="newNoteForm.targetName"
+              type="text"
+              placeholder="Title / Target (e.g. Dublin Rental Car Return, Galway B&B)..."
+              class="text-xs px-3 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+            />
+            <input
+              v-model="newNoteForm.code"
+              type="text"
+              placeholder="Confirmation / Door PIN code (optional)..."
+              class="text-xs px-3 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] font-mono text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+            />
+          </div>
+
+          <!-- Note Body -->
+          <textarea
+            v-model="newNoteForm.content"
+            placeholder="Write your note, instructions, parking tip, packing reminder, or memories..."
+            rows="3"
+            class="w-full text-xs p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none leading-relaxed"
+          ></textarea>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
             <button
-              @click="copyScratchpad"
-              class="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
+              @click="isAddingNewNote = false"
+              class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)]"
             >
-              <span>{{ isCopiedScratchpad ? '✓ Copied!' : '📋 Copy All' }}</span>
+              Cancel
+            </button>
+            <button
+              @click="createNewNote"
+              class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[var(--accent)] text-white shadow-sm hover:brightness-110 flex items-center gap-1"
+            >
+              <span>💾</span>
+              <span>Save Note</span>
             </button>
           </div>
-          <textarea
-            :value="tripScratchpad"
-            @input="saveTripScratchpad($event.target.value)"
-            placeholder="Use this scratchpad for flight confirmation numbers, eSIM data, emergency contact numbers, family expense tallies, or any quick notes..."
-            rows="5"
-            class="w-full text-xs p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-2 focus:ring-[var(--accent)] focus:outline-none leading-relaxed font-sans"
-          ></textarea>
-          <div class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-            <span>💾</span>
-            <span>All notes stay securely in your device's offline browser storage.</span>
+        </div>
+
+        <!-- Tab Group Selector Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 border-b border-[var(--border)]">
+          <button
+            v-for="grp in [
+              { id: 'all', label: '📋 All Notes (' + allNotesList.length + ')' },
+              { id: 'general', label: '📝 Scratchpad (' + allNotesList.filter(n => n.tab === 'general').length + ')' },
+              { id: 'planner', label: '📅 Daily Schedule (' + allNotesList.filter(n => n.tab === 'planner').length + ')' },
+              { id: 'reservations', label: '🏡 Bookings & Codes (' + allNotesList.filter(n => n.tab === 'reservations').length + ')' },
+              { id: 'hiking', label: '🥾 Trails (' + allNotesList.filter(n => n.tab === 'hiking').length + ')' },
+              { id: 'restaurants', label: '🍴 Dining (' + allNotesList.filter(n => n.tab === 'restaurants').length + ')' },
+              { id: 'custom', label: '⭐ Custom (' + allNotesList.filter(n => n.tab === 'custom').length + ')' }
+            ]"
+            :key="grp.id"
+            @click="notesModalTab = grp.id"
+            :class="[
+              'px-2.5 py-1 rounded-xl text-xs font-bold whitespace-nowrap transition-all border',
+              notesModalTab === grp.id
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+            ]"
+          >
+            {{ grp.label }}
+          </button>
+        </div>
+
+        <!-- Notes Cards List (CRUD List) -->
+        <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+          <div
+            v-for="note in filteredNotesList"
+            :key="note.id"
+            class="card p-3.5 rounded-xl border border-[var(--border)] bg-[var(--card)] hover:border-[var(--accent)]/50 transition-all space-y-2.5 shadow-sm"
+          >
+            <!-- Note Header -->
+            <div class="flex items-start justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Category Badge -->
+                <span
+                  class="px-2 py-0.5 rounded text-[10px] font-extrabold"
+                  :class="[
+                    note.tab === 'planner' ? 'bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400' : '',
+                    note.tab === 'reservations' ? 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400' : '',
+                    note.tab === 'hiking' ? 'bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400' : '',
+                    note.tab === 'restaurants' ? 'bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400' : '',
+                    note.tab === 'general' || note.tab === 'custom' ? 'bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400' : ''
+                  ]"
+                >
+                  {{ note.tabLabel }}
+                </span>
+
+                <!-- Target Title -->
+                <h4 class="font-bold text-sm text-[var(--foreground)] leading-snug">{{ note.targetName }}</h4>
+
+                <!-- Date / Location -->
+                <span v-if="note.date" class="text-xs text-[var(--muted-foreground)]">· {{ note.date }}</span>
+                <span v-if="note.rating" class="text-xs font-bold text-amber-400">· Rated {{ note.rating }} ★</span>
+              </div>
+
+              <!-- Top Actions: Jump, Copy, Edit, Delete -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button
+                  v-if="note.targetId || note.dayNumber"
+                  @click="jumpFromNoteToTarget(note)"
+                  class="px-2 py-0.5 rounded text-[11px] font-bold text-[var(--accent)] bg-[var(--accent)]/10 hover:bg-[var(--accent)]/20 transition-colors flex items-center gap-0.5"
+                  title="Open this item on the main page"
+                >
+                  <span>Go to Tab</span>
+                  <span>→</span>
+                </button>
+
+                <button
+                  @click="copyNoteContent(note)"
+                  class="px-2 py-0.5 rounded bg-[var(--background)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[11px] font-semibold text-[var(--foreground)] transition-colors flex items-center gap-1"
+                  title="Copy note content"
+                >
+                  <span>{{ copiedNoteId === note.id ? '✓ Copied' : '📋 Copy' }}</span>
+                </button>
+
+                <button
+                  v-if="!note.isEditing"
+                  @click="note.isEditing = true; note.editBuffer = note.content; note.codeBuffer = note.code"
+                  class="px-2 py-0.5 rounded bg-[var(--background)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[11px] font-semibold text-[var(--foreground)] transition-colors"
+                  title="Edit note"
+                >
+                  ✏️ Edit
+                </button>
+
+                <button
+                  @click="deleteNote(note)"
+                  class="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[11px] font-bold transition-colors"
+                  title="Delete note"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            <!-- View Mode -->
+            <div v-if="!note.isEditing" class="space-y-1.5 text-xs">
+              <!-- Code Callout if present -->
+              <div v-if="note.code" class="flex items-center gap-1.5 p-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] w-fit font-mono text-[11px] text-[var(--foreground)]">
+                <span class="text-[var(--muted-foreground)] font-bold">Code / PIN:</span>
+                <span class="font-extrabold text-[var(--accent)]">{{ note.code }}</span>
+              </div>
+
+              <!-- Content -->
+              <p class="text-[var(--foreground)] leading-relaxed whitespace-pre-wrap">
+                {{ note.content || 'No text notes entered.' }}
+              </p>
+            </div>
+
+            <!-- Edit Mode -->
+            <div v-else class="space-y-2 pt-1 border-t border-[var(--border)]/60 animate-fadeIn">
+              <div v-if="note.type === 'reservation' || note.type === 'custom'" class="flex items-center gap-2">
+                <label class="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Code / PIN:</label>
+                <input
+                  v-model="note.codeBuffer"
+                  type="text"
+                  placeholder="e.g. GY-9821 / PIN 4912"
+                  class="text-xs px-2 py-1 rounded bg-[var(--background)] border border-[var(--border)] font-mono text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+                />
+              </div>
+
+              <textarea
+                v-model="note.editBuffer"
+                rows="3"
+                class="w-full text-xs p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none leading-relaxed"
+                placeholder="Enter note details..."
+              ></textarea>
+
+              <div class="flex items-center justify-end gap-2">
+                <button
+                  @click="note.isEditing = false"
+                  class="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--card-hover)] text-[var(--foreground)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  @click="saveNoteEdit(note)"
+                  class="px-3 py-1 rounded text-xs font-bold bg-[var(--accent)] text-white shadow-sm hover:brightness-110 flex items-center gap-1"
+                >
+                  <span>💾</span>
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div
+            v-if="filteredNotesList.length === 0"
+            class="p-8 text-center rounded-xl bg-[var(--background)] border border-dashed border-[var(--border)] text-xs text-[var(--muted-foreground)] space-y-2"
+          >
+            <span class="text-2xl block">📝</span>
+            <div class="font-bold text-[var(--foreground)]">No notes found in this view</div>
+            <p>You can add notes directly on any day schedule, booking, trail, or restaurant card, or tap "+ Add New Note" above.</p>
           </div>
         </div>
 
-        <!-- Backup & Restore Action Buttons -->
+        <!-- Modal Footer: Export & Import -->
         <div class="pt-3 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <!-- Export JSON -->
             <button
               @click="exportAllTripNotes"
-              class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all flex items-center justify-center gap-1.5 shadow-sm"
-              title="Download all your trip notes, codes, ratings, and checklist as a JSON backup file"
+              class="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all flex items-center justify-center gap-1.5 shadow-sm"
+              title="Download all your trip notes, codes, and ratings as a JSON backup file"
             >
               <span>📥</span>
-              <span>Export Backup (JSON)</span>
+              <span>Export Notes (JSON)</span>
             </button>
 
             <!-- Import JSON File Input Trigger -->
             <label
-              class="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              class="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
               title="Restore your trip notes from a previously exported JSON backup"
             >
               <span>📤</span>
-              <span>Import Backup</span>
+              <span>Import Notes</span>
               <input type="file" accept=".json" @change="importNotesFromFile" class="hidden" />
             </label>
           </div>
