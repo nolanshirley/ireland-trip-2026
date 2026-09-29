@@ -146,7 +146,7 @@
 
       <!-- Heat Map Tab -->
       <section v-show="activeTab === 'heatmap'">
-        <heat-map :regions="regionList" :attractions="attractionMap" />
+        <heat-map :regions="regionList" :attractions="attractionMap" @switch-tab="handleSwitchTab" />
       </section>
 
       <!-- Distances Tab -->

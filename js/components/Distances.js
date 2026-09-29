@@ -49,6 +49,11 @@ const Distances = {
       if (urgency === 'high') return '⚠️ Long Drive';
       if (urgency === 'med') return '⏱️ Moderate';
       return '✅ Easy';
+    },
+    getRouteMapsUrl(d) {
+      const origin = encodeURIComponent(`${d.from}, Ireland`);
+      const dest = encodeURIComponent(`${d.to}, Ireland`);
+      return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
     }
   },
   template: `
@@ -79,11 +84,11 @@ const Distances = {
       </div>
 
       <!-- Main Distance Matrix Table -->
-      <div class="card p-5">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+      <div class="card p-5 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 class="text-xl font-bold tracking-tight">📏 Driving Distances & Times</h2>
-            <p class="text-sm text-[var(--muted-foreground)]">Plan driving breaks and stay within the daily driving budget</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Plan driving breaks and tap any route to launch Google Maps turn-by-turn directions</p>
           </div>
 
           <!-- Quick Filters -->
@@ -110,7 +115,7 @@ const Distances = {
         </div>
 
         <!-- Search Bar -->
-        <div class="mb-4">
+        <div class="mb-2">
           <input
             v-model="searchQuery"
             type="text"
@@ -129,6 +134,7 @@ const Distances = {
                 <th class="text-center py-2.5 px-3">Driving Time</th>
                 <th class="text-center py-2.5 px-3">Type / Urgency</th>
                 <th class="text-left py-2.5 px-3">Notes & Highlights</th>
+                <th class="text-right py-2.5 px-3">Directions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--border)]">
@@ -137,27 +143,38 @@ const Distances = {
                 :key="idx"
                 :class="['hover:bg-[var(--card-hover)] transition-colors', d.transfer ? 'bg-blue-500/[0.03]' : '']"
               >
-                <td class="py-2.5 px-3 font-semibold text-[var(--foreground)]">{{ d.from }}</td>
-                <td class="py-2.5 px-3 font-semibold text-[var(--foreground)]">{{ d.to }}</td>
-                <td class="text-center py-2.5 px-3 whitespace-nowrap">
+                <td class="py-3 px-3 font-semibold text-[var(--foreground)]">{{ d.from }}</td>
+                <td class="py-3 px-3 font-semibold text-[var(--foreground)]">{{ d.to }}</td>
+                <td class="text-center py-3 px-3 whitespace-nowrap">
                   <span class="font-mono font-bold text-sm text-[var(--foreground)]">{{ d.time }}</span>
                 </td>
-                <td class="text-center py-2.5 px-3 whitespace-nowrap">
+                <td class="text-center py-3 px-3 whitespace-nowrap">
                   <span :class="['px-2.5 py-0.5 rounded-full text-xs font-medium', getUrgencyClass(d.urgency)]">
                     {{ getUrgencyLabel(d.urgency) }}
                   </span>
                 </td>
-                <td class="py-2.5 px-3 text-xs text-[var(--muted-foreground)]">
+                <td class="py-3 px-3 text-xs text-[var(--muted-foreground)]">
                   <div class="flex items-center gap-2">
-                    <span v-if="d.transfer" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400">
+                    <span v-if="d.transfer" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 flex-shrink-0">
                       TRANSFER
                     </span>
                     <span>{{ d.notes }}</span>
                   </div>
                 </td>
+                <td class="py-3 px-3 text-right whitespace-nowrap">
+                  <a
+                    :href="getRouteMapsUrl(d)"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all shadow-sm"
+                    title="Open Google Maps Driving Directions"
+                  >
+                    <span>🚗 Route</span>
+                    <span>↗</span>
+                  </a>
+                </td>
               </tr>
               <tr v-if="filteredDistances.length === 0">
-                <td colspan="5" class="text-center py-8 text-sm text-[var(--muted-foreground)]">
+                <td colspan="6" class="text-center py-8 text-sm text-[var(--muted-foreground)]">
                   No routes match current filters.
                 </td>
               </tr>
@@ -168,3 +185,4 @@ const Distances = {
     </div>
   `
 };
+

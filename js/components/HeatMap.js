@@ -4,6 +4,7 @@
 
 const HeatMap = {
   name: 'HeatMap',
+  emits: ['switch-tab'],
   props: {
     regions: { type: Array, required: true },
     attractions: { type: Object, required: true }
@@ -21,7 +22,26 @@ const HeatMap = {
         { key: 'activities', label: '🎯 Activities' },
         { key: 'sport', label: '⚽ Sport' },
         { key: 'scenic', label: '📸 Scenic' }
-      ]
+      ],
+      attractionScheduleMap: {
+        "Giant's Causeway": { dayNumber: 3, dayIndex: 2, targetId: 'day-3' },
+        "Carrick-a-Rede Rope Bridge": { dayNumber: 3, dayIndex: 2, targetId: 'day-3' },
+        "Dunluce Castle": { dayNumber: 3, dayIndex: 2, targetId: 'day-3' },
+        "The Dark Hedges": { dayNumber: 3, dayIndex: 2, targetId: 'day-3' },
+        "Diamond Hill (Connemara)": { dayNumber: 5, dayIndex: 4, targetId: 'day-5' },
+        "Kylemore Abbey": { dayNumber: 5, dayIndex: 4, targetId: 'day-5' },
+        "Clifden Sky Road": { dayNumber: 5, dayIndex: 4, targetId: 'day-5' },
+        "Cliffs of Moher": { dayNumber: 6, dayIndex: 5, targetId: 'day-6' },
+        "The Burren (Poulnabrone)": { dayNumber: 6, dayIndex: 5, targetId: 'day-6' },
+        "Dingle Slea Head Drive": { dayNumber: 7, dayIndex: 6, targetId: 'day-7' },
+        "Gap of Dunloe": { dayNumber: 8, dayIndex: 7, targetId: 'day-8' },
+        "Torc Waterfall & Killarney": { dayNumber: 9, dayIndex: 8, targetId: 'day-9' },
+        "Rock of Cashel": { dayNumber: 10, dayIndex: 9, targetId: 'day-10' },
+        "Guinness Storehouse VIP Tour": { dayNumber: 11, dayIndex: 10, targetId: 'day-11' },
+        "Trinity College & Book of Kells": { dayNumber: 12, dayIndex: 11, targetId: 'day-12' },
+        "Mister S Birthday Dinner": { dayNumber: 12, dayIndex: 11, targetId: 'day-12' },
+        "Howth Cliff Path": { dayNumber: 12, dayIndex: 11, targetId: 'day-12' }
+      }
     };
   },
   computed: {
@@ -57,6 +77,25 @@ const HeatMap = {
       if (score >= 7) return 'bg-blue-500/20 text-blue-400 font-semibold';
       if (score >= 5) return 'bg-amber-500/20 text-amber-400';
       return 'text-zinc-500';
+    },
+    getAttractionMapsUrl(name) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ', Ireland')}`;
+    },
+    getScheduleLink(name) {
+      for (const [key, val] of Object.entries(this.attractionScheduleMap)) {
+        if (name.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(name.toLowerCase())) {
+          return val;
+        }
+      }
+      return null;
+    },
+    jumpToSchedule(sched) {
+      this.$emit('switch-tab', {
+        tab: 'planner',
+        dayIndex: sched.dayIndex,
+        dayNumber: sched.dayNumber,
+        targetId: sched.targetId
+      });
     }
   },
   template: `
@@ -66,7 +105,7 @@ const HeatMap = {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h2 class="text-xl font-bold tracking-tight">🗺️ Regional Experience Heat Map</h2>
-            <p class="text-sm text-[var(--muted-foreground)]">Rating across 8 core trip dimensions (1–10)</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Rating across 8 core trip dimensions (1–10). Tap any region to inspect sights.</p>
           </div>
           <div class="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
             <span class="inline-block w-3 h-3 rounded bg-zinc-800 border border-zinc-700"></span> 1-2
@@ -117,8 +156,8 @@ const HeatMap = {
       </div>
 
       <!-- Attraction Explorer Card -->
-      <div class="card p-5">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+      <div class="card p-5 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2">
               <span class="w-3 h-3 rounded-full" :style="{ backgroundColor: selectedRegion.color }"></span>
@@ -146,7 +185,7 @@ const HeatMap = {
         </div>
 
         <!-- Filter Input -->
-        <div class="mb-4">
+        <div class="mb-2">
           <input
             v-model="searchQuery"
             type="text"
@@ -167,28 +206,58 @@ const HeatMap = {
                 <th class="text-center py-2.5 px-2">Activity</th>
                 <th class="text-center py-2.5 px-3">Duration</th>
                 <th class="text-left py-2.5 px-3">Distance from Base</th>
+                <th class="text-right py-2.5 px-3">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--border)]">
               <tr v-for="att in filteredAttractions" :key="att.name" class="hover:bg-[var(--card-hover)] transition-colors">
-                <td class="py-2.5 px-3 font-semibold text-[var(--foreground)]">{{ att.name }}</td>
-                <td class="text-center py-2.5 px-2">
+                <td class="py-3 px-3 font-semibold text-[var(--foreground)]">
+                  <div class="flex items-center gap-2">
+                    <span>{{ att.name }}</span>
+                    <span
+                      v-if="getScheduleLink(att.name)"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                    >
+                      Day {{ getScheduleLink(att.name).dayNumber }}
+                    </span>
+                  </div>
+                </td>
+                <td class="text-center py-3 px-2">
                   <span :class="['px-2 py-0.5 rounded text-xs', getAttractionScoreBadge(att.nature)]">{{ att.nature }}</span>
                 </td>
-                <td class="text-center py-2.5 px-2">
+                <td class="text-center py-3 px-2">
                   <span :class="['px-2 py-0.5 rounded text-xs', getAttractionScoreBadge(att.history)]">{{ att.history }}</span>
                 </td>
-                <td class="text-center py-2.5 px-2">
+                <td class="text-center py-3 px-2">
                   <span :class="['px-2 py-0.5 rounded text-xs', getAttractionScoreBadge(att.culture)]">{{ att.culture }}</span>
                 </td>
-                <td class="text-center py-2.5 px-2">
+                <td class="text-center py-3 px-2">
                   <span :class="['px-2 py-0.5 rounded text-xs', getAttractionScoreBadge(att.activity)]">{{ att.activity }}</span>
                 </td>
-                <td class="text-center py-2.5 px-3 text-xs text-[var(--muted-foreground)] whitespace-nowrap">{{ att.time }}</td>
-                <td class="py-2.5 px-3 text-xs text-[var(--muted-foreground)]">{{ att.dist }}</td>
+                <td class="text-center py-3 px-3 text-xs text-[var(--muted-foreground)] whitespace-nowrap">{{ att.time }}</td>
+                <td class="py-3 px-3 text-xs text-[var(--muted-foreground)]">{{ att.dist }}</td>
+                <td class="py-3 px-3 text-right whitespace-nowrap space-x-1.5">
+                  <button
+                    v-if="getScheduleLink(att.name)"
+                    @click="jumpToSchedule(getScheduleLink(att.name))"
+                    class="px-2 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-all"
+                    title="View this attraction in the itinerary schedule"
+                  >
+                    📅 Schedule
+                  </button>
+                  <a
+                    :href="getAttractionMapsUrl(att.name)"
+                    target="_blank"
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] transition-all"
+                    title="Search attraction on Google Maps"
+                  >
+                    <span>📍 Maps</span>
+                    <span>↗</span>
+                  </a>
+                </td>
               </tr>
               <tr v-if="filteredAttractions.length === 0">
-                <td colspan="7" class="text-center py-8 text-sm text-[var(--muted-foreground)]">
+                <td colspan="8" class="text-center py-8 text-sm text-[var(--muted-foreground)]">
                   No attractions match "{{ searchQuery }}".
                 </td>
               </tr>
@@ -199,3 +268,4 @@ const HeatMap = {
     </div>
   `
 };
+

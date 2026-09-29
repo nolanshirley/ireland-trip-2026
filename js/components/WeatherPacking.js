@@ -12,26 +12,32 @@ const WeatherPacking = {
     return {
       selectedTab: 'forecast', // 'forecast', 'outfits', 'checklist'
       selectedRegionFilter: 'all',
-      checklist: [
-        { cat: '🧥 Outerwear & Shells', item: 'Heavy-duty hooded waterproof shell (Gore-Tex / 15k+ mm)', packed: false },
-        { cat: '🧥 Outerwear & Shells', item: 'Packable lightweight rain pants (for Diamond Hill / Cliffs)', packed: false },
-        { cat: '🧥 Outerwear & Shells', item: 'Warm fleece or packable down mid-layer jacket', packed: false },
-        { cat: '🧥 Outerwear & Shells', item: 'Stylish city coat or waxed jacket for evenings & pubs', packed: false },
-        { cat: '🥾 Footwear', item: 'Broken-in waterproof hiking boots with deep traction tread', packed: false },
-        { cat: '🥾 Footwear', item: 'Comfortable water-resistant leather sneakers / Chelsea boots', packed: false },
-        { cat: '🥾 Footwear', item: 'Fancy dress shoes / heels for Mom’s Birthday dinner at Mister S', packed: false },
-        { cat: '🥾 Footwear', item: '6+ pairs of Merino wool hiking socks (cushioned & moisture wicking)', packed: false },
-        { cat: '👕 Base & Mid Layers', item: '3–4 moisture-wicking synthetic or merino thermal base layers', packed: false },
-        { cat: '👕 Base & Mid Layers', item: 'Quick-dry hiking trousers (avoid heavy cotton jeans on wet trails)', packed: false },
-        { cat: '👕 Base & Mid Layers', item: 'Knit sweaters, cardigans, or henleys for cozy pub crawls', packed: false },
-        { cat: '🎂 Dad & Erin’s Birthday Outfit', item: 'Smart casual celebration outfit (button-down/sweater + chinos/jeans) for Ruibin / Dough Bros (Oct 7)', packed: false },
-        { cat: '🎂 Mom’s Birthday Outfit', item: 'Cocktail dress, elegant jumpsuit, or tailored blazer + trousers for Mister S (Oct 13 @ 5:15 PM)', packed: false },
-        { cat: '🧤 Accessories', item: 'Fleece beanie / windproof earband & neck gaiter (for cliff winds)', packed: false },
-        { cat: '🧤 Accessories', item: 'Lightweight water-resistant gloves', packed: false },
-        { cat: '🔌 Gear & Electronics', item: 'UK / Ireland Type G plug power adapters & portable power bank', packed: false },
-        { cat: '🔌 Gear & Electronics', item: 'Small daypack with waterproof rain cover (20L–25L)', packed: false }
-      ]
+      selectedChecklistCat: 'all',
+      defaultChecklist: [
+        { id: 'c1', cat: '🧥 Outerwear & Shells', item: 'Heavy-duty hooded waterproof shell (Gore-Tex / 15k+ mm rated)', packed: false },
+        { id: 'c2', cat: '🧥 Outerwear & Shells', item: 'Packable lightweight rain pants (essential for Diamond Hill / Cliffs)', packed: false },
+        { id: 'c3', cat: '🧥 Outerwear & Shells', item: 'Warm fleece or packable down mid-layer jacket', packed: false },
+        { id: 'c4', cat: '🧥 Outerwear & Shells', item: 'Stylish city coat or waxed jacket for evenings & pubs', packed: false },
+        { id: 'c5', cat: '🥾 Footwear', item: 'Broken-in waterproof hiking boots with deep traction tread', packed: false },
+        { id: 'c6', cat: '🥾 Footwear', item: 'Comfortable water-resistant leather sneakers / Chelsea boots for walking towns', packed: false },
+        { id: 'c7', cat: '🥾 Footwear', item: 'Fancy dress shoes / heels for Mom’s Birthday dinner at Mister S (Oct 13)', packed: false },
+        { id: 'c8', cat: '🥾 Footwear', item: '6+ pairs of Merino wool hiking socks (cushioned & moisture wicking)', packed: false },
+        { id: 'c9', cat: '👕 Base & Mid Layers', item: '3–4 moisture-wicking synthetic or merino thermal base layers', packed: false },
+        { id: 'c10', cat: '👕 Base & Mid Layers', item: 'Quick-dry hiking trousers (avoid heavy cotton jeans on wet trails)', packed: false },
+        { id: 'c11', cat: '👕 Base & Mid Layers', item: 'Knit sweaters, cardigans, or henleys for cozy pub crawls', packed: false },
+        { id: 'c12', cat: '🎂 Celebrations & Dinners', item: 'Dad & Erin Bday Outfit: Smart casual (button-down/sweater + chinos/jeans) for Ruibin / Dough Bros (Oct 7)', packed: false },
+        { id: 'c13', cat: '🎂 Celebrations & Dinners', item: 'Mom Bday Outfit: Cocktail dress, elegant jumpsuit, or tailored blazer + trousers for Mister S (Oct 13 @ 5:15 PM)', packed: false },
+        { id: 'c14', cat: '🧤 Accessories', item: 'Fleece beanie / windproof earband & neck gaiter (for cliff winds)', packed: false },
+        { id: 'c15', cat: '🧤 Accessories', item: 'Lightweight water-resistant windproof gloves', packed: false },
+        { id: 'c16', cat: '🔌 Gear & Electronics', item: 'UK / Ireland Type G plug power adapters & portable 10,000mAh+ power bank', packed: false },
+        { id: 'c17', cat: '🔌 Gear & Electronics', item: 'Small daypack with waterproof rain cover (20L–25L)', packed: false },
+        { id: 'c18', cat: '🔌 Gear & Electronics', item: 'Ziploc bags / waterproof dry pouch for phones & passports on wet hikes', packed: false }
+      ],
+      checklist: []
     };
+  },
+  created() {
+    this.initChecklist();
   },
   computed: {
     filteredDaily() {
@@ -40,13 +46,62 @@ const WeatherPacking = {
         d.region.toLowerCase().includes(this.selectedRegionFilter.toLowerCase())
       );
     },
+    checklistCategories() {
+      const cats = new Set(this.checklist.map(c => c.cat));
+      return ['all', ...Array.from(cats)];
+    },
+    filteredChecklist() {
+      if (this.selectedChecklistCat === 'all') return this.checklist;
+      return this.checklist.filter(c => c.cat === this.selectedChecklistCat);
+    },
     packedCount() {
       return this.checklist.filter(c => c.packed).length;
+    },
+    packedPercentage() {
+      if (!this.checklist.length) return 0;
+      return Math.round((this.packedCount / this.checklist.length) * 100);
     }
   },
   methods: {
-    toggleItem(idx) {
-      this.checklist[idx].packed = !this.checklist[idx].packed;
+    initChecklist() {
+      const saved = localStorage.getItem('ireland_packing_checklist_v2');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          this.checklist = this.defaultChecklist.map(item => {
+            const found = parsed.find(p => p.id === item.id || p.item === item.item);
+            return {
+              ...item,
+              packed: found ? Boolean(found.packed) : false
+            };
+          });
+          return;
+        } catch (e) {
+          console.error('Error loading checklist', e);
+        }
+      }
+      this.checklist = JSON.parse(JSON.stringify(this.defaultChecklist));
+    },
+    saveChecklist() {
+      localStorage.setItem('ireland_packing_checklist_v2', JSON.stringify(this.checklist));
+    },
+    toggleItem(item) {
+      item.packed = !item.packed;
+      this.saveChecklist();
+    },
+    markAll(packedState) {
+      this.checklist.forEach(item => {
+        if (this.selectedChecklistCat === 'all' || item.cat === this.selectedChecklistCat) {
+          item.packed = packedState;
+        }
+      });
+      this.saveChecklist();
+    },
+    resetChecklist() {
+      if (confirm('Reset all packing checklist items to unpacked?')) {
+        this.checklist.forEach(i => (i.packed = false));
+        this.saveChecklist();
+      }
     }
   },
   template: `
@@ -285,44 +340,125 @@ const WeatherPacking = {
         </div>
       </div>
 
-      <!-- TAB 3: Interactive Packing Checklist -->
-      <div v-if="selectedTab === 'checklist'" class="card p-5 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+      <!-- TAB 3: Interactive Packing Checklist with LocalStorage & Categories -->
+      <div v-if="selectedTab === 'checklist'" class="card p-5 space-y-5">
+        <!-- Header & Progress -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
           <div>
-            <h3 class="text-lg font-bold">🧳 Trip Packing Checklist</h3>
-            <p class="text-xs text-[var(--muted-foreground)]">Click any item to mark it as packed</p>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">🧳</span>
+              <h3 class="text-lg font-bold">Interactive Packing Checklist</h3>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+              Saved automatically on your device. Tap any item to check it off.
+            </p>
           </div>
-          <div class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30">
-            {{ packedCount }} of {{ checklist.length }} items packed ({{ Math.round((packedCount / checklist.length) * 100) }}%)
+
+          <!-- Progress Bar & Count -->
+          <div class="flex flex-col sm:items-end gap-1.5">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="font-bold text-[var(--foreground)]">{{ packedCount }} of {{ checklist.length }} Packed</span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                {{ packedPercentage }}%
+              </span>
+            </div>
+            <!-- Visual Progress Bar -->
+            <div class="w-full sm:w-48 h-2.5 rounded-full bg-[var(--background)] border border-[var(--border)] overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-emerald-500 to-[var(--accent)] transition-all duration-300"
+                :style="{ width: packedPercentage + '%' }"
+              ></div>
+            </div>
           </div>
         </div>
 
+        <!-- Filter Pills & Batch Action Buttons -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <!-- Category Filter Pills -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button
+              v-for="cat in checklistCategories"
+              :key="cat"
+              @click="selectedChecklistCat = cat"
+              :class="[
+                'px-3 py-1.5 rounded-xl text-xs font-semibold transition-all',
+                selectedChecklistCat === cat
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                  : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+              ]"
+            >
+              {{ cat === 'all' ? '🎒 All Items' : cat }}
+            </button>
+          </div>
+
+          <!-- Batch Action Controls -->
+          <div class="flex items-center gap-2 self-start sm:self-auto text-xs">
+            <button
+              @click="markAll(true)"
+              class="px-2.5 py-1 rounded-lg bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] font-medium transition-colors"
+              title="Check all items in current view"
+            >
+              ✓ Check All
+            </button>
+            <button
+              @click="markAll(false)"
+              class="px-2.5 py-1 rounded-lg bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] font-medium transition-colors"
+              title="Uncheck all items in current view"
+            >
+              ✗ Uncheck All
+            </button>
+            <button
+              @click="resetChecklist"
+              class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-medium transition-colors"
+              title="Reset entire checklist"
+            >
+              🔄 Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- 100% Packed Congratulations Banner -->
+        <div v-if="packedPercentage === 100" class="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-3">
+          <span class="text-3xl">🎉</span>
+          <div>
+            <div class="font-bold text-sm">All Packed & Ready for Ireland!</div>
+            <div class="text-xs opacity-90">You have checked off all items including birthday outfits and wet-weather gear. Have an amazing trip!</div>
+          </div>
+        </div>
+
+        <!-- Checklist Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div
-            v-for="(item, idx) in checklist"
-            :key="idx"
-            @click="toggleItem(idx)"
-            class="p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all flex items-center justify-between gap-3 select-none"
-            :class="item.packed ? 'border-emerald-500/50 bg-emerald-500/[0.05]' : ''"
+            v-for="item in filteredChecklist"
+            :key="item.id"
+            @click="toggleItem(item)"
+            class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all flex items-center justify-between gap-3 select-none"
+            :class="item.packed ? 'border-emerald-500/50 bg-emerald-500/[0.06]' : ''"
           >
-            <div class="flex items-center gap-3">
-              <span
-                class="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold border transition-colors"
+            <div class="flex items-start gap-3">
+              <div
+                class="w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold border transition-colors flex-shrink-0 mt-0.5"
                 :class="item.packed ? 'bg-emerald-500 text-white border-emerald-500' : 'border-[var(--border)] bg-[var(--card)]'"
               >
                 {{ item.packed ? '✓' : '' }}
-              </span>
+              </div>
               <div>
-                <div class="text-xs font-semibold text-[var(--foreground)]" :class="item.packed ? 'line-through text-[var(--muted-foreground)]' : ''">
+                <div
+                  class="text-xs font-semibold text-[var(--foreground)] leading-snug"
+                  :class="item.packed ? 'line-through opacity-60' : ''"
+                >
                   {{ item.item }}
                 </div>
-                <div class="text-[10px] text-[var(--muted-foreground)]">{{ item.cat }}</div>
+                <div class="text-[10px] text-[var(--muted-foreground)] mt-0.5 font-medium">{{ item.cat }}</div>
               </div>
             </div>
-            <span v-if="item.packed" class="text-[10px] font-bold text-emerald-400 uppercase">Packed</span>
+            <span v-if="item.packed" class="text-[10px] font-bold text-emerald-400 uppercase flex-shrink-0 px-2 py-0.5 rounded bg-emerald-500/15">
+              Packed
+            </span>
           </div>
         </div>
       </div>
     </div>
   `
 };
+
