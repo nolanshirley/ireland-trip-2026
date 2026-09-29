@@ -13,7 +13,8 @@ const app = createApp({
     'weather-packing': WeatherPacking,
     'hiking-nature': HikingNature,
     'restaurants-view': Restaurants,
-    'reservations-view': Reservations
+    'reservations-view': Reservations,
+    'budget-tracker': BudgetTracker
   },
   setup() {
     const trip = ref(TRIP);
@@ -208,6 +209,7 @@ const app = createApp({
 
     const tabs = [
       { id: 'planner', label: '📅 Daily Schedule', shortLabel: 'Schedule', icon: '📅' },
+      { id: 'budget', label: '💶 Budget & Splits', shortLabel: 'Budget', icon: '💶' },
       { id: 'weather', label: '🌦️ Weather & Packing', shortLabel: 'Weather', icon: '🌦️' },
       { id: 'hiking', label: '🥾 Trails & Nature', shortLabel: 'Trails', icon: '🥾' },
       { id: 'restaurants', label: '🍴 Food & Pubs', shortLabel: 'Food', icon: '🍴' },
