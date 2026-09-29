@@ -65,20 +65,56 @@ const app = createApp({
       localStorage.setItem('ireland_user_sender_name', name);
     };
 
+    const parseTimeStartHour = (timeStr) => {
+      if (!timeStr) return 10;
+      const str = timeStr.toString().trim().toUpperCase();
+      const match = str.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+      if (match) {
+        let hours = parseInt(match[1], 10);
+        const minutes = match[2] ? parseInt(match[2], 10) / 60 : 0;
+        const meridian = match[3];
+        if (meridian === 'PM' && hours < 12) hours += 12;
+        if (meridian === 'AM' && hours === 12) hours = 0;
+        return hours + minutes;
+      }
+      if (str.includes('MORNING')) return 9;
+      if (str.includes('AFTERNOON') || str.includes('LUNCH')) return 13;
+      if (str.includes('EVENING') || str.includes('DINNER')) return 18;
+      if (str.includes('NIGHT')) return 20;
+      return 10;
+    };
+
     // ── Dynamic Computed Merged Lists ─────────────────────────
     const timelineList = computed(() => {
       const baseTimeline = JSON.parse(JSON.stringify(timeline));
       customActivities.value.forEach(act => {
         const dIdx = act.dayIndex !== undefined ? act.dayIndex : (act.dayNumber ? act.dayNumber - 1 : 0);
         if (baseTimeline[dIdx]) {
-          const existingIdx = baseTimeline[dIdx].items.findIndex(i => i.id === act.id);
+          const actCopy = { ...act };
+          if (actCopy.startHour === undefined || isNaN(actCopy.startHour)) {
+            actCopy.startHour = parseTimeStartHour(actCopy.time);
+          }
+          if (actCopy.endHour === undefined || isNaN(actCopy.endHour)) {
+            actCopy.endHour = actCopy.startHour + (parseFloat(actCopy.durHours) || 1.5);
+          }
+          const existingIdx = baseTimeline[dIdx].items.findIndex(i => i.id === actCopy.id);
           if (existingIdx >= 0) {
-            baseTimeline[dIdx].items[existingIdx] = { ...act };
+            baseTimeline[dIdx].items[existingIdx] = actCopy;
           } else {
-            baseTimeline[dIdx].items.push({ ...act });
+            baseTimeline[dIdx].items.push(actCopy);
           }
         }
       });
+
+      // Sort items within each day chronologically by startHour
+      baseTimeline.forEach(day => {
+        day.items.sort((a, b) => {
+          const aStart = a.startHour !== undefined && !isNaN(a.startHour) ? a.startHour : parseTimeStartHour(a.time);
+          const bStart = b.startHour !== undefined && !isNaN(b.startHour) ? b.startHour : parseTimeStartHour(b.time);
+          return aStart - bStart;
+        });
+      });
+
       return baseTimeline;
     });
 
@@ -413,15 +449,15 @@ const app = createApp({
 
     // ── Color Palettes & Accessibility Tokens ──────────────────
     const palettes = [
-      { id: 'emerald', name: 'Emerald Isle', desc: 'Shamrock & Forest Green', color: '#10b981', icon: '🍀' },
-      { id: 'atlantic', name: 'Wild Atlantic', desc: 'Ocean Teal & Marine Blue', color: '#06b6d4', icon: '🌊' },
-      { id: 'amber', name: 'Guinness & Whiskey', desc: 'Roasted Malt & Golden Amber', color: '#f59e0b', icon: '🍺' },
-      { id: 'heather', name: 'Connemara Heather', desc: 'Twilight Violet & Lavender', color: '#a855f7', icon: '🪻' },
-      { id: 'autumn', name: 'Killarney Autumn', desc: 'Burnt Russet & Foliage Copper', color: '#f97316', icon: '🍁' },
-      { id: 'cyber', name: 'Midnight OLED', desc: 'Pitch Black & Electric Mint', color: '#00ff9d', icon: '⚡' }
+      { id: 'monochrome', name: 'Monochrome & Ice', desc: 'Crisp Obsidian & Ice Blue', color: '#38bdf8', icon: '❄️' },
+      { id: 'glacier', name: 'Glacier Cyan', desc: 'Arctic Ocean & Cyan', color: '#06b6d4', icon: '🌊' },
+      { id: 'twilight', name: 'Nordic Twilight', desc: 'Midnight & Lavender Indigo', color: '#818cf8', icon: '🌌' },
+      { id: 'sage', name: 'Muted Sage', desc: 'Gentle Pine & Earthy Sage', color: '#2dd4bf', icon: '🌲' },
+      { id: 'amber', name: 'Roasted Malt', desc: 'Irish Pub & Golden Amber', color: '#f59e0b', icon: '🍺' },
+      { id: 'pure-black', name: 'Pure OLED', desc: '100% Black & White Slate', color: '#f4f4f5', icon: '⚪' }
     ];
 
-    const selectedPalette = ref('emerald');
+    const selectedPalette = ref('monochrome');
 
     const setPalette = (id) => {
       selectedPalette.value = id;
@@ -1045,6 +1081,8 @@ const app = createApp({
       const timeStr = newScheduleForm.value.time || '10:00 AM';
       const dayIdx = parseInt(newScheduleForm.value.dayIndex) || 0;
       const durH = parseFloat(newScheduleForm.value.durHours) || 1.5;
+      const startH = parseTimeStartHour(timeStr);
+      const endH = startH + durH;
 
       const newStop = {
         id: 'cust_act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -1053,8 +1091,8 @@ const app = createApp({
         time: timeStr,
         dur: newScheduleForm.value.dur || `${durH} hrs`,
         durHours: durH,
-        startHour: parseInt(timeStr.match(/\d+/)?.[0] || '10') + (timeStr.includes('PM') && !timeStr.startsWith('12') ? 12 : 0),
-        endHour: (parseInt(timeStr.match(/\d+/)?.[0] || '10') + (timeStr.includes('PM') && !timeStr.startsWith('12') ? 12 : 0)) + durH,
+        startHour: startH,
+        endHour: endH,
         activity: newScheduleForm.value.activity.trim(),
         type: newScheduleForm.value.type || 'sight',
         energyLevel: newScheduleForm.value.energyLevel || 'moderate',
@@ -1486,25 +1524,53 @@ const app = createApp({
     const applyIncomingSync = (mode = 'merge') => {
       if (!incomingSyncPayload.value) return;
       const p = incomingSyncPayload.value;
+      let firstMergedDayIndex = null;
+      let mergedStopsCount = 0;
 
       if (mode === 'replace') {
-        if (p.activities) customActivities.value = p.activities;
-        if (p.restaurants) customRestaurants.value = p.restaurants;
-        if (p.trails) customTrails.value = p.trails;
-        if (p.reservations) customReservations.value = p.reservations;
-        if (p.votes) itemVotes.value = p.votes;
-        if (p.notes) customNotes.value = p.notes;
+        if (p.activities && Array.isArray(p.activities)) {
+          customActivities.value = p.activities.map(act => {
+            const startH = (typeof act.startHour === 'number' && !isNaN(act.startHour)) ? act.startHour : parseTimeStartHour(act.time);
+            const endH = (typeof act.endHour === 'number' && !isNaN(act.endHour)) ? act.endHour : (startH + (parseFloat(act.durHours) || 1.5));
+            return { ...act, startHour: startH, endHour: endH };
+          });
+          if (customActivities.value.length > 0 && customActivities.value[0].dayIndex !== undefined) {
+            firstMergedDayIndex = customActivities.value[0].dayIndex;
+          }
+          mergedStopsCount = customActivities.value.length;
+        } else {
+          customActivities.value = [];
+        }
+        customRestaurants.value = Array.isArray(p.restaurants) ? [...p.restaurants] : [];
+        customTrails.value = Array.isArray(p.trails) ? [...p.trails] : [];
+        customReservations.value = Array.isArray(p.reservations) ? [...p.reservations] : [];
+        itemVotes.value = (p.votes && typeof p.votes === 'object') ? { ...p.votes } : {};
+        if (p.notes && Array.isArray(p.notes)) {
+          customNotes.value = [...p.notes];
+          localStorage.setItem('ireland_custom_notes', JSON.stringify(customNotes.value));
+        }
         if (p.scratchpad !== undefined) localStorage.setItem('ireland_trip_scratchpad', p.scratchpad);
       } else {
         // Non-destructive Merge
         if (p.activities && Array.isArray(p.activities)) {
           const current = [...customActivities.value];
           p.activities.forEach(incoming => {
-            const idx = current.findIndex(a => a.id === incoming.id || (a.activity === incoming.activity && a.dayIndex === incoming.dayIndex));
+            const startH = (typeof incoming.startHour === 'number' && !isNaN(incoming.startHour)) ? incoming.startHour : parseTimeStartHour(incoming.time);
+            const endH = (typeof incoming.endHour === 'number' && !isNaN(incoming.endHour)) ? incoming.endHour : (startH + (parseFloat(incoming.durHours) || 1.5));
+            const preparedIncoming = {
+              ...incoming,
+              startHour: startH,
+              endHour: endH
+            };
+            const idx = current.findIndex(a => a.id === preparedIncoming.id || (a.activity === preparedIncoming.activity && a.dayIndex === preparedIncoming.dayIndex));
             if (idx >= 0) {
-              current[idx] = { ...current[idx], ...incoming };
+              current[idx] = { ...current[idx], ...preparedIncoming };
             } else {
-              current.push(incoming);
+              current.push(preparedIncoming);
+              mergedStopsCount++;
+              if (firstMergedDayIndex === null && preparedIncoming.dayIndex !== undefined) {
+                firstMergedDayIndex = preparedIncoming.dayIndex;
+              }
             }
           });
           customActivities.value = current;
@@ -1596,6 +1662,12 @@ const app = createApp({
 
       isIncomingSyncModalOpen.value = false;
       incomingSyncPayload.value = null;
+
+      // Automatically jump to the merged day on the planner tab so the user sees the new stops immediately!
+      if (firstMergedDayIndex !== null) {
+        handleSwitchTab({ tab: 'planner', dayIndex: firstMergedDayIndex });
+      }
+
       alert('🎉 Trip updates successfully synced! All new stops, dining spots, and family votes are live in your view.');
     };
 

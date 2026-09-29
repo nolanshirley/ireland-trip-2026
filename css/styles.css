@@ -2,72 +2,72 @@
    Ireland Trip Dashboard — Custom Styles & Theme Tokens
    ============================================================= */
 
-/* ── CSS Custom Properties (Emerald Isle Master Light Base) ─── */
+/* ── CSS Custom Properties (Chill Crisp Light Base) ─────────── */
 :root {
-  --background:        #f0fdf4;
-  --foreground:        #052e16;
+  --background:        #f8fafc;
+  --foreground:        #090d16;
   --card:              #ffffff;
-  --card-foreground:   #052e16;
-  --card-hover:        #e7faee;
-  --border:            #bbf7d0;
-  --muted-foreground:  #166534;
-  --accent:            #059669;
-  --accent-glow:       rgba(5, 150, 105, 0.28);
-  --accent-secondary:  #10b981;
-  --primary:           #052e16;
+  --card-foreground:   #090d16;
+  --card-hover:        #f1f5f9;
+  --border:            #e2e8f0;
+  --muted-foreground:  #475569;
+  --accent:            #0284c7;
+  --accent-glow:       rgba(2, 132, 199, 0.25);
+  --accent-secondary:  #4f46e5;
+  --primary:           #090d16;
   --primary-foreground:#ffffff;
-  --shadow-sm:         0 1px 3px rgba(5, 46, 22, 0.08), 0 1px 2px rgba(5, 46, 22, 0.04);
-  --shadow-md:         0 4px 14px rgba(5, 46, 22, 0.12);
-  --shadow-lg:         0 10px 25px -5px rgba(5, 46, 22, 0.16);
-  --shadow-xl:         0 20px 30px -10px rgba(5, 46, 22, 0.20);
+  --shadow-sm:         0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md:         0 4px 14px rgba(15, 23, 42, 0.08);
+  --shadow-lg:         0 10px 25px -5px rgba(15, 23, 42, 0.12);
+  --shadow-xl:         0 20px 30px -10px rgba(15, 23, 42, 0.16);
 }
 
-/* ── Dark Theme (Emerald Obsidian Master Luxury Base) ────────── */
+/* ── Dark Theme (Obsidian & Ice Blue Master Luxury Base) ─────── */
 .dark {
-  --background:        #030c08;
-  --foreground:        #f0fdf4;
-  --card:              #081b12;
-  --card-foreground:   #f0fdf4;
-  --card-hover:        #0f2e20;
-  --border:            #174833;
-  --muted-foreground:  #86efac;
-  --accent:            #10b981;
-  --accent-glow:       rgba(16, 185, 129, 0.38);
-  --accent-secondary:  #34d399;
-  --primary:           #f0fdf4;
-  --primary-foreground:#030c08;
-  --shadow-sm:         0 1px 3px rgba(0, 0, 0, 0.45);
-  --shadow-md:         0 4px 16px rgba(0, 0, 0, 0.55);
-  --shadow-lg:         0 10px 30px rgba(0, 0, 0, 0.65);
-  --shadow-xl:         0 20px 45px rgba(0, 0, 0, 0.80);
+  --background:        #090b10;
+  --foreground:        #f8fafc;
+  --card:              #11151f;
+  --card-foreground:   #f8fafc;
+  --card-hover:        #18202e;
+  --border:            #232d3f;
+  --muted-foreground:  #94a3b8;
+  --accent:            #38bdf8;
+  --accent-glow:       rgba(56, 189, 248, 0.35);
+  --accent-secondary:  #818cf8;
+  --primary:           #f8fafc;
+  --primary-foreground:#090b10;
+  --shadow-sm:         0 1px 3px rgba(0, 0, 0, 0.50);
+  --shadow-md:         0 4px 16px rgba(0, 0, 0, 0.60);
+  --shadow-lg:         0 10px 30px rgba(0, 0, 0, 0.70);
+  --shadow-xl:         0 20px 45px rgba(0, 0, 0, 0.85);
 }
 
-/* ── Palette 1: Emerald Isle (Lush Irish Forest & Mint) ──────── */
-.theme-emerald {
-  --background:        #f0fdf4;
-  --foreground:        #052e16;
+/* ── Palette 1: Monochrome & Ice Blue (Default Chill Master) ─── */
+.theme-monochrome {
+  --background:        #f8fafc;
+  --foreground:        #090d16;
   --card:              #ffffff;
-  --card-hover:        #e7faee;
-  --border:            #bbf7d0;
-  --muted-foreground:  #166534;
-  --accent:            #059669;
-  --accent-glow:       rgba(5, 150, 105, 0.30);
-  --accent-secondary:  #10b981;
+  --card-hover:        #f1f5f9;
+  --border:            #e2e8f0;
+  --muted-foreground:  #475569;
+  --accent:            #0284c7;
+  --accent-glow:       rgba(2, 132, 199, 0.25);
+  --accent-secondary:  #4f46e5;
 }
-.dark.theme-emerald {
-  --background:        #030c08;
-  --foreground:        #f0fdf4;
-  --card:              #081b12;
-  --card-hover:        #0f2e20;
-  --border:            #174833;
-  --muted-foreground:  #86efac;
-  --accent:            #10b981;
-  --accent-glow:       rgba(16, 185, 129, 0.40);
-  --accent-secondary:  #34d399;
+.dark.theme-monochrome {
+  --background:        #090b10;
+  --foreground:        #f8fafc;
+  --card:              #11151f;
+  --card-hover:        #18202e;
+  --border:            #232d3f;
+  --muted-foreground:  #94a3b8;
+  --accent:            #38bdf8;
+  --accent-glow:       rgba(56, 189, 248, 0.35);
+  --accent-secondary:  #818cf8;
 }
 
-/* ── Palette 2: Wild Atlantic Way (Deep Marine & Electric Cyan) ─ */
-.theme-atlantic {
+/* ── Palette 2: Glacier Cyan & Arctic Slate ──────────────────── */
+.theme-glacier {
   --background:        #f0f9ff;
   --foreground:        #082f49;
   --card:              #ffffff;
@@ -75,115 +75,115 @@
   --border:            #bae6fd;
   --muted-foreground:  #0369a1;
   --accent:            #0284c7;
-  --accent-glow:       rgba(2, 132, 199, 0.30);
+  --accent-glow:       rgba(2, 132, 199, 0.28);
   --accent-secondary:  #06b6d4;
 }
-.dark.theme-atlantic {
-  --background:        #020b14;
+.dark.theme-glacier {
+  --background:        #060e18;
   --foreground:        #f0f9ff;
-  --card:              #061a2e;
-  --card-hover:        #0c2a49;
-  --border:            #12436f;
+  --card:              #0a1827;
+  --card-hover:        #10243b;
+  --border:            #173859;
   --muted-foreground:  #7dd3fc;
-  --accent:            #38bdf8;
-  --accent-glow:       rgba(56, 189, 248, 0.40);
-  --accent-secondary:  #06b6d4;
+  --accent:            #00f0ff;
+  --accent-glow:       rgba(0, 240, 255, 0.38);
+  --accent-secondary:  #38bdf8;
 }
 
-/* ── Palette 3: Guinness & Whiskey (Roasted Malt & Golden Amber) ─ */
-.theme-amber {
-  --background:        #fffbeb;
-  --foreground:        #451a03;
-  --card:              #ffffff;
-  --card-hover:        #fef3c7;
-  --border:            #fde68a;
-  --muted-foreground:  #92400e;
-  --accent:            #d97706;
-  --accent-glow:       rgba(217, 119, 6, 0.30);
-  --accent-secondary:  #f59e0b;
-}
-.dark.theme-amber {
-  --background:        #0d0701;
-  --foreground:        #fffbeb;
-  --card:              #1c1004;
-  --card-hover:        #2d1b08;
-  --border:            #4a2c0c;
-  --muted-foreground:  #fde68a;
-  --accent:            #fbbf24;
-  --accent-glow:       rgba(251, 191, 36, 0.40);
-  --accent-secondary:  #f59e0b;
-}
-
-/* ── Palette 4: Connemara Heather (Twilight Purple & Violet) ─── */
-.theme-heather {
+/* ── Palette 3: Nordic Twilight & Lavender ───────────────────── */
+.theme-twilight {
   --background:        #faf5ff;
-  --foreground:        #3b0764;
+  --foreground:        #2e1065;
   --card:              #ffffff;
   --card-hover:        #f3e8ff;
   --border:            #e9d5ff;
-  --muted-foreground:  #7e22ce;
-  --accent:            #9333ea;
-  --accent-glow:       rgba(147, 51, 234, 0.30);
+  --muted-foreground:  #6b21a8;
+  --accent:            #7c3aed;
+  --accent-glow:       rgba(124, 58, 237, 0.25);
   --accent-secondary:  #a855f7;
 }
-.dark.theme-heather {
-  --background:        #0a0314;
+.dark.theme-twilight {
+  --background:        #0a0a14;
   --foreground:        #faf5ff;
-  --card:              #19092c;
-  --card-hover:        #291146;
-  --border:            #441c72;
-  --muted-foreground:  #d8b4fe;
-  --accent:            #c084fc;
-  --accent-glow:       rgba(192, 132, 252, 0.40);
-  --accent-secondary:  #a855f7;
+  --card:              #131326;
+  --card-hover:        #1c1c38;
+  --border:            #2a2a50;
+  --muted-foreground:  #c4b5fd;
+  --accent:            #a78bfa;
+  --accent-glow:       rgba(167, 139, 250, 0.35);
+  --accent-secondary:  #818cf8;
 }
 
-/* ── Palette 5: Killarney Autumn (Burnt Russet & Copper) ─────── */
-.theme-autumn {
-  --background:        #fff7ed;
-  --foreground:        #431407;
+/* ── Palette 4: Muted Sage & Celtic Slate (Gentle Earthy Pine) ─ */
+.theme-sage {
+  --background:        #f4f8f6;
+  --foreground:        #0f2e22;
   --card:              #ffffff;
-  --card-hover:        #ffedd5;
-  --border:            #fed7aa;
-  --muted-foreground:  #9a3412;
-  --accent:            #ea580c;
-  --accent-glow:       rgba(234, 88, 12, 0.30);
-  --accent-secondary:  #f97316;
+  --card-hover:        #e6f0eb;
+  --border:            #c8ded4;
+  --muted-foreground:  #2d6a4f;
+  --accent:            #0d9488;
+  --accent-glow:       rgba(13, 148, 136, 0.25);
+  --accent-secondary:  #059669;
 }
-.dark.theme-autumn {
-  --background:        #0f0501;
-  --foreground:        #fff7ed;
-  --card:              #200d03;
-  --card-hover:        #341706;
-  --border:            #562509;
-  --muted-foreground:  #fed7aa;
-  --accent:            #fb923c;
-  --accent-glow:       rgba(251, 146, 60, 0.40);
-  --accent-secondary:  #ea580c;
+.dark.theme-sage {
+  --background:        #070d0a;
+  --foreground:        #f2f9f5;
+  --card:              #0d1813;
+  --card-hover:        #15261f;
+  --border:            #1f3d30;
+  --muted-foreground:  #8ec5ad;
+  --accent:            #2dd4bf;
+  --accent-glow:       rgba(45, 212, 191, 0.35);
+  --accent-secondary:  #34d399;
 }
 
-/* ── Palette 6: Midnight OLED (True Black & Neon Emerald Mint) ─ */
-.theme-cyber {
-  --background:        #000000;
-  --foreground:        #f0fdf4;
-  --card:              #06110a;
-  --card-hover:        #0c2214;
-  --border:            #143e26;
-  --accent:            #00ff9d;
-  --accent-glow:       rgba(0, 255, 157, 0.45);
-  --accent-secondary:  #00f0ff;
-  --muted-foreground:  #6ee7b7;
+/* ── Palette 5: Roasted Malt & Golden Amber ──────────────────── */
+.theme-amber {
+  --background:        #fdfbf7;
+  --foreground:        #292524;
+  --card:              #ffffff;
+  --card-hover:        #fef3c7;
+  --border:            #fde68a;
+  --muted-foreground:  #78350f;
+  --accent:            #d97706;
+  --accent-glow:       rgba(217, 119, 6, 0.25);
+  --accent-secondary:  #f59e0b;
 }
-.dark.theme-cyber {
+.dark.theme-amber {
+  --background:        #0c0a08;
+  --foreground:        #fdfbf7;
+  --card:              #181410;
+  --card-hover:        #261f17;
+  --border:            #3d3122;
+  --muted-foreground:  #fcd34d;
+  --accent:            #fbbf24;
+  --accent-glow:       rgba(251, 191, 36, 0.35);
+  --accent-secondary:  #f59e0b;
+}
+
+/* ── Palette 6: Minimalist OLED Monochrome ───────────────────── */
+.theme-pure-black {
+  --background:        #ffffff;
+  --foreground:        #000000;
+  --card:              #ffffff;
+  --card-hover:        #f4f4f5;
+  --border:            #e4e4e7;
+  --accent:            #18181b;
+  --accent-glow:       rgba(24, 24, 27, 0.25);
+  --accent-secondary:  #3f3f46;
+  --muted-foreground:  #52525b;
+}
+.dark.theme-pure-black {
   --background:        #000000;
-  --foreground:        #f0fdf4;
-  --card:              #06110a;
-  --card-hover:        #0c2214;
-  --border:            #143e26;
-  --accent:            #00ff9d;
-  --accent-glow:       rgba(0, 255, 157, 0.45);
-  --accent-secondary:  #00f0ff;
-  --muted-foreground:  #6ee7b7;
+  --foreground:        #ffffff;
+  --card:              #09090b;
+  --card-hover:        #18181b;
+  --border:            #27272a;
+  --accent:            #f4f4f5;
+  --accent-glow:       rgba(244, 244, 245, 0.35);
+  --accent-secondary:  #a1a1aa;
+  --muted-foreground:  #a1a1aa;
 }
 
 /* ── Dynamic Text Size Scaling Tokens ───────────────────────── */

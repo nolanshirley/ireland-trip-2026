@@ -199,12 +199,46 @@ const DailyPlanner = {
       if (h < 12) return `${h} AM`;
       return `${h - 12} PM`;
     },
+    getItemStartHour(item) {
+      if (typeof item.startHour === 'number' && !isNaN(item.startHour)) {
+        return item.startHour;
+      }
+      if (item.time) {
+        const t = item.time.toString().trim().toUpperCase();
+        const match = t.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+        if (match) {
+          let hours = parseInt(match[1], 10);
+          const minutes = match[2] ? parseInt(match[2], 10) / 60 : 0;
+          const meridian = match[3];
+          if (meridian === 'PM' && hours < 12) hours += 12;
+          if (meridian === 'AM' && hours === 12) hours = 0;
+          return hours + minutes;
+        }
+        if (t.includes('MORNING')) return 9;
+        if (t.includes('AFTERNOON') || t.includes('LUNCH')) return 13;
+        if (t.includes('EVENING') || t.includes('DINNER')) return 18;
+        if (t.includes('NIGHT')) return 20;
+      }
+      return this.dayStartHour;
+    },
+    getItemEndHour(item) {
+      if (typeof item.endHour === 'number' && !isNaN(item.endHour)) {
+        return item.endHour;
+      }
+      const start = this.getItemStartHour(item);
+      let dur = typeof item.durHours === 'number' ? item.durHours : 1.5;
+      if (item.dur && typeof item.dur === 'string') {
+        const dMatch = item.dur.match(/([\d.]+)\s*hr/i);
+        if (dMatch) dur = parseFloat(dMatch[1]);
+      }
+      return start + Math.max(0.5, dur);
+    },
     getRibbonBlockStyle(item) {
       const totalSpan = this.dayEndHour - this.dayStartHour; // 18 hours
-      const start = Math.max(this.dayStartHour, item.startHour || this.dayStartHour);
-      const end = Math.min(this.dayEndHour, item.endHour || (start + 1));
+      const start = Math.max(this.dayStartHour, this.getItemStartHour(item));
+      const end = Math.min(this.dayEndHour, this.getItemEndHour(item));
       const leftPercent = ((start - this.dayStartHour) / totalSpan) * 100;
-      const widthPercent = Math.max(3.0, ((end - start) / totalSpan) * 100);
+      const widthPercent = Math.max(3.5, ((end - start) / totalSpan) * 100);
 
       return {
         left: `${leftPercent}%`,
@@ -233,13 +267,13 @@ const DailyPlanner = {
     },
     getItemsInHour(day, hour) {
       return day.items.filter(item => {
-        const start = item.startHour || this.dayStartHour;
-        const end = item.endHour || (start + 1);
+        const start = this.getItemStartHour(item);
+        const end = this.getItemEndHour(item);
         return hour >= Math.floor(start) && hour < Math.ceil(end);
       });
     },
     isFirstHourOfItem(item, hour) {
-      const start = item.startHour || this.dayStartHour;
+      const start = this.getItemStartHour(item);
       return hour === Math.floor(start);
     },
     getBudgetColor(hours) {
