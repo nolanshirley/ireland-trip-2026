@@ -214,6 +214,27 @@ const DailyPlanner = {
     hasRainBackups(day) {
       return day.items.some(i => i.rainBackup);
     },
+    openMap(query) {
+      if (!query) return;
+      if (window.TravelApp) {
+        window.TravelApp.triggerMap(query);
+      } else {
+        window.open(`https://maps.apple.com/?q=${encodeURIComponent(query.replace(/\+/g, ' '))}`, '_blank');
+      }
+    },
+    openCalendar(item, day) {
+      if (!item) return;
+      const eventData = {
+        title: item.activity || item.title || 'Ireland Trip Activity',
+        date: (day && day.date) || item.date || 'Oct 2',
+        time: item.time || '',
+        desc: item.desc || item.note || '',
+        location: item.mapsQuery || (day && day.base) || 'Ireland'
+      };
+      if (window.TravelApp) {
+        window.TravelApp.triggerCalendar(eventData);
+      }
+    },
     getGoogleMapsUrl(query) {
       if (!query) return '#';
       const clean = query.replace(/\+/g, ' ');
@@ -781,17 +802,22 @@ const DailyPlanner = {
                           <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
                             ⏱️ {{ item.note }}
                           </span>
-                          <!-- 1-Tap Apple Maps Button -->
-                          <a
+                          <!-- 1-Tap Maps & Calendar Buttons -->
+                          <button
                             v-if="item.mapsQuery"
-                            :href="getGoogleMapsUrl(item.mapsQuery)"
-                            target="_blank"
-                            @click.stop
+                            @click.stop="openMap(item.mapsQuery)"
                             class="maps-btn text-[10px] py-0.5 px-2"
-                            title="Open in Apple Maps Navigation"
+                            title="Open Navigation"
                           >
                             <span>📍 Map</span>
-                          </a>
+                          </button>
+                          <button
+                            @click.stop="openCalendar(item, day)"
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] transition-all shadow-sm flex items-center gap-1"
+                            title="Add event to Calendar"
+                          >
+                            <span>📅 Cal</span>
+                          </button>
                         </div>
                       </div>
 
@@ -878,23 +904,28 @@ const DailyPlanner = {
                     </div>
 
                     <div class="flex items-center gap-1.5">
-                      <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
                         💡 SUGGESTED ITINERARY
                       </span>
-                      <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)]">
+                      <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
                         {{ item.tag }}
                       </span>
-                      <!-- 1-Tap Apple Maps Button -->
-                      <a
+                      <!-- 1-Tap Maps & Calendar Buttons -->
+                      <button
                         v-if="item.mapsQuery"
-                        :href="getGoogleMapsUrl(item.mapsQuery)"
-                        target="_blank"
-                        @click.stop
+                        @click.stop="openMap(item.mapsQuery)"
                         class="maps-btn text-[10px] py-0.5 px-2"
-                        title="Open in Apple Maps"
+                        title="Open Navigation"
                       >
                         <span>📍 Map</span>
-                      </a>
+                      </button>
+                      <button
+                        @click.stop="openCalendar(item, day)"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] transition-all shadow-sm flex items-center gap-1"
+                        title="Add event to Calendar"
+                      >
+                        <span>📅 Cal</span>
+                      </button>
                     </div>
                   </div>
 

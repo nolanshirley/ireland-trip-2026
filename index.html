@@ -48,6 +48,21 @@
           </button>
         </div>
 
+        <!-- Apple vs Google Provider Indicator / Trigger -->
+        <button
+          @click="openProviderSettings"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shadow-sm"
+          :class="[
+            userProvider === 'apple' ? 'bg-zinc-800 text-white border-zinc-600 dark:bg-zinc-200 dark:text-zinc-950 dark:border-zinc-300' : '',
+            userProvider === 'google' ? 'bg-blue-600 text-white border-blue-500 dark:bg-blue-500 dark:text-white' : '',
+            !userProvider ? 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]' : ''
+          ]"
+          :title="'Current maps & calendar preference: ' + (userProvider ? (userProvider === 'apple' ? 'Apple Services' : 'Google Services') : 'Ask Each Time') + '. Tap to change.'"
+        >
+          <span>{{ userProvider === 'apple' ? '🍎' : (userProvider === 'google' ? '🌐' : '🗺️') }}</span>
+          <span class="hidden sm:inline">{{ userProvider === 'apple' ? 'Apple' : (userProvider === 'google' ? 'Google' : 'Maps & Cal') }}</span>
+        </button>
+
         <!-- Universal Trip Scratchpad Modal Trigger -->
         <button
           @click="openScratchpad"
@@ -121,7 +136,7 @@
       <!-- Dad & Erin Birthday -->
       <button
         @click="handleSwitchTab({ tab: 'planner', dayNumber: 6 })"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-all flex-shrink-0 shadow-sm"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 hover:brightness-105 transition-all flex-shrink-0 shadow-sm"
       >
         <span>🎂</span>
         <span>Dad & Erin (10/7 · Galway)</span>
@@ -130,7 +145,7 @@
       <!-- Mom's Birthday -->
       <button
         @click="handleSwitchTab({ tab: 'planner', dayNumber: 12 })"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold bg-pink-500/15 text-pink-300 border border-pink-500/30 hover:bg-pink-500/25 transition-all flex-shrink-0 shadow-sm"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400 hover:brightness-105 transition-all flex-shrink-0 shadow-sm"
       >
         <span>🎂</span>
         <span>Mom (10/13 @ 5:15 PM · Mister S)</span>
@@ -139,7 +154,7 @@
       <!-- Guinness Tour -->
       <button
         @click="handleSwitchTab({ tab: 'planner', dayNumber: 11 })"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all flex-shrink-0 shadow-sm"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 hover:brightness-105 transition-all flex-shrink-0 shadow-sm"
       >
         <span>🍺</span>
         <span>Guinness Tour (10/12 @ 10:30 AM)</span>
@@ -320,16 +335,25 @@
           </div>
         </div>
 
-        <!-- 1-Tap Google Maps Button & Deep Profile Jump Buttons -->
+        <!-- 1-Tap Maps & Calendar Buttons -->
         <div class="pt-3 border-t border-[var(--border)] flex flex-wrap items-center gap-2 justify-between">
-          <a
-            v-if="selectedDetailItem.mapsQuery"
-            :href="getGoogleMapsUrl(selectedDetailItem.mapsQuery)"
-            target="_blank"
-            class="maps-btn py-2 px-4 text-xs font-bold"
-          >
-            <span>📍 Navigate with Google Maps</span>
-          </a>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              v-if="selectedDetailItem.mapsQuery"
+              @click="triggerMap(selectedDetailItem.mapsQuery)"
+              class="maps-btn py-2 px-4 text-xs font-bold"
+            >
+              <span>📍 Open Location Map</span>
+            </button>
+            <button
+              @click="triggerCalendar({ title: selectedDetailItem.activity, date: selectedDetailDay?.date || 'Oct 2', time: selectedDetailItem.time, desc: selectedDetailItem.desc, location: selectedDetailItem.mapsQuery })"
+              class="px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] transition-all flex items-center gap-1.5 shadow-sm"
+              title="Add this event to your calendar"
+            >
+              <span>📅</span>
+              <span>Add to Calendar</span>
+            </button>
+          </div>
 
           <div class="flex items-center gap-2">
             <button
@@ -566,6 +590,125 @@
           >
             Done
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Universal Apple vs Google Provider Selection Modal -->
+    <div
+      v-if="isProviderModalOpen"
+      class="modal-backdrop"
+      @click="isProviderModalOpen = false"
+    >
+      <div class="modal-sheet space-y-5 max-w-lg mx-auto" @click.stop>
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🗺️</span>
+            <div>
+              <h3 class="text-lg font-bold text-[var(--foreground)]">Choose Maps & Calendar Service</h3>
+              <p class="text-xs text-[var(--muted-foreground)]">Are you an Apple user or a Google user?</p>
+            </div>
+          </div>
+          <button
+            @click="isProviderModalOpen = false"
+            class="w-8 h-8 rounded-full bg-[var(--card-hover)] hover:bg-[var(--border)] flex items-center justify-center text-sm font-bold text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">
+          Select your device ecosystem. We will automatically route turn-by-turn navigation directions and calendar events directly to your preferred service.
+        </p>
+
+        <!-- Provider Choice Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Apple User Card -->
+          <button
+            @click="selectProvider('apple')"
+            class="p-4 rounded-2xl border-2 text-left transition-all duration-150 flex flex-col justify-between gap-3 hover:scale-[1.02] shadow-sm"
+            :class="[
+              userProvider === 'apple'
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10 ring-2 ring-[var(--accent)]/30'
+                : 'border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)]'
+            ]"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-3xl">🍎</span>
+              <span v-if="userProvider === 'apple'" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[var(--accent)] text-white">Active</span>
+            </div>
+            <div>
+              <div class="font-extrabold text-base text-[var(--foreground)]">Apple User</div>
+              <div class="text-xs text-[var(--muted-foreground)] mt-0.5">iPhone · iPad · Mac</div>
+            </div>
+            <ul class="text-[11px] text-[var(--muted-foreground)] space-y-1 pt-2 border-t border-[var(--border)]/60">
+              <li class="flex items-center gap-1.5 font-medium">
+                <span class="text-emerald-400">✓</span> <span>Apple Maps turn-by-turn</span>
+              </li>
+              <li class="flex items-center gap-1.5 font-medium">
+                <span class="text-emerald-400">✓</span> <span>Apple Calendar (.ics / iCal)</span>
+              </li>
+            </ul>
+          </button>
+
+          <!-- Google User Card -->
+          <button
+            @click="selectProvider('google')"
+            class="p-4 rounded-2xl border-2 text-left transition-all duration-150 flex flex-col justify-between gap-3 hover:scale-[1.02] shadow-sm"
+            :class="[
+              userProvider === 'google'
+                ? 'border-[var(--accent)] bg-[var(--accent)]/10 ring-2 ring-[var(--accent)]/30'
+                : 'border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)]'
+            ]"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-3xl">🌐</span>
+              <span v-if="userProvider === 'google'" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[var(--accent)] text-white">Active</span>
+            </div>
+            <div>
+              <div class="font-extrabold text-base text-[var(--foreground)]">Google User</div>
+              <div class="text-xs text-[var(--muted-foreground)] mt-0.5">Android · Chrome · Windows</div>
+            </div>
+            <ul class="text-[11px] text-[var(--muted-foreground)] space-y-1 pt-2 border-t border-[var(--border)]/60">
+              <li class="flex items-center gap-1.5 font-medium">
+                <span class="text-blue-400">✓</span> <span>Google Maps & Street View</span>
+              </li>
+              <li class="flex items-center gap-1.5 font-medium">
+                <span class="text-blue-400">✓</span> <span>1-Tap Google Calendar</span>
+              </li>
+            </ul>
+          </button>
+        </div>
+
+        <!-- Preference Checkbox & Footer -->
+        <div class="pt-3 border-t border-[var(--border)] space-y-3">
+          <label class="flex items-center gap-2 cursor-pointer select-none text-xs text-[var(--foreground)]">
+            <input
+              type="checkbox"
+              v-model="rememberChoice"
+              class="w-4 h-4 rounded text-[var(--accent)] bg-[var(--background)] border-[var(--border)] focus:ring-[var(--accent)] cursor-pointer"
+            />
+            <span>Remember my choice for all maps and calendar links</span>
+          </label>
+
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <button
+              v-if="userProvider"
+              @click="setProviderPreference(null)"
+              class="text-[11px] text-rose-400 hover:underline font-semibold"
+            >
+              Reset to Ask Each Time
+            </button>
+            <span v-else class="text-[10px] text-[var(--muted-foreground)]">You can change this anytime from the top bar</span>
+
+            <button
+              @click="isProviderModalOpen = false"
+              class="px-4 py-1.5 rounded-xl text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] transition-all"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

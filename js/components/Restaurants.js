@@ -201,33 +201,42 @@ const Restaurants = {
       if (r.birthdayEvent || (r.special && r.name === 'Mister S')) {
         return {
           label: '🎂 Birthday Celebration',
-          class: 'bg-pink-500/20 text-pink-300 border border-pink-500/50 font-bold'
+          class: 'bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400 font-extrabold shadow-sm'
         };
       }
       if (r.booked) {
         return {
           label: '✅ Booked',
-          class: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
+          class: 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 font-extrabold shadow-sm'
         };
       }
       return {
         label: '💡 Recommended',
-        class: 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+        class: 'bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 font-extrabold shadow-sm'
       };
     },
     getPriceLabel(price) {
       if (!price) return '€€';
       return price;
     },
-    getGoogleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    openMap(query) {
+      if (window.TravelApp && window.TravelApp.triggerMap) {
+        window.TravelApp.triggerMap(query || 'Ireland');
+      } else {
+        const clean = (query || 'Ireland').replace(/\+/g, ' ');
+        window.open(`https://maps.apple.com/?q=${encodeURIComponent(clean)}`, '_blank');
+      }
     },
-    getAppleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    openCalendar(r) {
+      if (window.TravelApp && window.TravelApp.triggerCalendar) {
+        window.TravelApp.triggerCalendar({
+          title: r.name + ' (Dining/Dinner)',
+          day: r.date || 'Oct 2',
+          time: r.bookingTime || '7:00 PM',
+          location: (r.mapsQuery || r.name) + ', ' + r.city + ', Ireland',
+          notes: `Cuisine: ${r.cuisineType} (${r.cuisine}) | Price: ${r.price || '€€'} | Notes: ${r.notes || ''} ${r.cancelPolicy ? '| Cancel Policy: ' + r.cancelPolicy : ''}`
+        });
+      }
     },
     resetFilters() {
       this.selectedCity = 'all';
@@ -246,7 +255,7 @@ const Restaurants = {
           <div>
             <div class="flex items-center gap-2">
               <h4 class="font-bold text-sm text-[var(--foreground)]">Oct 7 (Wed): Dad & Erin's Double Birthday</h4>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-300">Galway</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400">Galway</span>
             </div>
             <p class="text-xs text-[var(--muted-foreground)] mt-1">
               Celebration dinner at <strong>Ruibin</strong> (modern seasonal dockside) or <strong>Dough Bros</strong> (Ireland's #1 pizza) + trad music pints in Latin Quarter.
@@ -260,10 +269,10 @@ const Restaurants = {
           <div>
             <div class="flex items-center gap-2">
               <h4 class="font-bold text-sm text-[var(--foreground)]">Oct 13 (Tue @ 5:15 PM): Mom's Birthday Dinner</h4>
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-pink-500/20 text-pink-300">Dublin</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400">Dublin</span>
             </div>
             <p class="text-xs text-[var(--muted-foreground)] mt-1">
-              Confirmed anchor reservation at <strong>Mister S</strong> (Camden St). High-end wood-fired steaks. <span class="text-pink-400 font-semibold">Strict 24hr cancellation window. Formal attire.</span>
+              Confirmed anchor reservation at <strong>Mister S</strong> (Camden St). High-end wood-fired steaks. <span class="text-pink-600 dark:text-pink-300 font-bold">Strict 24hr cancellation window. Formal attire.</span>
             </p>
           </div>
         </div>
@@ -420,7 +429,7 @@ const Restaurants = {
             <!-- Birthday Ribbon Badge if applicable -->
             <div
               v-if="r.birthdayEvent"
-              class="mb-3 px-2.5 py-1 rounded-lg bg-pink-500/20 border border-pink-500/40 text-pink-300 font-extrabold text-[11px] flex items-center gap-1.5"
+              class="mb-3 px-2.5 py-1 rounded-lg bg-pink-200 dark:bg-pink-300 border border-pink-400 text-pink-950 font-extrabold text-[11px] flex items-center gap-1.5 shadow-sm"
             >
               <span>🎂</span>
               <span>{{ r.birthdayEvent }}</span>
@@ -446,15 +455,21 @@ const Restaurants = {
                 </div>
               </div>
               <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                <a
+                <button
                   v-if="r.mapsQuery"
-                  :href="getGoogleMapsUrl(r.mapsQuery)"
-                  target="_blank"
+                  @click.stop="openMap(r.mapsQuery)"
                   class="maps-btn text-[10px] py-0.5 px-2"
-                  title="Open in Apple Maps"
+                  title="Open in Apple Maps or Google Maps"
                 >
                   <span>📍 Map</span>
-                </a>
+                </button>
+                <button
+                  @click.stop="openCalendar(r)"
+                  class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                  title="Add this dining/restaurant to Apple / Google Calendar"
+                >
+                  <span>📅 Cal</span>
+                </button>
                 <span :class="['px-2 py-0.5 rounded text-[11px] whitespace-nowrap', getStatusBadge(r).class]">
                   {{ getStatusBadge(r).label }}
                 </span>

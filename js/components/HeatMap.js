@@ -73,14 +73,30 @@ const HeatMap = {
       return 'heat-1';
     },
     getAttractionScoreBadge(score) {
-      if (score >= 9) return 'bg-emerald-500/20 text-emerald-400 font-bold';
-      if (score >= 7) return 'bg-blue-500/20 text-blue-400 font-semibold';
-      if (score >= 5) return 'bg-amber-500/20 text-amber-400';
-      return 'text-zinc-500';
+      if (score >= 9) return 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 font-extrabold border border-emerald-400 shadow-sm';
+      if (score >= 7) return 'bg-blue-200 dark:bg-blue-300 text-blue-950 font-extrabold border border-blue-400 shadow-sm';
+      if (score >= 5) return 'bg-amber-200 dark:bg-amber-300 text-amber-950 font-extrabold border border-amber-400 shadow-sm';
+      return 'bg-zinc-200 dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-bold';
     },
-    getAttractionMapsUrl(name) {
-      const clean = (name + ', Ireland').replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    openMap(name) {
+      if (window.TravelApp && window.TravelApp.triggerMap) {
+        window.TravelApp.triggerMap(name + ', Ireland');
+      } else {
+        const clean = (name + ', Ireland').replace(/\+/g, ' ');
+        window.open(`https://maps.apple.com/?q=${encodeURIComponent(clean)}`, '_blank');
+      }
+    },
+    openCalendar(att) {
+      const sched = this.getScheduleLink(att.name);
+      if (window.TravelApp && window.TravelApp.triggerCalendar) {
+        window.TravelApp.triggerCalendar({
+          title: att.name,
+          day: sched ? `Day ${sched.dayNumber}` : 'Oct 2',
+          time: '10:00 AM',
+          location: att.name + ', ' + this.selectedRegion.name + ', Ireland',
+          notes: `Attraction in ${this.selectedRegion.name} | Approx duration: ${att.time} | Distance from base: ${att.dist}`
+        });
+      }
     },
     getScheduleLink(name) {
       for (const [key, val] of Object.entries(this.attractionScheduleMap)) {
@@ -217,7 +233,7 @@ const HeatMap = {
                     <span>{{ att.name }}</span>
                     <span
                       v-if="getScheduleLink(att.name)"
-                      class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm"
                     >
                       Day {{ getScheduleLink(att.name).dayNumber }}
                     </span>
@@ -244,17 +260,22 @@ const HeatMap = {
                     class="px-2 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-all"
                     title="View this attraction in the itinerary schedule"
                   >
-                    📅 Schedule
+                    📅 Day {{ getScheduleLink(att.name).dayNumber }}
                   </button>
-                  <a
-                    :href="getAttractionMapsUrl(att.name)"
-                    target="_blank"
+                  <button
+                    @click="openMap(att.name)"
                     class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] transition-all"
-                    title="Search attraction on Apple Maps"
+                    title="Open on Apple Maps or Google Maps"
                   >
-                    <span>📍 Maps</span>
-                    <span>↗</span>
-                  </a>
+                    <span>📍 Map</span>
+                  </button>
+                  <button
+                    @click="openCalendar(att)"
+                    class="px-2 py-1 rounded-lg text-xs font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all"
+                    title="Add attraction to Calendar"
+                  >
+                    <span>📅 Cal</span>
+                  </button>
                 </td>
               </tr>
               <tr v-if="filteredAttractions.length === 0">

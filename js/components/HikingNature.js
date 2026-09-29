@@ -152,39 +152,48 @@ const HikingNature = {
       if (status === 'Suggested' || status === 'Confirmed') {
         return {
           label: '💡 Suggested on Itinerary',
-          class: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
+          class: 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 font-extrabold shadow-sm'
         };
       }
       if (status === 'Planned') {
         return {
           label: '📍 Planned Day Activity',
-          class: 'bg-blue-500/20 text-blue-300 border border-blue-500/40 font-semibold'
+          class: 'bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 font-extrabold shadow-sm'
         };
       }
       return {
         label: '🌱 Optional / Weather Permitting',
-        class: 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-medium'
+        class: 'bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 font-extrabold shadow-sm'
       };
     },
     getDifficultyBadge(diff) {
       const d = diff.toLowerCase();
       if (d.includes('strenuous')) {
-        return 'bg-red-500/15 text-red-400 border border-red-500/30';
+        return 'bg-red-200 dark:bg-red-300 text-red-950 border border-red-400 font-extrabold shadow-sm';
       }
       if (d.includes('moderate')) {
-        return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
+        return 'bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 font-extrabold shadow-sm';
       }
-      return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+      return 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 font-extrabold shadow-sm';
     },
-    getGoogleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    openMap(query) {
+      if (window.TravelApp && window.TravelApp.triggerMap) {
+        window.TravelApp.triggerMap(query || 'Ireland');
+      } else {
+        const clean = (query || 'Ireland').replace(/\+/g, ' ');
+        window.open(`https://maps.apple.com/?q=${encodeURIComponent(clean)}`, '_blank');
+      }
     },
-    getAppleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    openCalendar(trail) {
+      if (window.TravelApp && window.TravelApp.triggerCalendar) {
+        window.TravelApp.triggerCalendar({
+          title: trail.name + ' Hike',
+          day: trail.date || 'Oct 2',
+          time: '9:30 AM',
+          location: (trail.mapsQuery || trail.name) + ', ' + trail.regionName + ', Ireland',
+          notes: `Distance: ${trail.distance} | Elevation: ${trail.elevGain} | Duration: ${trail.duration} | Gear: ${trail.gear} | Rain Backup: ${trail.rainBackup || 'N/A'}`
+        });
+      }
     },
     jumpToSchedule(trail) {
       this.$emit('switch-tab', {
@@ -377,15 +386,21 @@ const HikingNature = {
                 >
                   <span>{{ isCompleted(trail) ? '✓ Hiked' : '○ To Hike' }}</span>
                 </button>
-                <a
+                <button
                   v-if="trail.mapsQuery"
-                  :href="getGoogleMapsUrl(trail.mapsQuery)"
-                  target="_blank"
+                  @click.stop="openMap(trail.mapsQuery)"
                   class="maps-btn text-xs py-1 px-2.5"
-                  title="Open Trailhead in Apple Maps"
+                  title="Open Trailhead in Apple Maps or Google Maps"
                 >
                   <span>📍 Map</span>
-                </a>
+                </button>
+                <button
+                  @click.stop="openCalendar(trail)"
+                  class="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-1"
+                  title="Add this hike to Apple / Google Calendar"
+                >
+                  <span>📅 Cal</span>
+                </button>
                 <span :class="['px-2.5 py-1 rounded-full text-xs whitespace-nowrap border', getStatusBadge(trail.status).class]">
                   {{ getStatusBadge(trail.status).label }}
                 </span>
@@ -426,7 +441,7 @@ const HikingNature = {
             </div>
 
             <!-- Rain Backup Callout -->
-            <div v-if="trail.rainBackup" class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs text-amber-300 font-medium">
+            <div v-if="trail.rainBackup" class="p-2.5 rounded-lg bg-amber-100 dark:bg-amber-200/95 border border-amber-400 text-xs text-amber-950 font-bold shadow-sm">
               <strong>🌧️ Rainy Day Contingency:</strong> {{ trail.rainBackup }}
             </div>
 
@@ -449,7 +464,7 @@ const HikingNature = {
 
           <!-- Bottom Actions / Alerts -->
           <div class="space-y-2 pt-2 border-t border-[var(--border)]/50">
-            <div v-if="trail.weatherAlert" class="p-2 rounded-lg bg-red-500/10 border border-red-500/25 text-xs text-red-300 font-medium flex items-center gap-2">
+            <div v-if="trail.weatherAlert" class="p-2 rounded-lg bg-red-100 dark:bg-red-200/95 border border-red-400 text-xs text-red-950 font-extrabold flex items-center gap-2 shadow-sm">
               <span>⚠️</span>
               <span>{{ trail.weatherAlert }}</span>
             </div>

@@ -138,12 +138,12 @@ const Reservations = {
     getStatusClass(status) {
       const s = status.toLowerCase();
       if (s.includes('confirmed') || s.includes('booked')) {
-        return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold';
+        return 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 font-extrabold shadow-sm';
       }
       if (s.includes('pending') || s.includes('review') || s.includes('tentative')) {
-        return 'bg-amber-500/20 text-amber-400 border border-amber-500/40 font-semibold';
+        return 'bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 font-extrabold shadow-sm';
       }
-      return 'bg-blue-500/20 text-blue-400 border border-blue-500/40 font-medium';
+      return 'bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 font-extrabold shadow-sm';
     },
     getTypeIcon(type) {
       switch (type) {
@@ -154,15 +154,24 @@ const Reservations = {
         default: return '📋';
       }
     },
-    getGoogleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    openMap(query) {
+      if (window.TravelApp && window.TravelApp.triggerMap) {
+        window.TravelApp.triggerMap(query || 'Ireland');
+      } else {
+        const clean = (query || 'Ireland').replace(/\+/g, ' ');
+        window.open(`https://maps.apple.com/?q=${encodeURIComponent(clean)}`, '_blank');
+      }
     },
-    getAppleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    openCalendar(r) {
+      if (window.TravelApp && window.TravelApp.triggerCalendar) {
+        window.TravelApp.triggerCalendar({
+          title: r.name + (r.type === 'lodging' ? ' (Stay)' : (r.type === 'dining' ? ' (Dinner/Dining)' : ' (Booking)')),
+          day: r.date || 'Oct 2',
+          time: r.time || (r.type === 'lodging' ? '3:00 PM' : '12:00 PM'),
+          location: r.location || 'Ireland',
+          notes: (r.notes || '') + (r.cancelPolicy ? ' | Cancel Policy: ' + r.cancelPolicy : '') + (this.getBookingCode(r.name) ? ' | Code: ' + this.getBookingCode(r.name) : '')
+        });
+      }
     },
     jumpToRestaurant(restaurantId) {
       this.$emit('switch-tab', { tab: 'restaurants', targetId: restaurantId });
@@ -333,7 +342,7 @@ const Reservations = {
                   <div class="flex items-center gap-2 flex-wrap">
                     <span>{{ getTypeIcon(r.type) }}</span>
                     <span class="font-bold text-[var(--foreground)]">{{ r.name }}</span>
-                    <span v-if="r.special" class="px-1.5 py-0.5 rounded text-[10px] bg-pink-500/20 text-pink-300 font-bold">
+                    <span v-if="r.special" class="px-2 py-0.5 rounded text-[10px] bg-pink-200 dark:bg-pink-300 text-pink-950 font-extrabold border border-pink-400 shadow-sm">
                       🎂 MOM'S BDAY
                     </span>
                   </div>
@@ -346,19 +355,27 @@ const Reservations = {
                   </button>
                 </td>
 
-                <!-- Location & 1-Tap Maps -->
+                <!-- Location & 1-Tap Maps & Calendar -->
                 <td class="py-3 px-3 text-xs align-top">
-                  <div class="flex items-center gap-2">
-                    <span class="text-[var(--muted-foreground)]">📍 {{ r.location }}</span>
-                    <a
-                      v-if="r.mapsQuery"
-                      :href="getGoogleMapsUrl(r.mapsQuery)"
-                      target="_blank"
-                      class="maps-btn text-[10px] py-0.5 px-2"
-                      title="Open in Apple Maps"
-                    >
-                      <span>Map</span>
-                    </a>
+                  <div class="space-y-1.5">
+                    <div class="text-[var(--muted-foreground)]">📍 {{ r.location }}</div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        v-if="r.mapsQuery"
+                        @click="openMap(r.mapsQuery)"
+                        class="maps-btn text-[10px] py-0.5 px-2"
+                        title="Open Map"
+                      >
+                        <span>📍 Map</span>
+                      </button>
+                      <button
+                        @click="openCalendar(r)"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                        title="Add this booking to Apple / Google Calendar"
+                      >
+                        <span>📅 Cal</span>
+                      </button>
+                    </div>
                   </div>
                 </td>
 

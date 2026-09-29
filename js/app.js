@@ -114,6 +114,177 @@ const app = createApp({
       scrollToActiveTab(newTab);
     });
 
+    // ── Global Provider Preference (Apple vs Google) ───────────
+    const userProvider = ref(localStorage.getItem('ireland_preferred_provider') || null); // 'apple', 'google', or null
+    const isProviderModalOpen = ref(false);
+    const pendingAction = ref(null);
+    const rememberChoice = ref(true);
+
+    const parseTripEventDates = (event) => {
+      const dateStr = event.date || 'Oct 2';
+      const dayMatch = dateStr.match(/Oct\s*(\d+)/i);
+      const day = dayMatch ? parseInt(dayMatch[1]) : 2;
+      const year = 2026;
+      const month = 10; // October
+
+      let startH = 9, startM = 0;
+      if (event.time) {
+        const timeMatch = event.time.match(/(\d+):?(\d+)?\s*(AM|PM)?/i);
+        if (timeMatch) {
+          let h = parseInt(timeMatch[1]);
+          const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
+          const ampm = timeMatch[3] ? timeMatch[3].toUpperCase() : '';
+          if (ampm === 'PM' && h < 12) h += 12;
+          if (ampm === 'AM' && h === 12) h = 0;
+          startH = h;
+          startM = m;
+        }
+      }
+
+      const dur = event.durHours || 1.5;
+      const endH = startH + Math.floor(dur);
+      const endM = startM + Math.round((dur % 1) * 60);
+
+      const pad = (n) => String(n).padStart(2, '0');
+      const startISO = `${year}${pad(month)}${pad(day)}T${pad(startH)}${pad(startM)}00Z`;
+      const endISO = `${year}${pad(month)}${pad(day)}T${pad(endH % 24)}${pad(endM % 60)}00Z`;
+
+      return { startISO, endISO, startICS: startISO, endICS: endISO, day, startH, startM };
+    };
+
+    const executeMap = (query, provider) => {
+      if (!query) return;
+      let url = '';
+      if (provider === 'google') {
+        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      } else {
+        const clean = query.replace(/\+/g, ' ');
+        url = `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+      }
+      window.open(url, '_blank');
+    };
+
+    const executeRoute = (from, to, provider) => {
+      let url = '';
+      if (provider === 'google') {
+        const origin = encodeURIComponent(`${from}, Ireland`);
+        const dest = encodeURIComponent(`${to}, Ireland`);
+        url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
+      } else {
+        const origin = encodeURIComponent(`${(from || '').replace(/\+/g, ' ')}, Ireland`);
+        const dest = encodeURIComponent(`${(to || '').replace(/\+/g, ' ')}, Ireland`);
+        url = `https://maps.apple.com/?saddr=${origin}&daddr=${dest}&dirflg=d`;
+      }
+      window.open(url, '_blank');
+    };
+
+    const executeCalendar = (event, provider) => {
+      const { startISO, endISO, startICS, endICS } = parseTripEventDates(event);
+      if (provider === 'google') {
+        const title = encodeURIComponent(event.title || event.activity || event.name || 'Ireland Trip Event');
+        const details = encodeURIComponent(`${event.desc || event.notes || ''}\n\n🍀 Ireland Vacation 2026`);
+        const location = encodeURIComponent(event.location || event.mapsQuery || 'Ireland');
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startISO}/${endISO}&details=${details}&location=${location}`;
+        window.open(url, '_blank');
+      } else {
+        // Apple Calendar (.ics file trigger)
+        const summary = event.title || event.activity || event.name || 'Ireland Trip Event';
+        const description = `${(event.desc || event.notes || '').replace(/\n/g, '\\n')}\\n\\n🍀 Ireland Vacation 2026`;
+        const location = event.location || event.mapsQuery || 'Ireland';
+        const icsContent = [
+          'BEGIN:VCALENDAR',
+          'VERSION:2.0',
+          'PRODID:-//Ireland Trip 2026//EN',
+          'CALSCALE:GREGORIAN',
+          'METHOD:PUBLISH',
+          'BEGIN:VEVENT',
+          `SUMMARY:${summary}`,
+          `DESCRIPTION:${description}`,
+          `LOCATION:${location}`,
+          `DTSTART:${startICS}`,
+          `DTEND:${endICS}`,
+          'STATUS:CONFIRMED',
+          'END:VEVENT',
+          'END:VCALENDAR'
+        ].join('\r\n');
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${summary.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    };
+
+    const triggerMap = (query) => {
+      if (userProvider.value) {
+        executeMap(query, userProvider.value);
+      } else {
+        pendingAction.value = { type: 'map', query };
+        isProviderModalOpen.value = true;
+      }
+    };
+
+    const triggerRoute = (from, to) => {
+      if (userProvider.value) {
+        executeRoute(from, to, userProvider.value);
+      } else {
+        pendingAction.value = { type: 'route', from, to };
+        isProviderModalOpen.value = true;
+      }
+    };
+
+    const triggerCalendar = (event) => {
+      if (userProvider.value) {
+        executeCalendar(event, userProvider.value);
+      } else {
+        pendingAction.value = { type: 'calendar', event };
+        isProviderModalOpen.value = true;
+      }
+    };
+
+    const selectProvider = (provider) => {
+      if (rememberChoice.value) {
+        userProvider.value = provider;
+        localStorage.setItem('ireland_preferred_provider', provider);
+      }
+      isProviderModalOpen.value = false;
+
+      // Execute pending action if present
+      if (pendingAction.value) {
+        const action = pendingAction.value;
+        pendingAction.value = null;
+        if (action.type === 'map') executeMap(action.query, provider);
+        else if (action.type === 'route') executeRoute(action.from, action.to, provider);
+        else if (action.type === 'calendar') executeCalendar(action.event, provider);
+      }
+    };
+
+    const openProviderSettings = () => {
+      isProviderModalOpen.value = true;
+    };
+
+    const setProviderPreference = (provider) => {
+      userProvider.value = provider;
+      if (provider) {
+        localStorage.setItem('ireland_preferred_provider', provider);
+      } else {
+        localStorage.removeItem('ireland_preferred_provider');
+      }
+      isProviderModalOpen.value = false;
+    };
+
+    // Attach to window so all components can invoke directly
+    window.TravelApp = {
+      triggerMap,
+      triggerRoute,
+      triggerCalendar,
+      openProviderSettings,
+      getUserProvider: () => userProvider.value
+    };
+
     const getGoogleMapsUrl = (query) => {
       if (!query) return '#';
       const clean = query.replace(/\+/g, ' ');
@@ -388,6 +559,17 @@ const app = createApp({
       isSettingsModalOpen,
       openSettingsModal,
       closeSettingsModal,
+      // Provider Manager (Apple vs Google)
+      userProvider,
+      isProviderModalOpen,
+      rememberChoice,
+      pendingAction,
+      triggerMap,
+      triggerRoute,
+      triggerCalendar,
+      selectProvider,
+      setProviderPreference,
+      openProviderSettings,
       // Scratchpad & Backup
       isScratchpadOpen,
       tripScratchpad,

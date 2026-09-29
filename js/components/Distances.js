@@ -65,14 +65,23 @@ const Distances = {
       return total;
     },
     getUrgencyClass(urgency) {
-      if (urgency === 'high') return 'bg-red-500/15 text-red-400 border border-red-500/30';
-      if (urgency === 'med') return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
-      return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+      if (urgency === 'high') return 'bg-red-200 dark:bg-red-300 text-red-950 border border-red-400 font-extrabold shadow-sm';
+      if (urgency === 'med') return 'bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 font-extrabold shadow-sm';
+      return 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 font-extrabold shadow-sm';
     },
     getUrgencyLabel(urgency) {
       if (urgency === 'high') return '⚠️ Long Drive';
       if (urgency === 'med') return '⏱️ Moderate';
       return '✅ Easy';
+    },
+    openRoute(d) {
+      if (window.TravelApp) {
+        window.TravelApp.triggerRoute(d.from, d.to);
+      } else {
+        const origin = encodeURIComponent(`${(d.from || '').replace(/\+/g, ' ')}, Ireland`);
+        const dest = encodeURIComponent(`${(d.to || '').replace(/\+/g, ' ')}, Ireland`);
+        window.open(`https://maps.apple.com/?saddr=${origin}&daddr=${dest}&dirflg=d`, '_blank');
+      }
     },
     getRouteMapsUrl(d) {
       const origin = encodeURIComponent(`${(d.from || '').replace(/\+/g, ' ')}, Ireland`);
@@ -201,22 +210,21 @@ const Distances = {
                 </td>
                 <td class="py-3 px-3 text-xs text-[var(--muted-foreground)]">
                   <div class="flex items-center gap-2">
-                    <span v-if="d.transfer" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 flex-shrink-0">
+                    <span v-if="d.transfer" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 flex-shrink-0 shadow-sm">
                       TRANSFER
                     </span>
                     <span>{{ d.notes }}</span>
                   </div>
                 </td>
                 <td class="py-3 px-3 text-right whitespace-nowrap">
-                  <a
-                    :href="getRouteMapsUrl(d)"
-                    target="_blank"
+                  <button
+                    @click="openRoute(d)"
                     class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all shadow-sm"
-                    title="Open Apple Maps Driving Directions"
+                    title="Open Driving Directions"
                   >
                     <span>🚗 Route</span>
                     <span>↗</span>
-                  </a>
+                  </button>
                 </td>
               </tr>
               <tr v-if="filteredDistances.length === 0">
