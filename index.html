@@ -18,12 +18,9 @@
     <!-- Top Navigation / Header Bar -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
       <div class="space-y-1">
-        <div class="flex items-center gap-3">
-          <span class="text-3xl">🍀</span>
-          <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">{{ trip.title }}</h1>
-            <p class="text-sm text-[var(--muted-foreground)]">{{ trip.subtitle }}</p>
-          </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--foreground)]">{{ trip.title }}</h1>
+          <p class="text-sm text-[var(--muted-foreground)]">{{ trip.subtitle }}</p>
         </div>
       </div>
 
@@ -47,6 +44,17 @@
             A+
           </button>
         </div>
+
+        <!-- Help / Quick Guide Button for Mobile & New Users -->
+        <button
+          @click="showHeaderHelp = !showHeaderHelp"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shadow-sm"
+          :class="showHeaderHelp ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]'"
+          title="Toggle Quick Guide to understand all header tools and buttons"
+        >
+          <span>❓</span>
+          <span class="hidden sm:inline">Guide</span>
+        </button>
 
         <!-- Universal Trip Creator & Importer Trigger -->
         <button
@@ -114,6 +122,90 @@
         </button>
       </div>
     </header>
+
+    <!-- Header Quick Help & Guide Drawer (Collapsible for Mobile & First-Time Users) -->
+    <div
+      v-if="showHeaderHelp"
+      class="p-4 sm:p-5 rounded-2xl bg-[var(--card)] border-2 border-[var(--accent)] shadow-xl space-y-3 animate-fadeIn"
+    >
+      <div class="flex items-center justify-between border-b border-[var(--border)] pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🧭</span>
+          <div>
+            <h3 class="font-extrabold text-sm text-[var(--foreground)]">Header Controls & Features Guide</h3>
+            <p class="text-[11px] text-[var(--muted-foreground)]">Everything you need to navigate, customize & sync the Ireland trip itinerary</p>
+          </div>
+        </div>
+        <button
+          @click="showHeaderHelp = false"
+          class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] px-2.5 py-1 rounded-lg bg-[var(--card-hover)] border border-[var(--border)] font-bold"
+        >
+          Close ✕
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+        <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-start gap-2.5">
+          <span class="text-xl flex-shrink-0">➕</span>
+          <div>
+            <strong class="text-[var(--foreground)] font-bold">Add / Import</strong>
+            <p class="text-[var(--muted-foreground)] mt-0.5 leading-relaxed">
+              Add new schedule stops, food recommendations, hikes, or paste text into the bulk importer.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-start gap-2.5">
+          <span class="text-xl flex-shrink-0">🔗</span>
+          <div>
+            <strong class="text-[var(--foreground)] font-bold">Share & Sync</strong>
+            <p class="text-[var(--muted-foreground)] mt-0.5 leading-relaxed">
+              Zero-cost URL or QR code sync with family to instantly merge custom stops, dining, votes, and removals.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-start gap-2.5">
+          <span class="text-xl flex-shrink-0">🗺️</span>
+          <div>
+            <strong class="text-[var(--foreground)] font-bold">Maps & Calendar Preference</strong>
+            <p class="text-[var(--muted-foreground)] mt-0.5 leading-relaxed">
+              Choose between Apple Maps / Apple Cal (iOS) and Google Maps / Google Cal (Android/Web).
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-start gap-2.5">
+          <span class="text-xl flex-shrink-0">📝</span>
+          <div>
+            <strong class="text-[var(--foreground)] font-bold">Notes & Offline Codes</strong>
+            <p class="text-[var(--muted-foreground)] mt-0.5 leading-relaxed">
+              Trip scratchpad, offline door lock PINs, daily journal notes & booking reference codes.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-start gap-2.5">
+          <span class="text-xl flex-shrink-0">🎨</span>
+          <div>
+            <strong class="text-[var(--foreground)] font-bold">Theme & Palettes</strong>
+            <p class="text-[var(--muted-foreground)] mt-0.5 leading-relaxed">
+              Switch between chill obsidian monochrome, glacier cyan, nordic twilight, muted sage, and pure OLED black.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-start gap-2.5">
+          <span class="text-xl flex-shrink-0">🗑️</span>
+          <div>
+            <strong class="text-[var(--foreground)] font-bold">Local Activity Removals</strong>
+            <p class="text-[var(--muted-foreground)] mt-0.5 leading-relaxed">
+              Remove optional stops or dining spots to customize your itinerary. Removals sync through Share links!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Incoming URL Sync Notification Banner (Auto-Triggered on #sync=...) -->
     <div
@@ -693,7 +785,7 @@
       <!-- LENS 5: Scenic Wonders & Nature Trails -->
       <div v-else-if="topDashboardLens === 'nature'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
         <div
-          @click="handleSwitchTab({ tab: 'hiking', targetId: 'diamond-hill' })"
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'diamond-hill', searchQuery: 'Diamond Hill' })"
           class="p-3.5 rounded-xl border border-red-400 bg-red-500/[0.06] hover:bg-red-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
         >
           <div>
@@ -715,7 +807,7 @@
         </div>
 
         <div
-          @click="handleSwitchTab({ tab: 'hiking', targetId: 'cliffs-of-moher' })"
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'cliffs-of-moher', searchQuery: 'Cliffs of Moher' })"
           class="p-3.5 rounded-xl border border-amber-400 bg-amber-500/[0.06] hover:bg-amber-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
         >
           <div>
@@ -737,7 +829,7 @@
         </div>
 
         <div
-          @click="handleSwitchTab({ tab: 'hiking', targetId: 'giants-causeway' })"
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'giants-causeway', searchQuery: 'Giant' })"
           class="p-3.5 rounded-xl border border-emerald-400 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
         >
           <div>
@@ -759,7 +851,7 @@
         </div>
 
         <div
-          @click="handleSwitchTab({ tab: 'hiking', targetId: 'gap-of-dunloe' })"
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'gap-of-dunloe', searchQuery: 'Dunloe' })"
           class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
         >
           <div>
@@ -900,12 +992,12 @@
 
       <!-- Hiking & Nature Trails Tab -->
       <section v-show="activeTab === 'hiking'">
-        <hiking-nature :trails="trailList" @switch-tab="handleSwitchTab" />
+        <hiking-nature :trails="trailList" :target-search-query="targetSearchQuery" @switch-tab="handleSwitchTab" />
       </section>
 
       <!-- Restaurants Tab -->
       <section v-show="activeTab === 'restaurants'">
-        <restaurants-view :restaurants="restaurantList" @switch-tab="handleSwitchTab" />
+        <restaurants-view :restaurants="restaurantList" :target-search-query="targetSearchQuery" @switch-tab="handleSwitchTab" />
       </section>
 
       <!-- Unified Sights & Drives Tab -->
@@ -1144,7 +1236,27 @@
           </div>
         </div>
 
-        <!-- Section 3: Mode & Quick Actions -->
+        <!-- Section 3: Removed Activities & Spots Manager -->
+        <div v-if="hiddenItemIds && hiddenItemIds.length > 0" class="space-y-2.5 pt-3 border-t border-[var(--border)]">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1">
+              <span>🗑️</span>
+              <span>Hidden / Removed Stops ({{ hiddenItemIds.length }})</span>
+            </label>
+            <button
+              @click="restoreAllHiddenItems"
+              class="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-500/15 text-rose-400 hover:bg-rose-500/25 border border-rose-500/30 transition-all shadow-sm"
+              title="Restore all hidden activities and dining spots back into your itinerary"
+            >
+              🔄 Restore All Items
+            </button>
+          </div>
+          <p class="text-[11px] text-[var(--muted-foreground)] leading-relaxed">
+            You customized your itinerary by removing {{ hiddenItemIds.length }} optional items. Tap "Restore All Items" to bring back all base stops.
+          </p>
+        </div>
+
+        <!-- Section 4: Mode & Quick Actions -->
         <div class="pt-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
           <button
             @click="toggleDark"

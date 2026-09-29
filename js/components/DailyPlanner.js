@@ -28,7 +28,8 @@ const DailyPlanner = {
       showRainBackups: {}, // Toggle state per day
       globalRainMode: false, // Global master switch
       dailyNotes: {}, // { [dayIndex]: string }
-      savingNoteDay: null
+      savingNoteDay: null,
+      isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768)
     };
   },
   created() {
@@ -397,6 +398,30 @@ const DailyPlanner = {
       if (window.TravelApp) {
         window.TravelApp.deleteCustomItem('schedule', id);
       }
+    },
+    isItemMandatory(item, day) {
+      if (!item) return false;
+      if (item.reserved || item.anchor || item.special) return true;
+      if (item.tag === 'FLIGHT ARRIVAL' || item.tag === 'RETURN FLIGHT' || item.type === 'housing') return true;
+      const act = (item.activity || item.title || '').toLowerCase();
+      if (act.includes('mister s') || act.includes('birthday') || act.includes('double bday') || act.includes('bday')) return true;
+      if (day && day.special && item.type === 'dining' && item.reserved) return true;
+      return false;
+    },
+    removeItem(item, day) {
+      if (!item) return;
+      const label = item.activity || item.title || 'this stop';
+      if (!confirm(`Remove "${label}" from your trip itinerary? (You can restore it anytime in Settings/Notes)`)) return;
+      if (item.isCustom) {
+        if (window.TravelApp && window.TravelApp.deleteCustomItem) {
+          window.TravelApp.deleteCustomItem('schedule', item.id);
+        }
+      } else {
+        const id = item.id || ('day' + (day ? day.dayNumber : 1) + '_' + (item.activity || item.title || '').toLowerCase().replace(/[^a-z0-9]/g, '_'));
+        if (window.TravelApp && window.TravelApp.hideItem) {
+          window.TravelApp.hideItem('schedule', id);
+        }
+      }
     }
   },
   template: `
@@ -588,81 +613,99 @@ const DailyPlanner = {
           </div>
         </div>
 
-        <!-- Color Legend Ribbon -->
-        <div class="flex flex-wrap items-center gap-3 p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs mb-3">
-          <span class="font-bold text-[var(--foreground)] text-[11px] uppercase tracking-wider">Key:</span>
-          <div class="flex items-center gap-1">
-            <span class="w-2.5 h-2.5 rounded block-reserved"></span>
-            <span class="font-semibold text-rose-400 text-[11px]">Bookings & Schedule</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="w-2.5 h-2.5 rounded block-anchor"></span>
-            <span class="font-semibold text-indigo-400 text-[11px]">Anchor Events</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="w-2.5 h-2.5 rounded block-drive"></span>
-            <span class="text-blue-400 text-[11px]">🚗 Drive</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="w-2.5 h-2.5 rounded block-dining"></span>
-            <span class="text-amber-400 text-[11px]">🍽️ Dining</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="w-2.5 h-2.5 rounded block-housing"></span>
-            <span class="text-purple-400 text-[11px]">🏡 Lodging</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="w-2.5 h-2.5 rounded block-sight"></span>
-            <span class="text-emerald-400 text-[11px]">🌲 Sights</span>
-          </div>
+        <!-- Mobile Collapsible Toggle Button for Filter/Pacing Panel -->
+        <div class="md:hidden pt-2 border-t border-[var(--border)]">
+          <button
+            @click="isMobileFiltersCollapsed = !isMobileFiltersCollapsed"
+            class="w-full py-2 px-3 rounded-xl text-xs font-bold bg-[var(--background)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] flex items-center justify-between transition-all"
+          >
+            <span class="flex items-center gap-1.5">
+              <span>⚙️</span>
+              <span>Filter & Pacing Panels</span>
+              <span v-if="activeTypeFilter !== 'all' || activeEnergyFilter !== 'all'" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-white font-bold">Active</span>
+            </span>
+            <span>{{ isMobileFiltersCollapsed ? '▼ Show Filters' : '▲ Hide Filters' }}</span>
+          </button>
         </div>
 
-        <!-- Filter Category Tabs (Type & Energy) -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[var(--border)]">
-          <!-- Type Filter -->
-          <div class="flex flex-wrap items-center gap-1">
-            <button
-              v-for="flt in [
-                { id: 'all', label: 'All Stops' },
-                { id: 'reserved', label: '💡 Bookings' },
-                { id: 'drive', label: '🚗 Drives' },
-                { id: 'dining', label: '🍽️ Dinners' },
-                { id: 'sight', label: '🌲 Sights' }
-              ]"
-              :key="flt.id"
-              @click="activeTypeFilter = flt.id"
-              :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
-                activeTypeFilter === flt.id
-                  ? 'bg-[var(--accent)] text-white shadow-sm'
-                  : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-              ]"
-            >
-              {{ flt.label }}
-            </button>
+        <!-- Filter & Legend Container (Collapsed by Default on Mobile) -->
+        <div :class="{'hidden md:block': isMobileFiltersCollapsed}" class="space-y-3 pt-1">
+          <!-- Color Legend Ribbon -->
+          <div class="flex flex-wrap items-center gap-3 p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs">
+            <span class="font-bold text-[var(--foreground)] text-[11px] uppercase tracking-wider">Key:</span>
+            <div class="flex items-center gap-1">
+              <span class="w-2.5 h-2.5 rounded block-reserved"></span>
+              <span class="font-semibold text-rose-400 text-[11px]">Bookings & Schedule</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-2.5 h-2.5 rounded block-anchor"></span>
+              <span class="font-semibold text-indigo-400 text-[11px]">Anchor Events</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-2.5 h-2.5 rounded block-drive"></span>
+              <span class="text-blue-400 text-[11px]">🚗 Drive</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-2.5 h-2.5 rounded block-dining"></span>
+              <span class="text-amber-400 text-[11px]">🍽️ Dining</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-2.5 h-2.5 rounded block-housing"></span>
+              <span class="text-purple-400 text-[11px]">🏡 Lodging</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span class="w-2.5 h-2.5 rounded block-sight"></span>
+              <span class="text-emerald-400 text-[11px]">🌲 Sights</span>
+            </div>
           </div>
 
-          <!-- Energy Level Filter -->
-          <div class="flex items-center gap-1">
-            <span class="text-[10px] font-bold uppercase text-[var(--muted-foreground)]">Pacing:</span>
-            <button
-              v-for="e in [
-                { id: 'all', label: 'All' },
-                { id: 'chill', label: '🟢 Chill' },
-                { id: 'moderate', label: '🟡 Mod' },
-                { id: 'strenuous', label: '🔴 Hard' }
-              ]"
-              :key="e.id"
-              @click="activeEnergyFilter = e.id"
-              :class="[
-                'px-2 py-0.5 rounded text-[11px] font-semibold transition-all',
-                activeEnergyFilter === e.id
-                  ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
-                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)]'
-              ]"
-            >
-              {{ e.label }}
-            </button>
+          <!-- Filter Category Tabs (Type & Energy) -->
+          <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[var(--border)]">
+            <!-- Type Filter -->
+            <div class="flex flex-wrap items-center gap-1">
+              <button
+                v-for="flt in [
+                  { id: 'all', label: 'All Stops' },
+                  { id: 'reserved', label: '💡 Bookings' },
+                  { id: 'drive', label: '🚗 Drives' },
+                  { id: 'dining', label: '🍽️ Dinners' },
+                  { id: 'sight', label: '🌲 Sights' }
+                ]"
+                :key="flt.id"
+                @click="activeTypeFilter = flt.id"
+                :class="[
+                  'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
+                  activeTypeFilter === flt.id
+                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                ]"
+              >
+                {{ flt.label }}
+              </button>
+            </div>
+
+            <!-- Energy Level Filter -->
+            <div class="flex items-center gap-1">
+              <span class="text-[10px] font-bold uppercase text-[var(--muted-foreground)]">Pacing:</span>
+              <button
+                v-for="e in [
+                  { id: 'all', label: 'All' },
+                  { id: 'chill', label: '🟢 Chill' },
+                  { id: 'moderate', label: '🟡 Mod' },
+                  { id: 'strenuous', label: '🔴 Hard' }
+                ]"
+                :key="e.id"
+                @click="activeEnergyFilter = e.id"
+                :class="[
+                  'px-2 py-0.5 rounded text-[11px] font-semibold transition-all',
+                  activeEnergyFilter === e.id
+                    ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
+                    : 'bg-[var(--card-hover)] text-[var(--muted-foreground)]'
+                ]"
+              >
+                {{ e.label }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -931,12 +974,12 @@ const DailyPlanner = {
                         >
                           👎 {{ getVotes(item.id || item.activity).down }}
                         </button>
-                        <!-- Delete custom stop -->
+                        <!-- Delete custom or non-mandatory base stop -->
                         <button
-                          v-if="item.isCustom"
-                          @click.stop="deleteCustomStop(item.id)"
-                          class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
-                          title="Delete this custom stop"
+                          v-if="!isItemMandatory(item, activeDay)"
+                          @click.stop="removeItem(item, activeDay)"
+                          class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                          :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Notes/Settings)'"
                         >
                           🗑️
                         </button>
@@ -1468,6 +1511,30 @@ const DailyPlanner = {
                           <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
                             ⏱️ {{ item.note }}
                           </span>
+                          <!-- Consensus Voting Buttons -->
+                          <button
+                            @click.stop="vote(item.id || item.activity, 'up')"
+                            :class="['vote-btn', isVoted(item.id || item.activity, 'up') ? 'active-up' : '']"
+                            title="Upvote / Support this stop"
+                          >
+                            👍 {{ getVotes(item.id || item.activity).up }}
+                          </button>
+                          <button
+                            @click.stop="vote(item.id || item.activity, 'down')"
+                            :class="['vote-btn', isVoted(item.id || item.activity, 'down') ? 'active-down' : '']"
+                            title="Downvote / Flag this stop"
+                          >
+                            👎 {{ getVotes(item.id || item.activity).down }}
+                          </button>
+                          <!-- Remove stop if non-mandatory -->
+                          <button
+                            v-if="!isItemMandatory(item, day)"
+                            @click.stop="removeItem(item, day)"
+                            class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                            :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Notes/Settings)'"
+                          >
+                            🗑️
+                          </button>
                           <!-- 1-Tap Maps & Calendar Buttons -->
                           <button
                             v-if="item.mapsQuery"
@@ -1576,6 +1643,15 @@ const DailyPlanner = {
                       <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
                         {{ item.tag }}
                       </span>
+                      <!-- Delete/Remove button for non-mandatory items -->
+                      <button
+                        v-if="!isItemMandatory(item, day)"
+                        @click.stop="removeItem(item, day)"
+                        class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                        :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Notes/Settings)'"
+                      >
+                        🗑️
+                      </button>
                       <!-- 1-Tap Maps & Calendar Buttons -->
                       <button
                         v-if="item.mapsQuery"

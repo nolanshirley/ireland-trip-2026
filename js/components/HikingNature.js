@@ -6,7 +6,8 @@
 const HikingNature = {
   name: 'HikingNature',
   props: {
-    trails: { type: Array, required: true }
+    trails: { type: Array, required: true },
+    targetSearchQuery: { type: String, default: '' }
   },
   emits: ['switch-tab'],
   data() {
@@ -16,8 +17,22 @@ const HikingNature = {
       statusFilter: 'all', // 'all', 'favorites', 'completed', 'Suggested', 'Planned', 'Optional'
       difficultyFilter: 'all', // 'all', 'Easy', 'Moderate', 'Strenuous'
       sortBy: 'itinerary', // 'itinerary', 'difficulty', 'elevation', 'duration', 'completion', 'name'
-      userTrailData: {} // { [trailId]: { completed: false, notes: '', favorite: false } }
+      userTrailData: {}, // { [trailId]: { completed: false, notes: '', favorite: false } }
+      isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768)
     };
+  },
+  watch: {
+    targetSearchQuery: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          this.searchQuery = newVal;
+          this.regionFilter = 'all';
+          this.statusFilter = 'all';
+          this.difficultyFilter = 'all';
+        }
+      }
+    }
   },
   created() {
     this.loadUserTrailData();
@@ -229,6 +244,21 @@ const HikingNature = {
       if (window.TravelApp) {
         window.TravelApp.deleteCustomItem('trail', id);
       }
+    },
+    removeTrail(trail) {
+      if (!trail) return;
+      const label = trail.name || 'this trail';
+      if (!confirm(`Remove "${label}" from your trail guide? (You can restore it anytime in Settings/Notes)`)) return;
+      if (trail.isCustom) {
+        if (window.TravelApp && window.TravelApp.deleteCustomItem) {
+          window.TravelApp.deleteCustomItem('trail', trail.id);
+        }
+      } else {
+        const id = trail.id || trail.name;
+        if (window.TravelApp && window.TravelApp.hideItem) {
+          window.TravelApp.hideItem('trail', id);
+        }
+      }
     }
   },
   template: `
@@ -263,21 +293,46 @@ const HikingNature = {
           </div>
         </div>
 
-        <!-- Filter Row 1: Region & Status -->
-        <div class="flex flex-wrap items-center gap-2 mb-3">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Region:</span>
+        <!-- Mobile Filter Toggle Button -->
+        <div class="md:hidden mb-3">
           <button
-            v-for="r in [
-              { id: 'all', label: 'All Regions' },
-              { id: 'ni', label: 'Northern Ireland' },
-              { id: 'galway', label: 'Galway / Connemara' },
-              { id: 'kerry', label: 'Kerry / Killarney' },
-              { id: 'dublin', label: 'Dublin / Boyne' }
-            ]"
-            :key="r.id"
-            @click="regionFilter = r.id"
-            :class="[
-              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
+            @click="isMobileFiltersCollapsed = !isMobileFiltersCollapsed"
+            class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[var(--background)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] flex items-center justify-between shadow-sm transition-all"
+          >
+            <span class="flex items-center gap-1.5">
+              <span>⚙️</span>
+              <span>Filter & Sort Trails</span>
+              <span v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all'" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-white font-bold">Active</span>
+            </span>
+            <span>{{ isMobileFiltersCollapsed ? '▼ Show Filters' : '▲ Hide Filters' }}</span>
+          </button>
+        </div>
+
+        <!-- Filter Controls (Collapsible on Mobile) -->
+        <div :class="{'hidden md:block': isMobileFiltersCollapsed}" class="space-y-3">
+          <!-- Filter Row 1: Region & Status -->
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Region:</span>
+            <button
+              v-for="r in [
+                { id: 'all', label: 'All Regions' },
+                { id: 'ni', label: 'Northern Ireland' },
+                { id: 'galway', label: 'Galway / Connemara' },
+                { id: 'kerry', label: 'Kerry / Killarney' },
+                { id: 'dublin', label: 'Dublin / Boyne' }
+              ]"
+              :key="r.id"
+              @click="regionFilter = r.id"
+              :class="[
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
+                regionFilter === r.id
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+              ]"
+            >
+              {{ r.label }}
+            </button>
+          </div>
               regionFilter === r.id
                 ? 'bg-[var(--accent)] text-white shadow-sm'
                 : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
@@ -371,6 +426,7 @@ const HikingNature = {
           />
         </div>
       </div>
+      </div>
 
       <!-- Trails Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -428,12 +484,11 @@ const HikingNature = {
                 >
                   👎 {{ getVotes(trail.id || trail.name).down }}
                 </button>
-                <!-- Delete custom trail -->
+                <!-- Delete/Remove trail button -->
                 <button
-                  v-if="trail.isCustom"
-                  @click.stop="deleteCustomTrail(trail.id)"
-                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
-                  title="Delete this custom trail"
+                  @click.stop="removeTrail(trail)"
+                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                  :title="trail.isCustom ? 'Delete this custom trail' : 'Remove trail from guide (can be restored anytime)'"
                 >
                   🗑️
                 </button>

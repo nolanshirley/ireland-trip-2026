@@ -5,7 +5,8 @@
 const Restaurants = {
   name: 'Restaurants',
   props: {
-    restaurants: { type: Array, required: true }
+    restaurants: { type: Array, required: true },
+    targetSearchQuery: { type: String, default: '' }
   },
   data() {
     return {
@@ -15,8 +16,22 @@ const Restaurants = {
       searchQuery: '',
       sortBy: 'route', // 'route', 'birthday', 'rating', 'price-asc', 'price-desc', 'name'
       userRestaurantData: {}, // { [id]: { rating: 0, notes: '', favorite: false } }
-      activeNoteRestId: null
+      activeNoteRestId: null,
+      isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768)
     };
+  },
+  watch: {
+    targetSearchQuery: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) {
+          this.searchQuery = newVal;
+          this.selectedCity = 'all';
+          this.selectedCuisine = 'all';
+          this.statusFilter = 'all';
+        }
+      }
+    }
   },
   created() {
     this.loadUserRestaurantData();
@@ -269,6 +284,28 @@ const Restaurants = {
       if (window.TravelApp) {
         window.TravelApp.deleteCustomItem('dining', id);
       }
+    },
+    isRestaurantMandatory(r) {
+      if (!r) return false;
+      if (r.birthdayEvent || r.special || r.booked) return true;
+      const name = (r.name || '').toLowerCase();
+      if (r.id === 'mister-s' || name.includes('mister s') || name.includes('birthday')) return true;
+      return false;
+    },
+    removeRestaurant(r) {
+      if (!r) return;
+      const label = r.name || 'this restaurant';
+      if (!confirm(`Remove "${label}" from your dining guide? (You can restore it anytime in Settings/Notes)`)) return;
+      if (r.isCustom) {
+        if (window.TravelApp && window.TravelApp.deleteCustomItem) {
+          window.TravelApp.deleteCustomItem('dining', r.id);
+        }
+      } else {
+        const id = r.id || r.name;
+        if (window.TravelApp && window.TravelApp.hideItem) {
+          window.TravelApp.hideItem('dining', id);
+        }
+      }
     }
   },
   template: `
@@ -304,39 +341,56 @@ const Restaurants = {
         </div>
       </div>
 
-      <!-- Cuisine Types Breakdown Grid (Clickable) -->
-      <div>
-        <div class="flex items-center justify-between mb-2.5">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Browse by Cuisine Type</h3>
-          <button
-            v-if="selectedCuisine !== 'all'"
-            @click="selectedCuisine = 'all'"
-            class="text-xs text-[var(--accent)] hover:underline font-semibold"
-          >
-            Clear Cuisine Filter (Showing: {{ selectedCuisine }})
-          </button>
-        </div>
+      <!-- Mobile Filter Toggle Button -->
+      <div class="md:hidden">
+        <button
+          @click="isMobileFiltersCollapsed = !isMobileFiltersCollapsed"
+          class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] flex items-center justify-between shadow-sm transition-all"
+        >
+          <span class="flex items-center gap-1.5">
+            <span>⚙️</span>
+            <span>Cuisine & City Filters</span>
+            <span v-if="selectedCity !== 'all' || selectedCuisine !== 'all' || statusFilter !== 'all'" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-white font-bold">Active</span>
+          </span>
+          <span>{{ isMobileFiltersCollapsed ? '▼ Show Filters' : '▲ Hide Filters' }}</span>
+        </button>
+      </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
-          <div
-            v-for="c in cuisineStats"
-            :key="c.name"
-            @click="selectCuisineFilter(c.name)"
-            :class="[
-              'card p-2.5 cursor-pointer text-center transition-all duration-150 flex flex-col items-center justify-center gap-1 hover:scale-[1.02]',
-              selectedCuisine === c.name
-                ? 'ring-2 ring-[var(--accent)] bg-[var(--accent)]/10 shadow-sm'
-                : 'hover:bg-[var(--card-hover)]'
-            ]"
-          >
-            <span class="text-xl">{{ c.icon }}</span>
-            <div class="font-semibold text-xs text-[var(--foreground)] leading-tight truncate w-full">{{ c.name }}</div>
-            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono text-[var(--muted-foreground)] bg-[var(--card-hover)]">
-              {{ c.count }} {{ c.count === 1 ? 'place' : 'places' }}
-            </span>
+      <!-- Filters & Cuisine Grid (Collapsible on Mobile) -->
+      <div :class="{'hidden md:block': isMobileFiltersCollapsed}" class="space-y-6">
+        <!-- Cuisine Types Breakdown Grid (Clickable) -->
+        <div>
+          <div class="flex items-center justify-between mb-2.5">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Browse by Cuisine Type</h3>
+            <button
+              v-if="selectedCuisine !== 'all'"
+              @click="selectedCuisine = 'all'"
+              class="text-xs text-[var(--accent)] hover:underline font-semibold"
+            >
+              Clear Cuisine Filter (Showing: {{ selectedCuisine }})
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+            <div
+              v-for="c in cuisineStats"
+              :key="c.name"
+              @click="selectCuisineFilter(c.name)"
+              :class="[
+                'card p-2.5 cursor-pointer text-center transition-all duration-150 flex flex-col items-center justify-center gap-1 hover:scale-[1.02]',
+                selectedCuisine === c.name
+                  ? 'ring-2 ring-[var(--accent)] bg-[var(--accent)]/10 shadow-sm'
+                  : 'hover:bg-[var(--card-hover)]'
+              ]"
+            >
+              <span class="text-xl">{{ c.icon }}</span>
+              <div class="font-semibold text-xs text-[var(--foreground)] leading-tight truncate w-full">{{ c.name }}</div>
+              <span class="px-1.5 py-0.2 rounded-full text-[10px] font-mono text-[var(--muted-foreground)] bg-[var(--card-hover)]">
+                {{ c.count }} {{ c.count === 1 ? 'place' : 'places' }}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
       <!-- Main Controls & Filters Bar -->
       <div class="card p-5 space-y-4">
@@ -445,6 +499,7 @@ const Restaurants = {
           </button>
         </div>
       </div>
+      </div>
 
       <!-- Restaurant Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -511,12 +566,12 @@ const Restaurants = {
                 >
                   👎 {{ getVotes(r.id || r.name).down }}
                 </button>
-                <!-- Delete custom spot -->
+                <!-- Delete/Remove restaurant button for non-mandatory spots -->
                 <button
-                  v-if="r.isCustom"
-                  @click.stop="deleteCustomRestaurant(r.id)"
-                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
-                  title="Delete this custom spot"
+                  v-if="!isRestaurantMandatory(r)"
+                  @click.stop="removeRestaurant(r)"
+                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                  :title="r.isCustom ? 'Delete this custom spot' : 'Remove restaurant from guide (can be restored anytime)'"
                 >
                   🗑️
                 </button>

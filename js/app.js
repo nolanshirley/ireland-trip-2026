@@ -31,6 +31,9 @@ const app = createApp({
     const customNotes = ref([]);
     const itemVotes = ref({});
     const userSenderName = ref(localStorage.getItem('ireland_user_sender_name') || 'Family Member');
+    const hiddenItemIds = ref([]);
+    const showHeaderHelp = ref(false);
+    const targetSearchQuery = ref('');
 
     const loadCustomStorageData = () => {
       try {
@@ -40,6 +43,7 @@ const app = createApp({
         customReservations.value = JSON.parse(localStorage.getItem('ireland_custom_reservations') || '[]');
         customNotes.value = JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]');
         itemVotes.value = JSON.parse(localStorage.getItem('ireland_item_votes') || '{}');
+        hiddenItemIds.value = JSON.parse(localStorage.getItem('ireland_hidden_item_ids') || '[]');
       } catch (e) {
         console.error('Error loading custom trip data from storage', e);
       }
@@ -60,15 +64,57 @@ const app = createApp({
     const saveItemVotes = () => {
       localStorage.setItem('ireland_item_votes', JSON.stringify(itemVotes.value));
     };
+    const saveHiddenItemIds = () => {
+      localStorage.setItem('ireland_hidden_item_ids', JSON.stringify(hiddenItemIds.value));
+    };
     const saveSenderName = (name) => {
       userSenderName.value = name;
       localStorage.setItem('ireland_user_sender_name', name);
     };
 
+    // Helper to generate canonical stable ID for items if not present
+    const getItemId = (item, prefix = 'item') => {
+      if (!item) return prefix + '_unknown';
+      if (item.id) return item.id;
+      const key = (item.activity || item.name || item.title || item.time || 'stop').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      return prefix + '_' + key;
+    };
+
+    const hideItem = (category, id) => {
+      if (!id) return;
+      if (!hiddenItemIds.value.includes(id)) {
+        hiddenItemIds.value = [...hiddenItemIds.value, id];
+        saveHiddenItemIds();
+      }
+    };
+
+    const restoreItem = (id) => {
+      if (!id) return;
+      hiddenItemIds.value = hiddenItemIds.value.filter(h => h !== id);
+      saveHiddenItemIds();
+    };
+
+    const restoreAllHiddenItems = () => {
+      hiddenItemIds.value = [];
+      saveHiddenItemIds();
+    };
+
+    const isItemHidden = (id) => hiddenItemIds.value.includes(id);
+
     // ── Dynamic Computed Merged Lists ─────────────────────────
     const timelineList = computed(() => {
       const baseTimeline = JSON.parse(JSON.stringify(timeline));
+      
+      // Ensure all base items have stable IDs & filter out hidden items
+      baseTimeline.forEach(day => {
+        day.items = (day.items || []).map(item => {
+          const id = item.id || getItemId(item, 'day' + day.dayNumber);
+          return { ...item, id };
+        }).filter(item => !hiddenItemIds.value.includes(item.id));
+      });
+
       customActivities.value.forEach(act => {
+        if (hiddenItemIds.value.includes(act.id)) return;
         const dIdx = act.dayIndex !== undefined ? parseInt(act.dayIndex) : (act.dayNumber ? parseInt(act.dayNumber) - 1 : 0);
         if (baseTimeline[dIdx]) {
           const actCopy = { ...act };
@@ -99,21 +145,21 @@ const app = createApp({
     });
 
     const restaurantList = computed(() => {
-      const baseList = JSON.parse(JSON.stringify(restaurants));
+      const baseList = JSON.parse(JSON.stringify(restaurants)).map(r => ({ ...r, id: r.id || getItemId(r, 'rest') }));
       const customList = customRestaurants.value;
-      return [...baseList, ...customList];
+      return [...baseList, ...customList].filter(r => !hiddenItemIds.value.includes(r.id));
     });
 
     const trailList = computed(() => {
-      const baseList = JSON.parse(JSON.stringify(hikingTrails));
+      const baseList = JSON.parse(JSON.stringify(hikingTrails)).map(t => ({ ...t, id: t.id || getItemId(t, 'trail') }));
       const customList = customTrails.value;
-      return [...baseList, ...customList];
+      return [...baseList, ...customList].filter(t => !hiddenItemIds.value.includes(t.id));
     });
 
     const reservationList = computed(() => {
-      const baseList = JSON.parse(JSON.stringify(reservations));
+      const baseList = JSON.parse(JSON.stringify(reservations)).map(b => ({ ...b, id: b.id || getItemId(b, 'res') }));
       const customList = customReservations.value;
-      return [...baseList, ...customList];
+      return [...baseList, ...customList].filter(b => !hiddenItemIds.value.includes(b.id));
     });
 
     // Active Tab State (default to planner)
@@ -192,32 +238,37 @@ const app = createApp({
     // Deep jump between tabs & scroll to target element
     const handleSwitchTab = (payload) => {
       if (!payload) return;
-      const { tab, targetId, dayIndex, dayNumber, trailId } = payload;
+      const { tab, targetId, dayIndex, dayNumber, trailId, searchQuery } = payload;
       if (tab) {
         activeTab.value = tab;
       }
+      if (searchQuery !== undefined) {
+        targetSearchQuery.value = searchQuery;
+      }
       if (dayIndex !== undefined && dayIndex !== null) {
-        selectedTargetDayIndex.value = dayIndex;
+        selectedTargetDayIndex.value = parseInt(dayIndex);
       } else if (dayNumber !== undefined && dayNumber !== null) {
-        selectedTargetDayIndex.value = dayNumber - 1;
+        selectedTargetDayIndex.value = parseInt(dayNumber) - 1;
       }
       if (isDetailModalOpen.value) {
         closeDetailModal();
       }
       nextTick(() => {
         setTimeout(() => {
-          const el = document.getElementById(targetId) ||
+          const cleanId = (targetId || trailId || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+          const el = (cleanId ? document.getElementById(cleanId) : null) ||
+                     (cleanId ? document.getElementById('trail-' + cleanId) : null) ||
+                     (cleanId ? document.getElementById('restaurant-' + cleanId) : null) ||
+                     (cleanId ? document.getElementById('res-' + cleanId) : null) ||
                      (dayNumber ? document.getElementById('day-card-' + dayNumber) : null) ||
                      (dayIndex !== undefined ? document.getElementById('day-' + dayIndex) : null) ||
-                     document.getElementById('active-day-focus-card') ||
-                     (targetId ? document.getElementById('trail-' + targetId) : null) ||
-                     (targetId ? document.getElementById('restaurant-' + targetId) : null);
+                     document.getElementById('active-day-focus-card');
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             el.classList.add('card-highlight');
             setTimeout(() => el.classList.remove('card-highlight'), 2200);
           }
-        }, 120);
+        }, 150);
       });
     };
 
@@ -1414,7 +1465,8 @@ const app = createApp({
         reservations: customReservations.value || [],
         votes: itemVotes.value || {},
         notes: customNotes.value || [],
-        scratchpad: localStorage.getItem('ireland_trip_scratchpad') || ''
+        scratchpad: localStorage.getItem('ireland_trip_scratchpad') || '',
+        hiddenItemIds: hiddenItemIds.value || []
       };
 
       try {
@@ -1490,7 +1542,7 @@ const app = createApp({
           const payloadStr = hash.slice(6);
           if (payloadStr) {
             const decoded = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payloadStr)))));
-            if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes)) {
+            if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes || decoded.hiddenItemIds)) {
               incomingSyncPayload.value = decoded;
               isIncomingSyncModalOpen.value = true;
             }
@@ -1525,6 +1577,8 @@ const app = createApp({
         customTrails.value = Array.isArray(p.trails) ? [...p.trails] : [];
         customReservations.value = Array.isArray(p.reservations) ? [...p.reservations] : [];
         itemVotes.value = (p.votes && typeof p.votes === 'object') ? { ...p.votes } : {};
+        hiddenItemIds.value = Array.isArray(p.hiddenItemIds) ? [...p.hiddenItemIds] : [];
+        saveHiddenItemIds();
         if (p.notes && Array.isArray(p.notes)) {
           customNotes.value = [...p.notes];
           localStorage.setItem('ireland_custom_notes', JSON.stringify(customNotes.value));
@@ -1612,6 +1666,11 @@ const app = createApp({
           itemVotes.value = mergedVotes;
         }
 
+        if (p.hiddenItemIds && Array.isArray(p.hiddenItemIds)) {
+          hiddenItemIds.value = Array.from(new Set([...hiddenItemIds.value, ...p.hiddenItemIds]));
+          saveHiddenItemIds();
+        }
+
         if (p.notes && Array.isArray(p.notes)) {
           const currentNotes = [...customNotes.value];
           p.notes.forEach(incNote => {
@@ -1636,6 +1695,7 @@ const app = createApp({
       saveCustomTrails();
       saveCustomReservations();
       saveItemVotes();
+      saveHiddenItemIds();
 
       try {
         history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -1649,7 +1709,7 @@ const app = createApp({
         handleSwitchTab({ tab: 'planner', dayIndex: firstMergedDayIndex });
       }
 
-      alert('🎉 Trip updates successfully synced! All new stops, dining spots, and family votes are live in your view.');
+      alert('🎉 Trip updates successfully synced! All new stops, dining spots, removals, and family votes are live in your view.');
     };
 
     const dismissIncomingSync = () => {
@@ -1672,7 +1732,12 @@ const app = createApp({
       voteItem,
       getItemVotes,
       setItemStatus,
-      deleteCustomItem
+      deleteCustomItem,
+      hideItem,
+      restoreItem,
+      restoreAllHiddenItems,
+      isItemHidden,
+      getHiddenItemIds: () => hiddenItemIds.value
     };
 
     const exportAllTripNotes = () => {
@@ -1690,6 +1755,7 @@ const app = createApp({
         customRestaurants: customRestaurants.value,
         customTrails: customTrails.value,
         customReservations: customReservations.value,
+        hiddenItemIds: hiddenItemIds.value,
         itemVotes: itemVotes.value,
         packingChecklist: JSON.parse(localStorage.getItem('ireland_packing_checklist_v2') || '[]'),
         theme: localStorage.getItem('ireland_theme') || 'dark',
@@ -1720,6 +1786,10 @@ const app = createApp({
           if (data.restaurantUserData) localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(data.restaurantUserData));
           if (data.trailUserData) localStorage.setItem('ireland_trail_user_data', JSON.stringify(data.trailUserData));
           if (data.customNotes) localStorage.setItem('ireland_custom_notes', JSON.stringify(data.customNotes));
+          if (data.hiddenItemIds) {
+            hiddenItemIds.value = data.hiddenItemIds;
+            saveHiddenItemIds();
+          }
           if (data.customActivities) {
             customActivities.value = data.customActivities;
             saveCustomActivities();
@@ -1783,6 +1853,7 @@ const app = createApp({
       openDetailModal,
       closeDetailModal,
       handleSwitchTab,
+      targetSearchQuery,
       getGoogleMapsUrl,
       // Appearance & Accessibility
       palettes,
@@ -1796,6 +1867,7 @@ const app = createApp({
       isSettingsModalOpen,
       openSettingsModal,
       closeSettingsModal,
+      showHeaderHelp,
       // Provider Manager (Apple vs Google)
       userProvider,
       isProviderModalOpen,
@@ -1839,6 +1911,11 @@ const app = createApp({
       customRestaurants,
       customTrails,
       customReservations,
+      hiddenItemIds,
+      hideItem,
+      restoreItem,
+      restoreAllHiddenItems,
+      isItemHidden,
       itemVotes,
       userSenderName,
       saveSenderName,
