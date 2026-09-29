@@ -2,7 +2,7 @@
    Ireland Trip Dashboard — Custom Styles & Theme Tokens
    ============================================================= */
 
-/* ── CSS Custom Properties (Light Theme) ─────────────────────── */
+/* ── CSS Custom Properties (Light Theme Base) ─────────────────── */
 :root {
   --background:        #f8fafc;
   --foreground:        #0f172a;
@@ -13,6 +13,7 @@
   --muted-foreground:  #64748b;
   --accent:            #059669;
   --accent-glow:       rgba(5, 150, 105, 0.2);
+  --accent-secondary:  #10b981;
   --primary:           #0f172a;
   --primary-foreground:#ffffff;
   --shadow-sm:         0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
@@ -21,7 +22,7 @@
   --shadow-xl:         0 20px 30px -10px rgba(0,0,0,.15);
 }
 
-/* ── Dark Theme (Obsidian & Emerald Luxury) ──────────────────── */
+/* ── Dark Theme (Obsidian Luxury Base) ───────────────────────── */
 .dark {
   --background:        #080d12;
   --foreground:        #f1f5f9;
@@ -32,6 +33,7 @@
   --muted-foreground:  #94a3b8;
   --accent:            #10b981;
   --accent-glow:       rgba(16, 185, 129, 0.25);
+  --accent-secondary:  #34d399;
   --primary:           #f1f5f9;
   --primary-foreground:#090d16;
   --shadow-sm:         0 1px 3px rgba(0,0,0,.35);
@@ -39,6 +41,151 @@
   --shadow-lg:         0 10px 30px rgba(0,0,0,.55);
   --shadow-xl:         0 20px 40px rgba(0,0,0,.7);
 }
+
+/* ── Palette 1: Emerald Isle (Classic Ireland) ───────────────── */
+.theme-emerald {
+  --accent: #059669;
+  --accent-glow: rgba(5, 150, 105, 0.25);
+  --accent-secondary: #10b981;
+}
+.dark.theme-emerald {
+  --accent: #10b981;
+  --accent-glow: rgba(16, 185, 129, 0.3);
+  --accent-secondary: #34d399;
+}
+
+/* ── Palette 2: Wild Atlantic Way (Ocean Teal & Sky Blue) ─────── */
+.theme-atlantic {
+  --accent: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.25);
+  --accent-secondary: #06b6d4;
+}
+.dark.theme-atlantic {
+  --accent: #38bdf8;
+  --accent-glow: rgba(56, 189, 248, 0.3);
+  --accent-secondary: #06b6d4;
+  --background: #06111e;
+  --card: #0c1c2e;
+  --card-hover: #142a42;
+  --border: #1e3a5a;
+}
+
+/* ── Palette 3: Guinness & Whiskey (Roasted Malt & Warm Amber) ── */
+.theme-amber {
+  --accent: #d97706;
+  --accent-glow: rgba(217, 119, 6, 0.25);
+  --accent-secondary: #f59e0b;
+}
+.dark.theme-amber {
+  --accent: #fbbf24;
+  --accent-glow: rgba(251, 191, 36, 0.3);
+  --accent-secondary: #f59e0b;
+  --background: #110c06;
+  --card: #1c150c;
+  --card-hover: #2a2014;
+  --border: #3b2c1b;
+}
+
+/* ── Palette 4: Connemara Heather (Twilight Purple & Lavender) ─ */
+.theme-heather {
+  --accent: #7c3aed;
+  --accent-glow: rgba(124, 58, 237, 0.25);
+  --accent-secondary: #a855f7;
+}
+.dark.theme-heather {
+  --accent: #a78bfa;
+  --accent-glow: rgba(167, 139, 250, 0.3);
+  --accent-secondary: #c084fc;
+  --background: #0e0918;
+  --card: #171026;
+  --card-hover: #241a3a;
+  --border: #322352;
+}
+
+/* ── Palette 5: Killarney Autumn (Burnt Russet & Copper) ─────── */
+.theme-autumn {
+  --accent: #ea580c;
+  --accent-glow: rgba(234, 88, 12, 0.25);
+  --accent-secondary: #f97316;
+}
+.dark.theme-autumn {
+  --accent: #fb923c;
+  --accent-glow: rgba(251, 146, 60, 0.3);
+  --accent-secondary: #ea580c;
+  --background: #120904;
+  --card: #1d1208;
+  --card-hover: #2d1c0e;
+  --border: #422815;
+}
+
+/* ── Palette 6: Midnight OLED (True Black & Neon Mint) ───────── */
+.theme-cyber {
+  --accent: #059669;
+  --accent-glow: rgba(5, 150, 105, 0.3);
+  --accent-secondary: #00d2ff;
+}
+.dark.theme-cyber {
+  --background: #000000;
+  --foreground: #f8fafc;
+  --card: #080808;
+  --card-hover: #141414;
+  --border: #242424;
+  --accent: #00ff9d;
+  --accent-glow: rgba(0, 255, 157, 0.4);
+  --accent-secondary: #00f0ff;
+  --muted-foreground: #a1a1aa;
+}
+
+/* ── Dynamic Text Size Scaling Tokens ───────────────────────── */
+html.font-scale-sm {
+  font-size: 14px;
+}
+html.font-scale-md {
+  font-size: 16px;
+}
+html.font-scale-lg {
+  font-size: 18px;
+}
+html.font-scale-xl {
+  font-size: 20px;
+}
+
+/* ── Swatch Pill Buttons ─────────────────────────────────────── */
+.palette-swatch-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  transition: all 0.15s ease;
+  user-select: none;
+  cursor: pointer;
+}
+
+.palette-swatch-btn:hover {
+  background: var(--card-hover);
+  transform: translateY(-1px);
+}
+
+.palette-swatch-btn.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+  background: var(--card-hover);
+}
+
+.swatch-circle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  flex-shrink: 0;
+}
+
 
 /* ── Base ────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }

@@ -27,18 +27,45 @@
         </div>
       </div>
 
-      <!-- Right controls: Dark mode toggle & Version badge -->
-      <div class="flex items-center gap-3 self-start md:self-auto">
-        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          Vue 3 Powered
-        </span>
+      <!-- Right controls: Quick Theme, Font Stepper & Dark Mode -->
+      <div class="flex items-center gap-2 flex-wrap self-start md:self-auto">
+        <!-- Quick Font Size Stepper -->
+        <div class="flex items-center bg-[var(--card)] border border-[var(--border)] rounded-xl p-0.5 shadow-sm text-xs">
+          <button
+            @click="decreaseFontSize"
+            class="px-2 py-1.5 rounded-lg hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] font-bold"
+            title="Decrease Text Size"
+          >
+            A-
+          </button>
+          <span class="px-1.5 font-mono text-[10px] font-bold text-[var(--accent)]">{{ fontScale.toUpperCase() }}</span>
+          <button
+            @click="increaseFontSize"
+            class="px-2 py-1.5 rounded-lg hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] font-bold"
+            title="Increase Text Size"
+          >
+            A+
+          </button>
+        </div>
+
+        <!-- Theme & Palette Modal Trigger -->
+        <button
+          @click="openSettingsModal"
+          class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm"
+          title="Customize Theme & Color Palette"
+        >
+          <span>🎨</span>
+          <span class="hidden sm:inline">Theme</span>
+        </button>
+
+        <!-- Dark Mode Toggle -->
         <button
           @click="toggleDark"
-          class="px-3.5 py-2 rounded-xl text-xs font-medium bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] transition-all flex items-center gap-2 shadow-sm"
+          class="px-3 py-1.5 rounded-xl text-xs font-medium bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm"
           :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
         >
           <span>{{ isDark ? '☀️' : '🌙' }}</span>
-          <span>{{ isDark ? 'Light' : 'Dark' }}</span>
+          <span class="hidden sm:inline">{{ isDark ? 'Light' : 'Dark' }}</span>
         </button>
       </div>
     </header>
@@ -251,6 +278,121 @@
       </div>
     </div>
 
+    <!-- Interactive Theme & Text Size Settings Bottom Sheet / Modal -->
+    <div
+      v-if="isSettingsModalOpen"
+      class="modal-backdrop"
+      @click="closeSettingsModal"
+    >
+      <div class="modal-sheet space-y-5" @click.stop>
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🎨</span>
+            <div>
+              <h3 class="text-lg font-bold text-[var(--foreground)]">Display & Theme Settings</h3>
+              <p class="text-xs text-[var(--muted-foreground)]">Customize color palette, text scale & dark mode</p>
+            </div>
+          </div>
+          <button
+            @click="closeSettingsModal"
+            class="w-8 h-8 rounded-full bg-[var(--card-hover)] hover:bg-[var(--border)] flex items-center justify-center text-sm font-bold text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Section 1: Color Palette Selector -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
+              Irish Color Palettes:
+            </label>
+            <span class="text-xs font-semibold text-[var(--accent)]">
+              {{ palettes.find(p => p.id === selectedPalette)?.name }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <button
+              v-for="p in palettes"
+              :key="p.id"
+              @click="setPalette(p.id)"
+              :class="[
+                'palette-swatch-btn flex-col items-start p-3 text-left',
+                selectedPalette === p.id ? 'active ring-2 ring-[var(--accent)]/40' : ''
+              ]"
+            >
+              <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-2">
+                  <span class="swatch-circle" :style="{ backgroundColor: p.color }"></span>
+                  <span class="font-bold text-xs">{{ p.icon }} {{ p.name }}</span>
+                </div>
+                <span v-if="selectedPalette === p.id" class="text-xs text-[var(--accent)] font-bold">✓</span>
+              </div>
+              <span class="text-[10px] text-[var(--muted-foreground)] font-normal mt-1 leading-tight">
+                {{ p.desc }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 2: Text Size Scaler -->
+        <div class="space-y-2.5 pt-3 border-t border-[var(--border)]">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
+              Text & Font Scaling:
+            </label>
+            <span class="text-xs font-mono font-bold text-[var(--accent)]">
+              {{ fontScales.find(s => s.id === fontScale)?.scale }} Scale
+            </span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2">
+            <button
+              v-for="s in fontScales"
+              :key="s.id"
+              @click="setFontScale(s.id)"
+              :class="[
+                'p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1',
+                fontScale === s.id
+                  ? 'bg-[var(--accent)] text-white border-[var(--accent)] font-bold shadow-sm'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]'
+              ]"
+            >
+              <span class="text-sm font-bold">{{ s.badge }}</span>
+              <span class="text-[10px] opacity-85">{{ s.label }}</span>
+            </button>
+          </div>
+
+          <!-- Live Sample Preview Box -->
+          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] mt-2">
+            <div class="text-xs font-bold text-[var(--accent)] mb-0.5">Live Preview:</div>
+            <p class="text-xs text-[var(--foreground)] leading-relaxed">
+              🍀 <strong>Oct 2–14:</strong> Ireland autumn travel schedule with 1-tap navigation & weather alerts.
+            </p>
+          </div>
+        </div>
+
+        <!-- Section 3: Mode & Quick Actions -->
+        <div class="pt-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
+          <button
+            @click="toggleDark"
+            class="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] border border-[var(--border)] transition-all flex items-center gap-2"
+          >
+            <span>{{ isDark ? '☀️ Switch to Light Mode' : '🌙 Switch to Dark Mode' }}</span>
+          </button>
+
+          <button
+            @click="closeSettingsModal"
+            class="px-5 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] text-white shadow-md hover:brightness-110 transition-all"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Mobile Bottom Navigation Bar (Fixed for thumb access on phones) -->
     <nav class="mobile-bottom-nav">
       <button
@@ -261,6 +403,14 @@
       >
         <span>{{ t.icon }}</span>
         <span>{{ t.shortLabel }}</span>
+      </button>
+      <button
+        @click="openSettingsModal"
+        class="mobile-nav-item"
+        title="Theme & Text Settings"
+      >
+        <span>🎨</span>
+        <span>Theme</span>
       </button>
     </nav>
 
