@@ -1581,6 +1581,21 @@ const app = createApp({
         const hash = window.location.hash;
         if (hash && hash.startsWith('#sync=')) {
           const payloadStr = hash.slice(6);
+
+          // Strip hash immediately from browser address bar to prevent modal reappearing on refresh
+          try {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+          } catch (e) {}
+
+          // Ensure sync prompt is only shown once per session for this payload
+          const alreadyPrompted = sessionStorage.getItem('ireland_last_synced_hash');
+          if (alreadyPrompted === payloadStr) {
+            return;
+          }
+          try {
+            sessionStorage.setItem('ireland_last_synced_hash', payloadStr);
+          } catch (e) {}
+
           if (payloadStr) {
             const decoded = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payloadStr)))));
             if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes || decoded.hiddenItemIds || decoded.menus)) {
@@ -1944,9 +1959,8 @@ const app = createApp({
     });
 
     const openExpenseModal = () => {
-      loadCustomExpenses();
-      isExpenseModalOpen.value = true;
-      document.body.style.overflow = 'hidden';
+      activeTab.value = 'budget';
+      isExpenseModalOpen.value = false;
     };
 
     const closeExpenseModal = () => {
