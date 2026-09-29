@@ -1,9 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🍀 Ireland Trip — October 2026 Interactive Travel Dashboard</title>
+
+  <!-- Prevent Theme Flash (FOUC): Synchronously set theme before stylesheets & DOM paint -->
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('ireland_theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = savedTheme !== null ? (savedTheme === 'dark') : (prefersDark !== false);
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        var savedPalette = localStorage.getItem('ireland_palette');
+        if (savedPalette) {
+          document.documentElement.classList.add('theme-' + savedPalette);
+        }
+      } catch (e) {}
+    })();
+  </script>
   
   <!-- Local Tailwind CSS Runtime (no internet needed) -->
   <script src="lib/tailwind.min.js"></script>
@@ -11,7 +31,7 @@
   <!-- Local Custom Styles & Theme Variables -->
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen font-sans antialiased transition-colors duration-200">
+<body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen font-sans antialiased">
 
   <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 space-y-6">
 
