@@ -321,8 +321,11 @@ const app = createApp({
     };
 
     // Deep jump between tabs & scroll to target element
-    const handleSwitchTab = (payload) => {
+    const handleSwitchTab = (payload, event) => {
       if (!payload) return;
+      if (event && event.currentTarget && event.currentTarget.scrollIntoView) {
+        event.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
       const { tab, targetId, dayIndex, dayNumber, trailId, searchQuery } = payload;
       if (tab) {
         activeTab.value = tab;
@@ -353,8 +356,26 @@ const app = createApp({
                  document.getElementById('restaurant-' + cleanId) ||
                  document.getElementById('res-' + cleanId);
           } else if (tab === 'planner') {
-            if (dayNumber) el = document.getElementById('day-card-' + dayNumber);
-            else if (dayIndex !== undefined) el = document.getElementById('day-' + dayIndex);
+            const dayNum = dayNumber || (dayIndex !== undefined ? parseInt(dayIndex) + 1 : null);
+            const idx = dayNum ? dayNum - 1 : (dayIndex !== undefined ? parseInt(dayIndex) : null);
+
+            // Horizontally center the day strip card in the horizontal scroll container
+            if (idx !== null) {
+              const stripCard = document.getElementById('day-strip-card-' + idx);
+              const container = document.getElementById('day-strip-scroll-container');
+              if (stripCard && container) {
+                const cardLeft = stripCard.offsetLeft;
+                const cardWidth = stripCard.offsetWidth;
+                const containerWidth = container.clientWidth;
+                container.scrollTo({
+                  left: Math.max(0, cardLeft - (containerWidth / 2) + (cardWidth / 2)),
+                  behavior: 'smooth'
+                });
+              }
+            }
+
+            if (dayNum) el = document.getElementById('day-card-' + dayNum) || document.getElementById('active-day-focus-card');
+            else if (dayIndex !== undefined) el = document.getElementById('day-' + dayIndex) || document.getElementById('active-day-focus-card');
             else el = document.getElementById('active-day-focus-card');
           }
 

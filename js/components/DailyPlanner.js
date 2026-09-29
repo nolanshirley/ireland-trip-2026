@@ -47,6 +47,9 @@ const DailyPlanner = {
     this.showRainBackups = {};
     this.loadDailyNotes();
   },
+  mounted() {
+    this.scrollDayStripTo(this.activeCalendarDayIndex);
+  },
   watch: {
     targetDayIndex: {
       immediate: true,
@@ -55,6 +58,15 @@ const DailyPlanner = {
           this.activeCalendarDayIndex = newVal;
           this.expandedDays[newVal] = true;
           this.activeDayFilter = null;
+          this.scrollDayStripTo(newVal);
+          this.$nextTick(() => {
+            setTimeout(() => {
+              const el = document.getElementById('active-day-focus-card') || document.getElementById('day-card-' + (newVal + 1));
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 60);
+          });
         }
       }
     }
@@ -183,11 +195,30 @@ const DailyPlanner = {
     selectCalendarDay(idx) {
       this.activeCalendarDayIndex = idx;
       this.expandedDays[idx] = true;
+      this.scrollDayStripTo(idx);
       this.$nextTick(() => {
         const el = document.getElementById('active-day-focus-card');
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+      });
+    },
+    scrollDayStripTo(idx) {
+      this.$nextTick(() => {
+        setTimeout(() => {
+          const card = document.getElementById('day-strip-card-' + idx);
+          const container = document.getElementById('day-strip-scroll-container') || (this.$refs && this.$refs.dayStripContainer);
+          if (card && container) {
+            const cardLeft = card.offsetLeft;
+            const cardWidth = card.offsetWidth;
+            const containerWidth = container.clientWidth;
+            const targetScroll = cardLeft - (containerWidth / 2) + (cardWidth / 2);
+            container.scrollTo({
+              left: Math.max(0, targetScroll),
+              behavior: 'smooth'
+            });
+          }
+        }, 50);
       });
     },
     prevCalendarDay() {
@@ -663,10 +694,11 @@ const DailyPlanner = {
           </div>
 
           <!-- Horizontal Scrollable Day Cards Strip -->
-          <div class="day-strip-scroll pt-1 pb-2">
+          <div class="day-strip-scroll pt-1 pb-2" id="day-strip-scroll-container" ref="dayStripContainer">
             <div
               v-for="(d, idx) in timeline"
               :key="d.dayNumber"
+              :id="'day-strip-card-' + idx"
               @click="selectCalendarDay(idx)"
               :class="[
                 'day-strip-card p-2.5 rounded-xl border flex flex-col justify-between gap-1.5 transition-all text-left shadow-sm',
