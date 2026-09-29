@@ -243,6 +243,32 @@ const Restaurants = {
       this.selectedCuisine = 'all';
       this.statusFilter = 'all';
       this.searchQuery = '';
+    },
+    openAddRestaurant() {
+      if (window.TravelApp) {
+        window.TravelApp.openCreator('dining');
+      }
+    },
+    getVotes(id) {
+      if (window.TravelApp) {
+        return window.TravelApp.getItemVotes(id);
+      }
+      return { up: 0, down: 0, userVoted: null };
+    },
+    vote(id, type) {
+      if (window.TravelApp) {
+        window.TravelApp.voteItem(id, type);
+        this.$forceUpdate();
+      }
+    },
+    isVoted(id, type) {
+      const v = this.getVotes(id);
+      return v && v.userVoted === type;
+    },
+    deleteCustomRestaurant(id) {
+      if (window.TravelApp) {
+        window.TravelApp.deleteCustomItem('dining', id);
+      }
     }
   },
   template: `
@@ -316,11 +342,19 @@ const Restaurants = {
       <div class="card p-5 space-y-4">
         <!-- Row 1: Title & Status Filters -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 class="text-xl font-bold tracking-tight">🍴 Restaurants & Pubs Directory</h2>
-            <p class="text-sm text-[var(--muted-foreground)]">
-              Showing {{ filteredRestaurants.length }} of {{ restaurants.length }} places
-            </p>
+          <div class="flex items-center gap-3">
+            <div>
+              <h2 class="text-xl font-bold tracking-tight">🍴 Restaurants & Pubs Directory</h2>
+              <p class="text-sm text-[var(--muted-foreground)]">
+                Showing {{ filteredRestaurants.length }} of {{ restaurants.length }} places
+              </p>
+            </div>
+            <button
+              @click="openAddRestaurant"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
+            >
+              <span>➕ Add Spot</span>
+            </button>
           </div>
 
           <!-- Status Filter -->
@@ -455,6 +489,37 @@ const Restaurants = {
                 </div>
               </div>
               <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                <!-- Consensus Status Badge if custom -->
+                <span v-if="r.status === 'confirmed'" class="consensus-badge-confirmed">
+                  🟢 Confirmed
+                </span>
+                <span v-else-if="r.status === 'proposed'" class="consensus-badge-proposed">
+                  🟡 Proposed
+                </span>
+                <!-- Voting buttons -->
+                <button
+                  @click.stop="vote(r.id || r.name, 'up')"
+                  :class="['vote-btn', isVoted(r.id || r.name, 'up') ? 'active-up' : '']"
+                  title="Upvote this spot"
+                >
+                  👍 {{ getVotes(r.id || r.name).up }}
+                </button>
+                <button
+                  @click.stop="vote(r.id || r.name, 'down')"
+                  :class="['vote-btn', isVoted(r.id || r.name, 'down') ? 'active-down' : '']"
+                  title="Downvote this spot"
+                >
+                  👎 {{ getVotes(r.id || r.name).down }}
+                </button>
+                <!-- Delete custom spot -->
+                <button
+                  v-if="r.isCustom"
+                  @click.stop="deleteCustomRestaurant(r.id)"
+                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
+                  title="Delete this custom spot"
+                >
+                  🗑️
+                </button>
                 <button
                   v-if="r.mapsQuery"
                   @click.stop="openMap(r.mapsQuery)"

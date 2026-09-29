@@ -175,6 +175,32 @@ const Reservations = {
     },
     jumpToRestaurant(restaurantId) {
       this.$emit('switch-tab', { tab: 'restaurants', targetId: restaurantId });
+    },
+    openAddReservation() {
+      if (window.TravelApp) {
+        window.TravelApp.openCreator('booking');
+      }
+    },
+    getVotes(id) {
+      if (window.TravelApp) {
+        return window.TravelApp.getItemVotes(id);
+      }
+      return { up: 0, down: 0, userVoted: null };
+    },
+    vote(id, type) {
+      if (window.TravelApp) {
+        window.TravelApp.voteItem(id, type);
+        this.$forceUpdate();
+      }
+    },
+    isVoted(id, type) {
+      const v = this.getVotes(id);
+      return v && v.userVoted === type;
+    },
+    deleteCustomReservation(id) {
+      if (window.TravelApp) {
+        window.TravelApp.deleteCustomItem('booking', id);
+      }
     }
   },
   template: `
@@ -241,6 +267,12 @@ const Reservations = {
 
           <!-- Summary Badges -->
           <div class="flex items-center gap-2 text-xs flex-wrap">
+            <button
+              @click="openAddReservation"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
+            >
+              <span>➕ Add Booking / Pass</span>
+            </button>
             <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
               ✅ {{ confirmedCount }} Confirmed / Booked
             </span>
@@ -379,11 +411,36 @@ const Reservations = {
                   </div>
                 </td>
 
-                <!-- Status -->
-                <td class="py-3 px-3 text-center whitespace-nowrap align-top">
-                  <span :class="['px-2.5 py-1 rounded-full text-xs font-semibold border', getStatusClass(r.status)]">
+                <!-- Status & Consensus Votes -->
+                <td class="py-3 px-3 text-center whitespace-nowrap align-top space-y-1.5">
+                  <span :class="['px-2.5 py-1 rounded-full text-xs font-semibold border inline-block', getStatusClass(r.status)]">
                     {{ r.status }}
                   </span>
+                  <!-- Consensus Votes -->
+                  <div class="flex items-center justify-center gap-1 mt-1">
+                    <button
+                      @click.stop="vote(r.id || r.name, 'up')"
+                      :class="['vote-btn', isVoted(r.id || r.name, 'up') ? 'active-up' : '']"
+                      title="Upvote this reservation"
+                    >
+                      👍 {{ getVotes(r.id || r.name).up }}
+                    </button>
+                    <button
+                      @click.stop="vote(r.id || r.name, 'down')"
+                      :class="['vote-btn', isVoted(r.id || r.name, 'down') ? 'active-down' : '']"
+                      title="Downvote this reservation"
+                    >
+                      👎 {{ getVotes(r.id || r.name).down }}
+                    </button>
+                    <button
+                      v-if="r.isCustom"
+                      @click.stop="deleteCustomReservation(r.id)"
+                      class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
+                      title="Delete this custom booking"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </td>
 
                 <!-- Custom Confirmation / Lockbox Code -->

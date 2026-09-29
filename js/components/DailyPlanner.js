@@ -345,6 +345,32 @@ const DailyPlanner = {
         return this.restaurants.filter(r => r.name.includes('Mad Monk') || r.name.includes('Bricín'));
       }
       return [];
+    },
+    openAddStop(dayIndex) {
+      if (window.TravelApp) {
+        window.TravelApp.openCreator('schedule', { dayIndex: dayIndex !== undefined ? dayIndex : this.activeCalendarDayIndex });
+      }
+    },
+    getVotes(id) {
+      if (window.TravelApp) {
+        return window.TravelApp.getItemVotes(id);
+      }
+      return { up: 0, down: 0, userVoted: null };
+    },
+    vote(id, type) {
+      if (window.TravelApp) {
+        window.TravelApp.voteItem(id, type);
+        this.$forceUpdate();
+      }
+    },
+    isVoted(id, type) {
+      const v = this.getVotes(id);
+      return v && v.userVoted === type;
+    },
+    deleteCustomStop(id) {
+      if (window.TravelApp) {
+        window.TravelApp.deleteCustomItem('schedule', id);
+      }
     }
   },
   template: `
@@ -668,6 +694,14 @@ const DailyPlanner = {
                 <span>🛣️ <strong>Route:</strong> {{ activeDay.route }}</span>
                 <span>·</span>
                 <span class="font-bold text-[var(--foreground)]">🚗 {{ activeDay.driveHours }}h car time</span>
+                <span>·</span>
+                <button
+                  @click.stop="openAddStop(activeCalendarDayIndex)"
+                  class="px-2.5 py-0.5 rounded-lg text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white flex items-center gap-1 shadow-sm transition-all"
+                  title="Add custom stop to this day"
+                >
+                  <span>➕ Add Stop to Day {{ activeDay.dayNumber }}</span>
+                </button>
               </div>
             </div>
 
@@ -847,6 +881,40 @@ const DailyPlanner = {
                         <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
                           ⏱️ {{ item.note }}
                         </span>
+                        <!-- Consensus Status Badge -->
+                        <span v-if="item.status === 'confirmed'" class="consensus-badge-confirmed">
+                          🟢 Confirmed
+                        </span>
+                        <span v-else-if="item.status === 'proposed'" class="consensus-badge-proposed">
+                          🟡 Proposed
+                        </span>
+                        <span v-else-if="item.status === 'pruned'" class="consensus-badge-pruned">
+                          🔴 Backup
+                        </span>
+                        <!-- Consensus Voting Buttons -->
+                        <button
+                          @click.stop="vote(item.id || item.activity, 'up')"
+                          :class="['vote-btn', isVoted(item.id || item.activity, 'up') ? 'active-up' : '']"
+                          title="Upvote / Support this stop"
+                        >
+                          👍 {{ getVotes(item.id || item.activity).up }}
+                        </button>
+                        <button
+                          @click.stop="vote(item.id || item.activity, 'down')"
+                          :class="['vote-btn', isVoted(item.id || item.activity, 'down') ? 'active-down' : '']"
+                          title="Downvote / Flag this stop"
+                        >
+                          👎 {{ getVotes(item.id || item.activity).down }}
+                        </button>
+                        <!-- Delete custom stop -->
+                        <button
+                          v-if="item.isCustom"
+                          @click.stop="deleteCustomStop(item.id)"
+                          class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
+                          title="Delete this custom stop"
+                        >
+                          🗑️
+                        </button>
                         <!-- 1-Tap Maps & Calendar Buttons -->
                         <button
                           v-if="item.mapsQuery"
@@ -955,6 +1023,40 @@ const DailyPlanner = {
                     <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
                       {{ item.tag }}
                     </span>
+                    <!-- Consensus Status Badge -->
+                    <span v-if="item.status === 'confirmed'" class="consensus-badge-confirmed">
+                      🟢 Confirmed
+                    </span>
+                    <span v-else-if="item.status === 'proposed'" class="consensus-badge-proposed">
+                      🟡 Proposed
+                    </span>
+                    <span v-else-if="item.status === 'pruned'" class="consensus-badge-pruned">
+                      🔴 Backup
+                    </span>
+                    <!-- Consensus Voting Buttons -->
+                    <button
+                      @click.stop="vote(item.id || item.activity, 'up')"
+                      :class="['vote-btn', isVoted(item.id || item.activity, 'up') ? 'active-up' : '']"
+                      title="Upvote / Support this stop"
+                    >
+                      👍 {{ getVotes(item.id || item.activity).up }}
+                    </button>
+                    <button
+                      @click.stop="vote(item.id || item.activity, 'down')"
+                      :class="['vote-btn', isVoted(item.id || item.activity, 'down') ? 'active-down' : '']"
+                      title="Downvote / Flag this stop"
+                    >
+                      👎 {{ getVotes(item.id || item.activity).down }}
+                    </button>
+                    <!-- Delete custom stop -->
+                    <button
+                      v-if="item.isCustom"
+                      @click.stop="deleteCustomStop(item.id)"
+                      class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
+                      title="Delete this custom stop"
+                    >
+                      🗑️
+                    </button>
                     <!-- 1-Tap Maps & Calendar Buttons -->
                     <button
                       v-if="item.mapsQuery"

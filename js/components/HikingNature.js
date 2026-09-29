@@ -203,6 +203,32 @@ const HikingNature = {
         targetId: 'day-card-' + (trail.dayNumber || 1),
         trailId: trail.id
       });
+    },
+    openAddTrail() {
+      if (window.TravelApp) {
+        window.TravelApp.openCreator('trail');
+      }
+    },
+    getVotes(id) {
+      if (window.TravelApp) {
+        return window.TravelApp.getItemVotes(id);
+      }
+      return { up: 0, down: 0, userVoted: null };
+    },
+    vote(id, type) {
+      if (window.TravelApp) {
+        window.TravelApp.voteItem(id, type);
+        this.$forceUpdate();
+      }
+    },
+    isVoted(id, type) {
+      const v = this.getVotes(id);
+      return v && v.userVoted === type;
+    },
+    deleteCustomTrail(id) {
+      if (window.TravelApp) {
+        window.TravelApp.deleteCustomItem('trail', id);
+      }
     }
   },
   template: `
@@ -222,6 +248,12 @@ const HikingNature = {
 
           <!-- Status Summary Badges -->
           <div class="flex items-center gap-2 text-xs flex-wrap">
+            <button
+              @click="openAddTrail"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white flex items-center gap-1.5 shadow-sm transition-all whitespace-nowrap"
+            >
+              <span>➕ Add Trail</span>
+            </button>
             <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
               💡 {{ suggestedCount }} Suggested Trails
             </span>
@@ -373,7 +405,38 @@ const HikingNature = {
                   </div>
                 </div>
               </div>
-              <div class="flex items-center gap-2 flex-wrap justify-end">
+              <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                <!-- Consensus Status Badge if custom -->
+                <span v-if="trail.status === 'confirmed'" class="consensus-badge-confirmed">
+                  🟢 Confirmed
+                </span>
+                <span v-else-if="trail.status === 'proposed'" class="consensus-badge-proposed">
+                  🟡 Proposed
+                </span>
+                <!-- Voting buttons -->
+                <button
+                  @click.stop="vote(trail.id || trail.name, 'up')"
+                  :class="['vote-btn', isVoted(trail.id || trail.name, 'up') ? 'active-up' : '']"
+                  title="Upvote this trail"
+                >
+                  👍 {{ getVotes(trail.id || trail.name).up }}
+                </button>
+                <button
+                  @click.stop="vote(trail.id || trail.name, 'down')"
+                  :class="['vote-btn', isVoted(trail.id || trail.name, 'down') ? 'active-down' : '']"
+                  title="Downvote this trail"
+                >
+                  👎 {{ getVotes(trail.id || trail.name).down }}
+                </button>
+                <!-- Delete custom trail -->
+                <button
+                  v-if="trail.isCustom"
+                  @click.stop="deleteCustomTrail(trail.id)"
+                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
+                  title="Delete this custom trail"
+                >
+                  🗑️
+                </button>
                 <button
                   @click.stop="toggleCompleted(trail)"
                   :class="[

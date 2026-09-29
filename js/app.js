@@ -20,12 +20,83 @@ const app = createApp({
     const regionList = ref(regions);
     const attractionMap = ref(attractions);
     const distanceList = ref(distances);
-    const timelineList = ref(timeline);
-    const restaurantList = ref(restaurants);
-    const reservationList = ref(reservations);
     const weatherInfo = ref(weatherData);
     const outfitList = ref(outfitGuides);
-    const trailList = ref(hikingTrails);
+
+    // ── Reactive Custom Entities & Local Database ─────────────
+    const customActivities = ref([]);
+    const customRestaurants = ref([]);
+    const customTrails = ref([]);
+    const customReservations = ref([]);
+    const itemVotes = ref({});
+    const userSenderName = ref(localStorage.getItem('ireland_user_sender_name') || 'Family Member');
+
+    const loadCustomStorageData = () => {
+      try {
+        customActivities.value = JSON.parse(localStorage.getItem('ireland_custom_activities') || '[]');
+        customRestaurants.value = JSON.parse(localStorage.getItem('ireland_custom_restaurants') || '[]');
+        customTrails.value = JSON.parse(localStorage.getItem('ireland_custom_trails') || '[]');
+        customReservations.value = JSON.parse(localStorage.getItem('ireland_custom_reservations') || '[]');
+        itemVotes.value = JSON.parse(localStorage.getItem('ireland_item_votes') || '{}');
+      } catch (e) {
+        console.error('Error loading custom trip data from storage', e);
+      }
+    };
+
+    const saveCustomActivities = () => {
+      localStorage.setItem('ireland_custom_activities', JSON.stringify(customActivities.value));
+    };
+    const saveCustomRestaurants = () => {
+      localStorage.setItem('ireland_custom_restaurants', JSON.stringify(customRestaurants.value));
+    };
+    const saveCustomTrails = () => {
+      localStorage.setItem('ireland_custom_trails', JSON.stringify(customTrails.value));
+    };
+    const saveCustomReservations = () => {
+      localStorage.setItem('ireland_custom_reservations', JSON.stringify(customReservations.value));
+    };
+    const saveItemVotes = () => {
+      localStorage.setItem('ireland_item_votes', JSON.stringify(itemVotes.value));
+    };
+    const saveSenderName = (name) => {
+      userSenderName.value = name;
+      localStorage.setItem('ireland_user_sender_name', name);
+    };
+
+    // ── Dynamic Computed Merged Lists ─────────────────────────
+    const timelineList = computed(() => {
+      const baseTimeline = JSON.parse(JSON.stringify(timeline));
+      customActivities.value.forEach(act => {
+        const dIdx = act.dayIndex !== undefined ? act.dayIndex : (act.dayNumber ? act.dayNumber - 1 : 0);
+        if (baseTimeline[dIdx]) {
+          const existingIdx = baseTimeline[dIdx].items.findIndex(i => i.id === act.id);
+          if (existingIdx >= 0) {
+            baseTimeline[dIdx].items[existingIdx] = { ...act };
+          } else {
+            baseTimeline[dIdx].items.push({ ...act });
+          }
+        }
+      });
+      return baseTimeline;
+    });
+
+    const restaurantList = computed(() => {
+      const baseList = JSON.parse(JSON.stringify(restaurants));
+      const customList = customRestaurants.value;
+      return [...baseList, ...customList];
+    });
+
+    const trailList = computed(() => {
+      const baseList = JSON.parse(JSON.stringify(hikingTrails));
+      const customList = customTrails.value;
+      return [...baseList, ...customList];
+    });
+
+    const reservationList = computed(() => {
+      const baseList = JSON.parse(JSON.stringify(reservations));
+      const customList = customReservations.value;
+      return [...baseList, ...customList];
+    });
 
     // Active Tab State (default to planner)
     const activeTab = ref('planner');
@@ -806,16 +877,747 @@ const app = createApp({
       }
     };
 
+    // ── Group Consensus & Voting Engine ────────────────────────
+    const getItemVotes = (id) => {
+      if (!id) return { up: 0, down: 0, userVoted: null };
+      return itemVotes.value[id] || { up: 0, down: 0, userVoted: null };
+    };
+
+    const voteItem = (id, type) => {
+      if (!id) return;
+      const current = itemVotes.value[id] || { up: 0, down: 0, userVoted: null };
+      let newUp = current.up || 0;
+      let newDown = current.down || 0;
+      let newUserVoted = current.userVoted;
+
+      if (type === 'up') {
+        if (newUserVoted === 'up') {
+          newUp = Math.max(0, newUp - 1);
+          newUserVoted = null;
+        } else {
+          newUp += 1;
+          if (newUserVoted === 'down') newDown = Math.max(0, newDown - 1);
+          newUserVoted = 'up';
+        }
+      } else if (type === 'down') {
+        if (newUserVoted === 'down') {
+          newDown = Math.max(0, newDown - 1);
+          newUserVoted = null;
+        } else {
+          newDown += 1;
+          if (newUserVoted === 'up') newUp = Math.max(0, newUp - 1);
+          newUserVoted = 'down';
+        }
+      }
+
+      itemVotes.value = {
+        ...itemVotes.value,
+        [id]: { up: newUp, down: newDown, userVoted: newUserVoted }
+      };
+      saveItemVotes();
+    };
+
+    const setItemStatus = (category, id, newStatus) => {
+      if (category === 'schedule') {
+        const idx = customActivities.value.findIndex(a => a.id === id);
+        if (idx >= 0) {
+          customActivities.value[idx].status = newStatus;
+          saveCustomActivities();
+        }
+      } else if (category === 'dining') {
+        const idx = customRestaurants.value.findIndex(r => r.id === id);
+        if (idx >= 0) {
+          customRestaurants.value[idx].status = newStatus;
+          saveCustomRestaurants();
+        }
+      } else if (category === 'trail') {
+        const idx = customTrails.value.findIndex(t => t.id === id);
+        if (idx >= 0) {
+          customTrails.value[idx].status = newStatus;
+          saveCustomTrails();
+        }
+      } else if (category === 'booking') {
+        const idx = customReservations.value.findIndex(b => b.id === id);
+        if (idx >= 0) {
+          customReservations.value[idx].status = newStatus;
+          saveCustomReservations();
+        }
+      }
+    };
+
+    const deleteCustomItem = (category, id) => {
+      if (!confirm('Are you sure you want to delete this custom item?')) return;
+      if (category === 'schedule') {
+        customActivities.value = customActivities.value.filter(a => a.id !== id);
+        saveCustomActivities();
+      } else if (category === 'dining') {
+        customRestaurants.value = customRestaurants.value.filter(r => r.id !== id);
+        saveCustomRestaurants();
+      } else if (category === 'trail') {
+        customTrails.value = customTrails.value.filter(t => t.id !== id);
+        saveCustomTrails();
+      } else if (category === 'booking') {
+        customReservations.value = customReservations.value.filter(b => b.id !== id);
+        saveCustomReservations();
+      }
+    };
+
+    // ── Universal Trip Creator & Importer Modal ────────────────
+    const isCreatorModalOpen = ref(false);
+    const creatorTab = ref('schedule'); // 'schedule', 'dining', 'trail', 'booking', 'bulk'
+
+    const newScheduleForm = ref({
+      dayIndex: 0,
+      time: '11:00 AM',
+      dur: '1.5 hrs',
+      durHours: 1.5,
+      activity: '',
+      type: 'sight',
+      energyLevel: 'moderate',
+      tag: 'GROUP IDEA',
+      desc: '',
+      location: '',
+      rainBackup: '',
+      splitOption: '',
+      status: 'proposed'
+    });
+
+    const newDiningForm = ref({
+      name: '',
+      city: 'Galway',
+      cuisine: 'Traditional Irish & Seafood',
+      cuisineType: 'Seafood',
+      price: '€€',
+      mustOrder: '',
+      notes: '',
+      resAdvice: 'Walk-ins or call ahead',
+      status: 'proposed'
+    });
+
+    const newTrailForm = ref({
+      name: '',
+      region: 'galway',
+      regionName: 'Connemara, Co. Galway',
+      distance: '5.0 km',
+      elevation: '250 m',
+      duration: '2.0 hrs',
+      difficulty: 'Moderate',
+      highlights: '',
+      gear: 'Hiking boots & waterproof jacket',
+      parkingTip: '',
+      rainBackup: '',
+      status: 'proposed'
+    });
+
+    const newBookingForm = ref({
+      name: '',
+      date: 'Oct 5, 2026',
+      time: '10:00 AM',
+      location: 'Galway',
+      type: 'activity',
+      cost: '€30',
+      status: 'Proposed',
+      cancelPolicy: '24hr free cancellation',
+      notes: ''
+    });
+
+    const openCreator = (tab = 'schedule', initialData = null) => {
+      creatorTab.value = tab;
+      if (tab === 'schedule' && initialData && initialData.dayIndex !== undefined) {
+        newScheduleForm.value.dayIndex = initialData.dayIndex;
+      }
+      isCreatorModalOpen.value = true;
+      document.body.style.overflow = 'hidden';
+    };
+
+    const closeCreator = () => {
+      isCreatorModalOpen.value = false;
+      document.body.style.overflow = '';
+    };
+
+    const saveScheduleStop = () => {
+      if (!newScheduleForm.value.activity.trim()) {
+        alert('Please enter an activity name.');
+        return;
+      }
+      const timeStr = newScheduleForm.value.time || '10:00 AM';
+      const dayIdx = parseInt(newScheduleForm.value.dayIndex) || 0;
+      const durH = parseFloat(newScheduleForm.value.durHours) || 1.5;
+
+      const newStop = {
+        id: 'cust_act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        dayIndex: dayIdx,
+        dayNumber: dayIdx + 1,
+        time: timeStr,
+        dur: newScheduleForm.value.dur || `${durH} hrs`,
+        durHours: durH,
+        startHour: parseInt(timeStr.match(/\d+/)?.[0] || '10') + (timeStr.includes('PM') && !timeStr.startsWith('12') ? 12 : 0),
+        endHour: (parseInt(timeStr.match(/\d+/)?.[0] || '10') + (timeStr.includes('PM') && !timeStr.startsWith('12') ? 12 : 0)) + durH,
+        activity: newScheduleForm.value.activity.trim(),
+        type: newScheduleForm.value.type || 'sight',
+        energyLevel: newScheduleForm.value.energyLevel || 'moderate',
+        tag: newScheduleForm.value.tag.trim() || 'PROPOSED',
+        desc: newScheduleForm.value.desc.trim(),
+        mapsQuery: newScheduleForm.value.location.trim() || newScheduleForm.value.activity.trim() + ', Ireland',
+        location: newScheduleForm.value.location.trim(),
+        rainBackup: newScheduleForm.value.rainBackup.trim(),
+        splitOption: newScheduleForm.value.splitOption.trim(),
+        status: newScheduleForm.value.status || 'proposed',
+        isCustom: true,
+        createdBy: userSenderName.value || 'Family Member',
+        createdAt: new Date().toISOString()
+      };
+
+      customActivities.value.push(newStop);
+      saveCustomActivities();
+
+      // Initialize vote
+      voteItem(newStop.id, 'up');
+
+      // Reset form
+      newScheduleForm.value.activity = '';
+      newScheduleForm.value.desc = '';
+      newScheduleForm.value.location = '';
+      newScheduleForm.value.rainBackup = '';
+      newScheduleForm.value.splitOption = '';
+
+      closeCreator();
+      handleSwitchTab({ tab: 'planner', dayIndex: dayIdx });
+    };
+
+    const saveDiningSpot = () => {
+      if (!newDiningForm.value.name.trim()) {
+        alert('Please enter a restaurant or pub name.');
+        return;
+      }
+      const newRest = {
+        id: 'cust_rest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: newDiningForm.value.name.trim(),
+        city: newDiningForm.value.city,
+        cuisine: newDiningForm.value.cuisine.trim() || 'Irish & Seafood',
+        cuisineType: newDiningForm.value.cuisineType || 'Modern Irish',
+        price: newDiningForm.value.price || '€€',
+        mustOrder: newDiningForm.value.mustOrder.trim(),
+        notes: newDiningForm.value.notes.trim(),
+        resAdvice: newDiningForm.value.resAdvice.trim() || 'Walk-in or call ahead',
+        status: newDiningForm.value.status || 'proposed',
+        isCustom: true,
+        createdBy: userSenderName.value || 'Family Member',
+        createdAt: new Date().toISOString()
+      };
+
+      customRestaurants.value.push(newRest);
+      saveCustomRestaurants();
+      voteItem(newRest.id, 'up');
+
+      newDiningForm.value.name = '';
+      newDiningForm.value.mustOrder = '';
+      newDiningForm.value.notes = '';
+
+      closeCreator();
+      handleSwitchTab({ tab: 'restaurants' });
+    };
+
+    const saveHikingTrail = () => {
+      if (!newTrailForm.value.name.trim()) {
+        alert('Please enter a trail name.');
+        return;
+      }
+      const newTrail = {
+        id: 'cust_trail_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: newTrailForm.value.name.trim(),
+        region: newTrailForm.value.region,
+        regionName: newTrailForm.value.regionName.trim() || newTrailForm.value.region.toUpperCase(),
+        distance: newTrailForm.value.distance.trim() || '5.0 km',
+        elevation: newTrailForm.value.elevation.trim() || '200 m',
+        duration: newTrailForm.value.duration.trim() || '2 hrs',
+        difficulty: newTrailForm.value.difficulty || 'Moderate',
+        highlights: newTrailForm.value.highlights.trim(),
+        gear: newTrailForm.value.gear.trim() || 'Sturdy boots & waterproof shell',
+        parkingTip: newTrailForm.value.parkingTip.trim(),
+        rainBackup: newTrailForm.value.rainBackup.trim(),
+        base: newTrailForm.value.region === 'ni' ? 'Belfast' : (newTrailForm.value.region === 'galway' ? 'Galway' : (newTrailForm.value.region === 'kerry' ? 'Killarney' : 'Dublin')),
+        status: newTrailForm.value.status || 'proposed',
+        isCustom: true,
+        createdBy: userSenderName.value || 'Family Member',
+        createdAt: new Date().toISOString()
+      };
+
+      customTrails.value.push(newTrail);
+      saveCustomTrails();
+      voteItem(newTrail.id, 'up');
+
+      newTrailForm.value.name = '';
+      newTrailForm.value.highlights = '';
+      newTrailForm.value.parkingTip = '';
+
+      closeCreator();
+      handleSwitchTab({ tab: 'hiking' });
+    };
+
+    const saveBookingPass = () => {
+      if (!newBookingForm.value.name.trim()) {
+        alert('Please enter a booking or pass name.');
+        return;
+      }
+      const newBooking = {
+        id: 'cust_res_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: newBookingForm.value.name.trim(),
+        date: newBookingForm.value.date.trim(),
+        time: newBookingForm.value.time.trim(),
+        location: newBookingForm.value.location.trim(),
+        type: newBookingForm.value.type || 'activity',
+        cost: newBookingForm.value.cost.trim() || '€0',
+        status: newBookingForm.value.status || 'Proposed',
+        cancelPolicy: newBookingForm.value.cancelPolicy.trim() || 'Check with vendor',
+        notes: newBookingForm.value.notes.trim(),
+        isCustom: true,
+        createdBy: userSenderName.value || 'Family Member',
+        createdAt: new Date().toISOString()
+      };
+
+      customReservations.value.push(newBooking);
+      saveCustomReservations();
+      voteItem(newBooking.id, 'up');
+
+      newBookingForm.value.name = '';
+      newBookingForm.value.notes = '';
+
+      closeCreator();
+      handleSwitchTab({ tab: 'reservations' });
+    };
+
+    // ── Bulk Smart Importer Engine ─────────────────────────────
+    const bulkImportText = ref('');
+    const bulkImportPreview = ref([]);
+    const bulkImportStatus = ref('');
+
+    const parseBulkImport = () => {
+      bulkImportPreview.value = [];
+      const text = bulkImportText.value.trim();
+      if (!text) {
+        bulkImportStatus.value = 'Please paste some text or JSON first.';
+        return;
+      }
+
+      // 1. Try parsing as JSON first
+      if (text.startsWith('{') || text.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(text);
+          const list = Array.isArray(parsed) ? parsed : (parsed.items || parsed.activities || parsed.customActivities || []);
+          list.forEach(item => {
+            bulkImportPreview.value.push({
+              category: item.category || (item.dayIndex !== undefined ? 'schedule' : (item.cuisine ? 'dining' : (item.difficulty ? 'trail' : 'schedule'))),
+              name: item.activity || item.name || item.title || 'Imported Item',
+              detail: item.desc || item.notes || item.cuisine || `${item.time || ''} · ${item.location || ''}`,
+              raw: item,
+              selected: true
+            });
+          });
+          bulkImportStatus.value = `✅ Successfully parsed ${bulkImportPreview.value.length} items from JSON!`;
+          return;
+        } catch (e) {
+          // Fall through to plain text parser
+        }
+      }
+
+      // 2. Intelligent Plain Text / Bullet Line Parser
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      lines.forEach((line, idx) => {
+        // Match Day X prefix
+        const dayMatch = line.match(/(?:Day\s*(\d+)|Oct\s*(\d+))/i);
+        const timeMatch = line.match(/(\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm))/);
+        const dayNum = dayMatch ? parseInt(dayMatch[1] || dayMatch[2]) : null;
+        const timeStr = timeMatch ? timeMatch[1].toUpperCase() : '12:00 PM';
+
+        let category = 'schedule';
+        if (line.toLowerCase().includes('pub') || line.toLowerCase().includes('restaurant') || line.toLowerCase().includes('dinner') || line.toLowerCase().includes('lunch') || line.toLowerCase().includes('seafood') || line.toLowerCase().includes('food')) {
+          category = 'dining';
+        } else if (line.toLowerCase().includes('trail') || line.toLowerCase().includes('hike') || line.toLowerCase().includes('mountain') || line.toLowerCase().includes('loop') || line.toLowerCase().includes('walk')) {
+          category = 'trail';
+        } else if (line.toLowerCase().includes('booking') || line.toLowerCase().includes('ferry') || line.toLowerCase().includes('tour') || line.toLowerCase().includes('hotel') || line.toLowerCase().includes('pass')) {
+          category = 'booking';
+        }
+
+        // Clean line
+        const cleanedTitle = line.replace(/^(?:[-*•]|\d+\.|\d+\))\s*/, '').replace(/^(?:Day\s*\d+:?|Oct\s*\d+:?)\s*/i, '').trim();
+
+        bulkImportPreview.value.push({
+          category: category,
+          name: cleanedTitle.split(/[-–|;:]/)[0].trim(),
+          detail: cleanedTitle.includes('-') || cleanedTitle.includes('|') ? cleanedTitle : `Imported line #${idx + 1}`,
+          dayIndex: dayNum && dayNum >= 1 && dayNum <= 13 ? dayNum - 1 : 0,
+          time: timeStr,
+          rawText: line,
+          selected: true
+        });
+      });
+
+      bulkImportStatus.value = `✨ Smart-detected ${bulkImportPreview.value.length} items from text! Review below and tap Import.`;
+    };
+
+    const applyBulkImport = () => {
+      const selected = bulkImportPreview.value.filter(i => i.selected);
+      if (selected.length === 0) {
+        alert('No items selected for import.');
+        return;
+      }
+
+      let count = 0;
+      selected.forEach(item => {
+        const id = 'bulk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        if (item.category === 'schedule') {
+          customActivities.value.push({
+            id: id,
+            dayIndex: item.dayIndex || 0,
+            dayNumber: (item.dayIndex || 0) + 1,
+            time: item.time || '12:00 PM',
+            dur: '1.5 hrs',
+            durHours: 1.5,
+            activity: item.name,
+            type: 'sight',
+            energyLevel: 'moderate',
+            tag: 'BULK IMPORT',
+            desc: item.detail,
+            mapsQuery: item.name + ', Ireland',
+            status: 'proposed',
+            isCustom: true,
+            createdBy: userSenderName.value || 'Family Member',
+            createdAt: new Date().toISOString()
+          });
+          voteItem(id, 'up');
+          count++;
+        } else if (item.category === 'dining') {
+          customRestaurants.value.push({
+            id: id,
+            name: item.name,
+            city: 'Galway',
+            cuisine: 'Irish & Casual',
+            cuisineType: 'Modern Irish',
+            price: '€€',
+            notes: item.detail,
+            resAdvice: 'Walk-ins or call ahead',
+            status: 'proposed',
+            isCustom: true,
+            createdBy: userSenderName.value || 'Family Member',
+            createdAt: new Date().toISOString()
+          });
+          voteItem(id, 'up');
+          count++;
+        } else if (item.category === 'trail') {
+          customTrails.value.push({
+            id: id,
+            name: item.name,
+            region: 'galway',
+            regionName: 'Connemara, Co. Galway',
+            distance: '5.0 km',
+            elevation: '200 m',
+            duration: '2 hrs',
+            difficulty: 'Moderate',
+            highlights: item.detail,
+            gear: 'Sturdy boots & waterproof shell',
+            base: 'Galway',
+            status: 'proposed',
+            isCustom: true,
+            createdBy: userSenderName.value || 'Family Member',
+            createdAt: new Date().toISOString()
+          });
+          voteItem(id, 'up');
+          count++;
+        } else if (item.category === 'booking') {
+          customReservations.value.push({
+            id: id,
+            name: item.name,
+            date: 'Oct 5, 2026',
+            time: item.time || '10:00 AM',
+            location: 'Ireland',
+            type: 'activity',
+            cost: '€0',
+            status: 'Proposed',
+            cancelPolicy: 'Check booking terms',
+            notes: item.detail,
+            isCustom: true,
+            createdBy: userSenderName.value || 'Family Member',
+            createdAt: new Date().toISOString()
+          });
+          voteItem(id, 'up');
+          count++;
+        }
+      });
+
+      saveCustomActivities();
+      saveCustomRestaurants();
+      saveCustomTrails();
+      saveCustomReservations();
+
+      bulkImportText.value = '';
+      bulkImportPreview.value = [];
+      bulkImportStatus.value = '';
+      closeCreator();
+      alert(`🎉 Successfully imported ${count} new items into your trip!`);
+    };
+
+    const clearBulkImport = () => {
+      bulkImportText.value = '';
+      bulkImportPreview.value = [];
+      bulkImportStatus.value = '';
+    };
+
+    // ── Zero-Cost Share Link & QR Code Live Sync ───────────────
+    const isShareSyncModalOpen = ref(false);
+    const shareSyncUrl = ref('');
+    const shareSyncQrUrl = ref('');
+    const shareCopied = ref(false);
+
+    const openShareSync = () => {
+      const payload = {
+        v: 1,
+        sender: userSenderName.value || 'Family Traveler',
+        time: new Date().toISOString(),
+        activities: customActivities.value,
+        restaurants: customRestaurants.value,
+        trails: customTrails.value,
+        reservations: customReservations.value,
+        votes: itemVotes.value,
+        notes: customNotes.value,
+        scratchpad: localStorage.getItem('ireland_trip_scratchpad') || ''
+      };
+
+      try {
+        const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(payload)))));
+        const baseUrl = window.location.origin + window.location.pathname;
+        const url = baseUrl + '#sync=' + encoded;
+        shareSyncUrl.value = url;
+        shareSyncQrUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(url)}`;
+        isShareSyncModalOpen.value = true;
+        document.body.style.overflow = 'hidden';
+      } catch (e) {
+        console.error('Error generating sync url', e);
+      }
+    };
+
+    const closeShareSync = () => {
+      isShareSyncModalOpen.value = false;
+      document.body.style.overflow = '';
+    };
+
+    const copyShareLink = () => {
+      navigator.clipboard.writeText(shareSyncUrl.value).then(() => {
+        shareCopied.value = true;
+        setTimeout(() => { shareCopied.value = false; }, 2500);
+      }).catch(() => {
+        const input = document.createElement('textarea');
+        input.value = shareSyncUrl.value;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        shareCopied.value = true;
+        setTimeout(() => { shareCopied.value = false; }, 2500);
+      });
+    };
+
+    const shareToWhatsApp = () => {
+      const text = `🍀 Check out our updated Ireland 2026 Trip Itinerary!\nTap here to sync all new stops, restaurants & votes:\n${shareSyncUrl.value}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    };
+
+    const shareToEmail = () => {
+      const subject = `🍀 Ireland 2026 Trip Itinerary Updates & Consensus Votes`;
+      const body = `Hey everyone,\n\nHere is our updated Ireland 2026 trip schedule, dining list, and group votes:\n\n${shareSyncUrl.value}\n\nTap the link above on your phone or computer to automatically merge all new recommendations and votes into your trip dashboard!`;
+      window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+    };
+
+    // ── Incoming URL Sync Detector & Non-Destructive Merge ──────
+    const incomingSyncPayload = ref(null);
+    const isIncomingSyncModalOpen = ref(false);
+
+    const incomingSummary = computed(() => {
+      if (!incomingSyncPayload.value) return { stops: 0, dining: 0, trails: 0, bookings: 0, votes: 0, sender: 'Family' };
+      const p = incomingSyncPayload.value;
+      return {
+        stops: (p.activities && p.activities.length) || 0,
+        dining: (p.restaurants && p.restaurants.length) || 0,
+        trails: (p.trails && p.trails.length) || 0,
+        bookings: (p.reservations && p.reservations.length) || 0,
+        votes: (p.votes && Object.keys(p.votes).length) || 0,
+        sender: p.sender || 'Family Member'
+      };
+    });
+
+    const checkUrlSyncPayload = () => {
+      try {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#sync=')) {
+          const payloadStr = hash.slice(6);
+          if (payloadStr) {
+            const decoded = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payloadStr)))));
+            if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes)) {
+              incomingSyncPayload.value = decoded;
+              isIncomingSyncModalOpen.value = true;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Could not parse sync payload from URL hash', e);
+      }
+    };
+
+    const applyIncomingSync = (mode = 'merge') => {
+      if (!incomingSyncPayload.value) return;
+      const p = incomingSyncPayload.value;
+
+      if (mode === 'replace') {
+        if (p.activities) customActivities.value = p.activities;
+        if (p.restaurants) customRestaurants.value = p.restaurants;
+        if (p.trails) customTrails.value = p.trails;
+        if (p.reservations) customReservations.value = p.reservations;
+        if (p.votes) itemVotes.value = p.votes;
+        if (p.notes) customNotes.value = p.notes;
+        if (p.scratchpad !== undefined) localStorage.setItem('ireland_trip_scratchpad', p.scratchpad);
+      } else {
+        // Non-destructive Merge
+        if (p.activities && Array.isArray(p.activities)) {
+          const current = [...customActivities.value];
+          p.activities.forEach(incoming => {
+            const idx = current.findIndex(a => a.id === incoming.id || (a.activity === incoming.activity && a.dayIndex === incoming.dayIndex));
+            if (idx >= 0) {
+              current[idx] = { ...current[idx], ...incoming };
+            } else {
+              current.push(incoming);
+            }
+          });
+          customActivities.value = current;
+        }
+
+        if (p.restaurants && Array.isArray(p.restaurants)) {
+          const current = [...customRestaurants.value];
+          p.restaurants.forEach(incoming => {
+            const idx = current.findIndex(r => r.id === incoming.id || (r.name.toLowerCase() === incoming.name.toLowerCase() && r.city === incoming.city));
+            if (idx >= 0) {
+              current[idx] = { ...current[idx], ...incoming };
+            } else {
+              current.push(incoming);
+            }
+          });
+          customRestaurants.value = current;
+        }
+
+        if (p.trails && Array.isArray(p.trails)) {
+          const current = [...customTrails.value];
+          p.trails.forEach(incoming => {
+            const idx = current.findIndex(t => t.id === incoming.id || t.name.toLowerCase() === incoming.name.toLowerCase());
+            if (idx >= 0) {
+              current[idx] = { ...current[idx], ...incoming };
+            } else {
+              current.push(incoming);
+            }
+          });
+          customTrails.value = current;
+        }
+
+        if (p.reservations && Array.isArray(p.reservations)) {
+          const current = [...customReservations.value];
+          p.reservations.forEach(incoming => {
+            const idx = current.findIndex(b => b.id === incoming.id || (b.name.toLowerCase() === incoming.name.toLowerCase() && b.date === incoming.date));
+            if (idx >= 0) {
+              current[idx] = { ...current[idx], ...incoming };
+            } else {
+              current.push(incoming);
+            }
+          });
+          customReservations.value = current;
+        }
+
+        if (p.votes && typeof p.votes === 'object') {
+          const mergedVotes = { ...itemVotes.value };
+          Object.keys(p.votes).forEach(k => {
+            if (!mergedVotes[k]) {
+              mergedVotes[k] = p.votes[k];
+            } else {
+              mergedVotes[k] = {
+                up: Math.max(mergedVotes[k].up || 0, p.votes[k].up || 0),
+                down: Math.max(mergedVotes[k].down || 0, p.votes[k].down || 0),
+                userVoted: mergedVotes[k].userVoted || p.votes[k].userVoted
+              };
+            }
+          });
+          itemVotes.value = mergedVotes;
+        }
+
+        if (p.notes && Array.isArray(p.notes)) {
+          const currentNotes = [...customNotes.value];
+          p.notes.forEach(incNote => {
+            const idx = currentNotes.findIndex(n => n.id === incNote.id);
+            if (idx >= 0) {
+              currentNotes[idx] = { ...currentNotes[idx], ...incNote };
+            } else {
+              currentNotes.push(incNote);
+            }
+          });
+          customNotes.value = currentNotes;
+          localStorage.setItem('ireland_custom_notes', JSON.stringify(customNotes.value));
+        }
+
+        if (p.scratchpad && !localStorage.getItem('ireland_trip_scratchpad')) {
+          localStorage.setItem('ireland_trip_scratchpad', p.scratchpad);
+        }
+      }
+
+      saveCustomActivities();
+      saveCustomRestaurants();
+      saveCustomTrails();
+      saveCustomReservations();
+      saveItemVotes();
+
+      try {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch (e) {}
+
+      isIncomingSyncModalOpen.value = false;
+      incomingSyncPayload.value = null;
+      alert('🎉 Trip updates successfully synced! All new stops, dining spots, and family votes are live in your view.');
+    };
+
+    const dismissIncomingSync = () => {
+      try {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch (e) {}
+      isIncomingSyncModalOpen.value = false;
+      incomingSyncPayload.value = null;
+    };
+
+    // Attach extended API to window.TravelApp for cross-component calls
+    window.TravelApp = {
+      triggerMap,
+      triggerRoute,
+      triggerCalendar,
+      openProviderSettings,
+      getUserProvider: () => userProvider.value,
+      openCreator,
+      openShareSync,
+      voteItem,
+      getItemVotes,
+      setItemStatus,
+      deleteCustomItem
+    };
+
     const exportAllTripNotes = () => {
       const backupData = {
         exportDate: new Date().toISOString(),
         tripTitle: 'Ireland Vacation October 2026',
+        senderName: userSenderName.value,
         scratchpad: localStorage.getItem('ireland_trip_scratchpad') || '',
         dailyNotes: JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}'),
         reservationNotes: JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}'),
         restaurantUserData: JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}'),
         trailUserData: JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}'),
         customNotes: JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]'),
+        customActivities: customActivities.value,
+        customRestaurants: customRestaurants.value,
+        customTrails: customTrails.value,
+        customReservations: customReservations.value,
+        itemVotes: itemVotes.value,
         packingChecklist: JSON.parse(localStorage.getItem('ireland_packing_checklist_v2') || '[]'),
         theme: localStorage.getItem('ireland_theme') || 'dark',
         palette: localStorage.getItem('ireland_palette') || 'emerald',
@@ -845,11 +1647,32 @@ const app = createApp({
           if (data.restaurantUserData) localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(data.restaurantUserData));
           if (data.trailUserData) localStorage.setItem('ireland_trail_user_data', JSON.stringify(data.trailUserData));
           if (data.customNotes) localStorage.setItem('ireland_custom_notes', JSON.stringify(data.customNotes));
+          if (data.customActivities) {
+            customActivities.value = data.customActivities;
+            saveCustomActivities();
+          }
+          if (data.customRestaurants) {
+            customRestaurants.value = data.customRestaurants;
+            saveCustomRestaurants();
+          }
+          if (data.customTrails) {
+            customTrails.value = data.customTrails;
+            saveCustomTrails();
+          }
+          if (data.customReservations) {
+            customReservations.value = data.customReservations;
+            saveCustomReservations();
+          }
+          if (data.itemVotes) {
+            itemVotes.value = data.itemVotes;
+            saveItemVotes();
+          }
+          if (data.senderName) saveSenderName(data.senderName);
           if (data.packingChecklist) localStorage.setItem('ireland_packing_checklist_v2', JSON.stringify(data.packingChecklist));
           if (data.palette) setPalette(data.palette);
           if (data.fontScale) setFontScale(data.fontScale);
 
-          alert('✅ Trip notes and custom data successfully imported! Refreshing view...');
+          alert('✅ Trip notes, stops, and custom data successfully imported! Refreshing view...');
           window.location.reload();
         } catch (err) {
           alert('⚠️ Failed to import backup file: Invalid JSON format.');
@@ -860,7 +1683,9 @@ const app = createApp({
 
     onMounted(() => {
       initTheme();
+      loadCustomStorageData();
       loadAllNotesFromStorage();
+      checkUrlSyncPayload();
     });
 
     return {
@@ -935,7 +1760,55 @@ const app = createApp({
       jumpFromNoteToTarget,
       backupStats,
       exportAllTripNotes,
-      importNotesFromFile
+      importNotesFromFile,
+      // Group Consensus & Voting Engine
+      customActivities,
+      customRestaurants,
+      customTrails,
+      customReservations,
+      itemVotes,
+      userSenderName,
+      saveSenderName,
+      getItemVotes,
+      voteItem,
+      setItemStatus,
+      deleteCustomItem,
+      // Universal Trip Creator & Importer
+      isCreatorModalOpen,
+      creatorTab,
+      newScheduleForm,
+      newDiningForm,
+      newTrailForm,
+      newBookingForm,
+      openCreator,
+      closeCreator,
+      saveScheduleStop,
+      saveDiningSpot,
+      saveHikingTrail,
+      saveBookingPass,
+      bulkImportText,
+      bulkImportPreview,
+      bulkImportStatus,
+      parseBulkImport,
+      applyBulkImport,
+      clearBulkImport,
+      // Zero-Cost Share Link & QR Code Live Sync
+      isShareSyncModalOpen,
+      shareSyncUrl,
+      shareSyncQrUrl,
+      shareCopied,
+      openShareSync,
+      closeShareSync,
+      copyShareLink,
+      shareToWhatsApp,
+      shareToEmail,
+      // Incoming URL Sync Detector & Non-Destructive Merge
+      incomingSyncPayload,
+      isIncomingSyncModalOpen,
+      incomingSummary,
+      checkUrlSyncPayload,
+      applyIncomingSync,
+      dismissIncomingSync
     };
   }
 });
