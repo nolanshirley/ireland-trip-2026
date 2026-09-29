@@ -41,7 +41,7 @@ const Restaurants = {
   },
   computed: {
     cities() {
-      const set = new Set(this.restaurants.map(r => r.city));
+      const set = new Set(this.restaurants.map(r => r.city).filter(Boolean));
       return ['all', ...Array.from(set)];
     },
     favoritesCount() {
@@ -61,6 +61,7 @@ const Restaurants = {
       };
 
       this.restaurants.forEach(r => {
+        if (!r) return;
         const type = r.cuisineType || 'Other';
         if (!map[type]) {
           map[type] = {
@@ -80,11 +81,12 @@ const Restaurants = {
       const cityOrder = { 'Belfast': 1, 'Galway': 2, 'Killarney': 3, 'Dingle': 4, 'Dublin': 5 };
 
       const list = this.restaurants.filter(r => {
+        if (!r) return false;
         // City filter
-        if (this.selectedCity !== 'all' && r.city !== this.selectedCity) return false;
+        if (this.selectedCity !== 'all' && (r.city || '') !== this.selectedCity) return false;
 
         // Cuisine filter
-        if (this.selectedCuisine !== 'all' && r.cuisineType !== this.selectedCuisine) return false;
+        if (this.selectedCuisine !== 'all' && (r.cuisineType || '') !== this.selectedCuisine) return false;
 
         // Status filter
         if (this.statusFilter === 'favorites' && !this.isFavorite(r)) return false;
@@ -93,21 +95,30 @@ const Restaurants = {
         if (this.statusFilter === 'recommended' && r.booked) return false;
 
         // Search query
-        if (!this.searchQuery.trim()) return true;
-        const q = this.searchQuery.toLowerCase();
-        const userNotes = this.getNotes(r).toLowerCase();
+        if (!this.searchQuery || !this.searchQuery.trim()) return true;
+        const q = this.searchQuery.toLowerCase().trim();
+        const userNotes = (this.getNotes(r) || '').toLowerCase();
+        const rName = (r.name || '').toLowerCase();
+        const rCity = (r.city || '').toLowerCase();
+        const rCuisine = (r.cuisine || '').toLowerCase();
+        const rCuisineType = (r.cuisineType || '').toLowerCase();
+        const rBday = (r.birthdayEvent || '').toLowerCase();
+        const rNotes = (r.notes || '').toLowerCase();
+        const rMustOrder = (r.mustOrder || '').toLowerCase();
         return (
-          r.name.toLowerCase().includes(q) ||
-          r.city.toLowerCase().includes(q) ||
-          r.cuisine.toLowerCase().includes(q) ||
-          (r.cuisineType && r.cuisineType.toLowerCase().includes(q)) ||
-          (r.birthdayEvent && r.birthdayEvent.toLowerCase().includes(q)) ||
-          (r.notes && r.notes.toLowerCase().includes(q)) ||
+          rName.includes(q) ||
+          rCity.includes(q) ||
+          rCuisine.includes(q) ||
+          rCuisineType.includes(q) ||
+          rBday.includes(q) ||
+          rNotes.includes(q) ||
+          rMustOrder.includes(q) ||
           userNotes.includes(q)
         );
       });
 
       return list.sort((a, b) => {
+        if (!a || !b) return 0;
         if (this.sortBy === 'birthday') {
           const aBday = a.birthdayEvent || a.special ? 1 : 0;
           const bBday = b.birthdayEvent || b.special ? 1 : 0;
@@ -132,7 +143,7 @@ const Restaurants = {
           return bP - aP;
         }
         if (this.sortBy === 'name') {
-          return a.name.localeCompare(b.name);
+          return (a.name || '').localeCompare(b.name || '');
         }
         // Default: 'route' (Itinerary Order: Belfast -> Galway -> Killarney -> Dublin)
         const aRank = cityOrder[a.city] || 99;
@@ -612,6 +623,7 @@ const Restaurants = {
           </button>
         </div>
       </div>
+    </div>
 
       <!-- Active Search Filter Banner -->
       <div

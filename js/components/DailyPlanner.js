@@ -29,7 +29,11 @@ const DailyPlanner = {
       globalRainMode: false, // Global master switch
       dailyNotes: {}, // { [dayIndex]: string }
       savingNoteDay: null,
-      isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768)
+      isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768),
+      useBoreenBuffer: false, // +20% Irish rural road buffer
+      rainSwappedDays: {}, // { [dayIndex]: boolean }
+      whoIsInFilter: 'all', // 'all', 'dad', 'mom', 'erin', 'hikers', 'casual'
+      ambientTimeMode: 'auto' // 'auto', 'day', 'sunset', 'night'
     };
   },
   created() {
@@ -65,6 +69,68 @@ const DailyPlanner = {
     },
     activeDay() {
       return this.timeline[this.activeCalendarDayIndex] || this.timeline[0];
+    },
+    activeDaylight() {
+      const dNum = (this.activeDay && this.activeDay.dayNumber) || 1;
+      return (typeof daylightData !== 'undefined' && daylightData[dNum]) || {
+        sunrise: '07:44', sunset: '18:50', goldenHour: '18:02', daylightHours: '11h 06m', dusk: '19:26', sunsetHour: 18.83, goldenHourStart: 18.03
+      };
+    },
+    activeDayDriveHours() {
+      const base = parseFloat((this.activeDay && this.activeDay.driveHours) || 0);
+      return this.useBoreenBuffer ? (base * 1.2).toFixed(1) : base.toFixed(1);
+    },
+    isDayRainSwapped() {
+      return Boolean(this.rainSwappedDays[this.activeCalendarDayIndex] || this.globalRainMode);
+    },
+    activeDayItems() {
+      if (!this.activeDay || !this.activeDay.items) return [];
+      let items = [...this.activeDay.items];
+      if (this.isDayRainSwapped) {
+        items = items.map(item => {
+          if (item.rainBackup) {
+            const backupSummary = item.rainBackup.includes('.') ? item.rainBackup.split('.')[0] : item.rainBackup;
+            return {
+              ...item,
+              isRainSwapped: true,
+              originalActivity: item.activity,
+              activity: '🌧️ ' + backupSummary,
+              desc: `[INDOOR RAIN CONTINGENCY for ${item.activity}] ${item.rainBackup}`,
+              tag: 'Rain Alternate'
+            };
+          }
+          return item;
+        });
+      }
+      if (this.whoIsInFilter !== 'all') {
+        const f = this.whoIsInFilter.toLowerCase();
+        items = items.filter(item => {
+          if (item.reserved || item.anchor || item.type === 'drive' || item.type === 'housing') return true;
+          const text = ((item.attendees || '') + ' ' + (item.splitOption || '') + ' ' + (item.desc || '') + ' ' + item.activity).toLowerCase();
+          if (f === 'hikers') return item.energyLevel === 'strenuous' || text.includes('hike') || text.includes('summit');
+          if (f === 'casual') return item.energyLevel === 'chill' || text.includes('shop') || text.includes('walk') || text.includes('tea');
+          return text.includes(f) || !item.splitOption;
+        });
+      }
+      return items;
+    },
+    dayScheduleConflicts() {
+      const items = [...this.activeDayItems].sort((a, b) => this.getItemStartHour(a) - this.getItemStartHour(b));
+      const conflicts = [];
+      for (let i = 1; i < items.length; i++) {
+        const prev = items[i - 1];
+        const curr = items[i];
+        const prevEnd = this.getItemEndHour(prev);
+        const currStart = this.getItemStartHour(curr);
+        if (currStart < prevEnd - 0.05) {
+          conflicts.push({
+            itemA: prev,
+            itemB: curr,
+            message: `"${curr.activity}" (${curr.time || 'starts'}) overlaps with "${prev.activity}" (runs until ~${this.formatHour(Math.floor(prevEnd))})`
+          });
+        }
+      }
+      return conflicts;
     },
     filteredDays() {
       return this.timeline.filter((day, idx) => {
@@ -252,9 +318,35 @@ const DailyPlanner = {
           return { label: '🟢 Chill / Accessible', class: 'energy-chill' };
       }
     },
+    getItemTimePeriod(item, dayNumber) {
+      const dNum = dayNumber || (this.activeDay && this.activeDay.dayNumber) || 1;
+      const dl = (typeof daylightData !== 'undefined' && daylightData[dNum]) || { sunsetHour: 18.83, goldenHourStart: 18.03, sunset: '18:50' };
+      const start = this.getItemStartHour(item);
+      if (start >= dl.sunsetHour) {
+        return { period: 'night', label: '🌙 Evening / Night', class: 'badge-night', cardClass: 'time-period-night', icon: '🌙' };
+      }
+      if (start >= dl.goldenHourStart) {
+        return { period: 'sunset', label: `🌅 Sunset / Golden Hour (${dl.sunset})`, class: 'badge-sunset', cardClass: 'time-period-sunset', icon: '🌅' };
+      }
+      return { period: 'day', label: '☀️ Daytime', class: 'time-period-day', cardClass: 'time-period-day', icon: '☀️' };
+    },
+    isSunsetHazard(item, dayNumber) {
+      if (!item) return false;
+      const dNum = dayNumber || (this.activeDay && this.activeDay.dayNumber) || 1;
+      const dl = (typeof daylightData !== 'undefined' && daylightData[dNum]) || { sunsetHour: 18.83, sunset: '18:50' };
+      const end = this.getItemEndHour(item);
+      const title = ((item.activity || '') + ' ' + (item.desc || '')).toLowerCase();
+      const isOutdoor = item.type === 'sight' || item.trailId || title.includes('hike') || title.includes('cliff') || title.includes('walk') || title.includes('causeway');
+      return isOutdoor && end >= dl.sunsetHour;
+    },
+    toggleDayRainSwap(idx) {
+      this.rainSwappedDays[idx] = !this.rainSwappedDays[idx];
+      this.rainSwappedDays = { ...this.rainSwappedDays };
+    },
     getItemsStartingInHour(day, hour) {
-      if (!day || !day.items) return [];
-      return day.items.filter(item => {
+      if (!day) return [];
+      const list = (day === this.activeDay) ? this.activeDayItems : (day.items || []);
+      return list.filter(item => {
         const start = this.getItemStartHour(item);
         return Math.floor(start) === hour;
       });
@@ -827,43 +919,148 @@ const DailyPlanner = {
               </div>
             </div>
 
-            <!-- Rainy Day Contingency Toggle -->
-            <div v-if="hasRainBackups(activeDay)" class="flex items-center gap-2 self-start sm:self-auto">
+            <!-- Road Realism Buffer & Rain Swap Controls -->
+            <div class="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+              <!-- Road Realism Buffer Toggle -->
               <button
-                @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                @click="useBoreenBuffer = !useBoreenBuffer"
                 :class="[
-                  'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border',
-                  isRainActive(activeCalendarDayIndex)
-                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border',
+                  useBoreenBuffer
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
+                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+                ]"
+                title="Toggle +20% buffer on drive times for narrow Irish rural boreens, tour buses, and sheep"
+              >
+                <span>🚗</span>
+                <span>{{ useBoreenBuffer ? '+20% Boreen Buffer: ON' : '+20% Road Buffer' }}</span>
+              </button>
+
+              <!-- Dynamic Rain Contingency Plan Swap Button -->
+              <button
+                v-if="hasRainBackups(activeDay)"
+                @click.stop="toggleDayRainSwap(activeCalendarDayIndex)"
+                :class="[
+                  'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
+                  isDayRainSwapped
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold'
                     : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/30'
                 ]"
+                title="Swap outdoor hikes/walks directly with indoor alternatives for this day"
               >
                 <span>🌧️</span>
-                <span>{{ isRainActive(activeCalendarDayIndex) ? '☀️ Standard Plan' : '🌧️ View Rain Backup' }}</span>
+                <span>{{ isDayRainSwapped ? '🌧️ Rain Plan Active (Indoor Swapped)' : '🌧️ Swap to Rain Backup' }}</span>
               </button>
             </div>
           </div>
 
+          <!-- October Daylight & Civil Sunset Tracker -->
+          <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🌅</span>
+                <span class="font-extrabold text-[var(--foreground)]">
+                  October Daylight: {{ activeDaylight.sunrise }} AM – {{ activeDaylight.sunset }} PM
+                </span>
+                <span class="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                  {{ activeDaylight.daylightHours }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 text-[11px] text-[var(--muted-foreground)] flex-wrap">
+                <span>Golden Hour: <strong class="text-amber-400 font-bold">{{ activeDaylight.goldenHour }} PM</strong></span>
+                <span>·</span>
+                <span>Civil Dusk: <strong>{{ activeDaylight.dusk }} PM</strong></span>
+                <span>·</span>
+                <span v-if="useBoreenBuffer" class="text-emerald-400 font-bold">
+                  🚗 Real Drive: {{ activeDayDriveHours }}h
+                </span>
+              </div>
+            </div>
+
+            <!-- Daylight Spectrum Gradient Track -->
+            <div class="daylight-track" title="Daylight progression: Blue (Day) -> Amber (Golden Hour) -> Rose/Twilight (Sunset)">
+              <div class="daylight-fill" style="width: 100%;"></div>
+            </div>
+            
+            <div class="flex items-center justify-between text-[10px] text-[var(--muted-foreground)] font-mono">
+              <span>Dawn {{ activeDaylight.dawn || '07:00' }}</span>
+              <span>Sunrise {{ activeDaylight.sunrise }}</span>
+              <span class="text-amber-400 font-bold">Golden Hour {{ activeDaylight.goldenHour }}</span>
+              <span class="text-rose-400 font-bold">Sunset {{ activeDaylight.sunset }}</span>
+              <span>Dusk {{ activeDaylight.dusk }}</span>
+            </div>
+          </div>
+
+          <!-- Who's In / Family Attendee Filter Strip -->
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] text-xs flex-wrap">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">👥 Who's In:</span>
+              <button
+                v-for="who in [
+                  { id: 'all', label: 'All Family' },
+                  { id: 'dad', label: 'Dad' },
+                  { id: 'mom', label: 'Mom' },
+                  { id: 'erin', label: 'Erin' },
+                  { id: 'hikers', label: '🥾 Hikers' },
+                  { id: 'casual', label: '☕ Casual' }
+                ]"
+                :key="who.id"
+                @click="whoIsInFilter = who.id"
+                :class="[
+                  'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
+                  whoIsInFilter === who.id
+                    ? 'bg-[var(--accent)] text-white shadow-sm font-bold'
+                    : 'bg-[var(--background)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] border border-[var(--border)]'
+                ]"
+              >
+                {{ who.label }}
+              </button>
+            </div>
+
+            <span v-if="whoIsInFilter !== 'all'" class="text-[11px] text-[var(--accent)] font-semibold">
+              Showing stops matching: <strong>{{ whoIsInFilter }}</strong>
+            </span>
+          </div>
+
+          <!-- Potential Schedule Conflict / Overlap Alert Banner -->
+          <div
+            v-if="dayScheduleConflicts.length > 0"
+            class="p-3.5 rounded-xl bg-rose-500/15 border-2 border-rose-500/40 text-xs text-rose-300 space-y-1.5 animate-fadeIn"
+          >
+            <div class="flex items-center gap-2 font-bold text-sm text-rose-200">
+              <span class="text-base">⚠️</span>
+              <span>Potential Itinerary Overlap Detected ({{ dayScheduleConflicts.length }} {{ dayScheduleConflicts.length === 1 ? 'conflict' : 'conflicts' }}):</span>
+            </div>
+            <ul class="list-disc pl-5 space-y-1 text-xs text-[var(--foreground)]">
+              <li v-for="(cf, cIdx) in dayScheduleConflicts" :key="cIdx">
+                {{ cf.message }}
+              </li>
+            </ul>
+          </div>
+
           <!-- Rainy Day Contingency Callout Box (if toggled on) -->
           <div
-            v-if="isRainActive(activeCalendarDayIndex)"
+            v-if="isDayRainSwapped"
             class="p-4 rounded-xl bg-amber-500/[0.12] border-2 border-amber-500/50 space-y-2 animate-fadeIn shadow-sm"
           >
             <div class="flex items-center justify-between gap-2 flex-wrap text-amber-400 font-bold text-sm">
               <div class="flex items-center gap-2">
                 <span class="text-lg">🌧️</span>
-                <h4>Active Rainy Day Contingency for Day {{ activeDay.dayNumber }}:</h4>
+                <h4>Rain Contingency Active for Day {{ activeDay.dayNumber }}:</h4>
               </div>
               <button
-                @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                @click.stop="toggleDayRainSwap(activeCalendarDayIndex)"
                 class="text-xs underline text-amber-300 hover:text-amber-200 font-semibold"
               >
-                Close Rain Plan ✕
+                Revert to Standard Plan ✕
               </button>
             </div>
+            <p class="text-xs text-[var(--muted-foreground)]">
+              Outdoor activities have been substituted in-place with pre-curated indoor and low-wind backups:
+            </p>
             <ul class="text-xs text-[var(--foreground)] space-y-1.5 pl-5 list-disc">
               <li v-for="item in activeDay.items.filter(i => i.rainBackup)" :key="item.activity">
-                <strong>{{ item.activity }}:</strong> {{ item.rainBackup }}
+                <strong>{{ item.activity }} →</strong> {{ item.rainBackup }}
               </li>
             </ul>
           </div>
@@ -883,7 +1080,7 @@ const DailyPlanner = {
             <!-- Strip Graphic -->
             <div class="timeline-strip-container">
               <div
-                v-for="(item, iIdx) in activeDay.items"
+                v-for="(item, iIdx) in activeDayItems"
                 :key="iIdx"
                 @click="onItemClick(item, activeDay)"
                 :class="['timeline-strip-block', getBlockColorClass(item)]"
@@ -916,6 +1113,7 @@ const DailyPlanner = {
                     @click="onItemClick(item, activeDay)"
                     :class="[
                       'p-2.5 rounded-lg border text-xs transition-all cursor-pointer hover:shadow-sm hover:scale-[1.005]',
+                      getItemTimePeriod(item, activeDay.dayNumber).cardClass,
                       item.reserved ? 'bg-amber-500/10 border-amber-500/30' : '',
                       item.anchor && !item.reserved ? 'bg-indigo-500/10 border-indigo-500/30' : '',
                       item.type === 'drive' ? 'bg-blue-500/10 border-blue-500/25' : '',
@@ -931,6 +1129,17 @@ const DailyPlanner = {
                           {{ item.time }}
                         </span>
                         <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+
+                        <!-- Time of Day Atmospheric Badge -->
+                        <span :class="['px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm', getItemTimePeriod(item, activeDay.dayNumber).class]">
+                          <span>{{ getItemTimePeriod(item, activeDay.dayNumber).icon }}</span>
+                          <span>{{ getItemTimePeriod(item, activeDay.dayNumber).label }}</span>
+                        </span>
+
+                        <!-- Sunset Hazard Precaution Badge -->
+                        <span v-if="isSunsetHazard(item, activeDay.dayNumber)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-200 dark:bg-rose-300 text-rose-950 border border-rose-400 shadow-sm animate-pulse flex items-center gap-1">
+                          <span>⚠️ Finishes Near/After Sunset ({{ activeDaylight.sunset }})</span>
+                        </span>
                         
                         <!-- Energy Pacing Badge -->
                         <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
@@ -1054,15 +1263,16 @@ const DailyPlanner = {
           <!-- MODE 2: Agenda / Itinerary List View -->
           <div v-if="viewMode === 'agenda'" class="space-y-2.5">
             <div
-              v-for="(item, sIdx) in activeDay.items"
+              v-for="(item, sIdx) in activeDayItems"
               :key="sIdx"
               @click="onItemClick(item, activeDay)"
               class="flex flex-col sm:flex-row sm:items-start gap-3 p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] transition-all cursor-pointer"
-              :class="{
-                'border-amber-500/30 bg-amber-500/[0.02]': item.reserved,
-                'border-blue-500/25': item.type === 'drive',
-                'border-purple-500/25': item.type === 'housing'
-              }"
+              :class="[
+                getItemTimePeriod(item, activeDay.dayNumber).cardClass,
+                item.reserved ? 'border-amber-500/30 bg-amber-500/[0.02]' : '',
+                item.type === 'drive' ? 'border-blue-500/25' : '',
+                item.type === 'housing' ? 'border-purple-500/25' : ''
+              ]"
             >
               <!-- Time Badge -->
               <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
@@ -1079,6 +1289,18 @@ const DailyPlanner = {
                 <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+
+                    <!-- Time of Day Atmospheric Badge -->
+                    <span :class="['px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm', getItemTimePeriod(item, activeDay.dayNumber).class]">
+                      <span>{{ getItemTimePeriod(item, activeDay.dayNumber).icon }}</span>
+                      <span>{{ getItemTimePeriod(item, activeDay.dayNumber).label }}</span>
+                    </span>
+
+                    <!-- Sunset Hazard Precaution Badge -->
+                    <span v-if="isSunsetHazard(item, activeDay.dayNumber)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-200 dark:bg-rose-300 text-rose-950 border border-rose-400 shadow-sm animate-pulse flex items-center gap-1">
+                      <span>⚠️ Finishes Near/After Sunset ({{ activeDaylight.sunset }})</span>
+                    </span>
+
                     <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
                       {{ getEnergyBadge(item.energyLevel).label }}
                     </span>

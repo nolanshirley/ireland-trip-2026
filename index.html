@@ -101,6 +101,26 @@
           <span class="hidden sm:inline">Notes</span>
         </button>
 
+        <!-- Multi-Currency Budget & Expense Tracker Trigger -->
+        <button
+          @click="openExpenseModal"
+          class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm"
+          title="Open Multi-Currency Expense Ledger (€ EUR / £ GBP / $ USD) & Tipping Guide"
+        >
+          <span>💶</span>
+          <span class="hidden sm:inline">Budget</span>
+        </button>
+
+        <!-- Emergency & Offline Glovebox 1-Pager Trigger -->
+        <button
+          @click="openGloveboxModal"
+          class="px-3 py-1.5 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-500 text-white shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap"
+          title="Open Emergency Numbers, 24/7 Hospitals, Breakdown Assistance & Printable Glovebox 1-Pager"
+        >
+          <span>🆘</span>
+          <span class="font-extrabold">SOS Guide</span>
+        </button>
+
         <!-- Theme & Palette Modal Trigger -->
         <button
           @click="openSettingsModal"
@@ -875,10 +895,111 @@
           </div>
         </div>
       </div>
+
+      <!-- LENS 6: SOS & Emergency Guide -->
+      <div v-else-if="topDashboardLens === 'sos'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+        <div
+          @click="openGloveboxModal"
+          class="p-3.5 rounded-xl border border-rose-500/50 bg-rose-500/[0.08] hover:bg-rose-500/[0.14] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black bg-rose-200 dark:bg-rose-300 text-rose-950 border border-rose-400">
+                🚨 999 or 112
+              </span>
+              <span class="text-xs font-bold text-rose-400">Emergency</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Irish Emergency Services</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Police (Garda), Ambulance, Mountain & Coast Guard across Republic & Northern Ireland
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-rose-500/20 flex items-center justify-between text-[11px] font-bold text-rose-400">
+            <span>Open SOS Guide</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="openGloveboxModal"
+          class="p-3.5 rounded-xl border border-amber-500/50 bg-amber-500/[0.08] hover:bg-amber-500/[0.14] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400">
+                🚗 0818 66 77 88
+              </span>
+              <span class="text-xs font-bold text-amber-400">Breakdown</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">AA Ireland Roadside</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              24/7 Car breakdown, flat tires, battery jumps & towing assistance (+353 1 617 9999)
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-amber-500/20 flex items-center justify-between text-[11px] font-bold text-amber-400">
+            <span>View Roadside Line</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="openGloveboxModal"
+          class="p-3.5 rounded-xl border border-blue-500/50 bg-blue-500/[0.08] hover:bg-blue-500/[0.14] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400">
+                🏥 4 REGIONAL A&E
+              </span>
+              <span class="text-xs font-bold text-blue-400">Hospitals</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">24/7 Emergency Rooms</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Royal Victoria (Belfast), UHG (Galway), Kerry Hospital (Tralee), St. James's (Dublin)
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-blue-500/20 flex items-center justify-between text-[11px] font-bold text-blue-400">
+            <span>View Hospital Phones</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="openGloveboxModal"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400">
+                🖨️ PRINTABLE
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Offline</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Glovebox 1-Pager</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Print a clean 1-page physical sheet with all hotel addresses, phones, and driving rules
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Print or Save PDF</span>
+            <span>→</span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Top Milestones & Key Highlights Quick-Jump Pill Bar -->
     <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+      <!-- SOS Emergency Guide Pill -->
+      <button
+        @click="openGloveboxModal"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black bg-rose-600 hover:bg-rose-500 text-white shadow-sm flex-shrink-0 transition-all"
+        title="Open Emergency SOS Guide & Contacts"
+      >
+        <span>🆘</span>
+        <span>SOS Guide</span>
+      </button>
+
       <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] flex-shrink-0 flex items-center gap-1">
         <span>⚡ Quick Jump:</span>
       </span>
@@ -2468,6 +2589,305 @@ Day 8: 11:00 AM - Dingle Sea Safari Boat Tour (Booking)"
             <span>·</span>
             <span>Votes: <strong class="text-[var(--foreground)]">{{ Object.keys(itemVotes).length }}</strong></span>
           </div>
+
+          <!-- Hybrid Sync: Full Offline Trip File Backup (.ireland / JSON) -->
+          <div class="p-3.5 rounded-xl bg-purple-500/[0.08] border border-purple-500/25 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-[var(--foreground)] flex items-center gap-1.5">
+                <span>📦</span>
+                <span>Offline File Backup (.ireland / AirDrop)</span>
+              </span>
+              <span class="text-[10px] text-purple-400 font-bold">Zero Size Limits</span>
+            </div>
+            <p class="text-[11px] text-[var(--muted-foreground)] leading-relaxed">
+              Downloads a complete standalone file containing all custom stops, votes, notes, and attached restaurant menu PDFs. Share via AirDrop, Email, or Google Drive!
+            </p>
+            <div class="flex items-center gap-2 pt-1">
+              <button
+                @click="exportTripFile"
+                class="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+              >
+                <span>📥 Export .ireland File</span>
+              </button>
+              <label class="flex-1 py-2 px-3 rounded-xl bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-all">
+                <span>📂 Import File</span>
+                <input type="file" accept=".ireland,.json" class="hidden" @change="importTripFile" />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- MULTI-CURRENCY BUDGET & EXPENSE LEDGER MODAL                  -->
+    <!-- ============================================================= -->
+    <div
+      v-if="isExpenseModalOpen"
+      class="modal-backdrop"
+      @click="closeExpenseModal"
+    >
+      <div
+        class="modal-sheet max-w-3xl flex flex-col space-y-4 max-h-[90vh]"
+        @click.stop
+      >
+        <!-- Header -->
+        <div class="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">💶</span>
+            <div>
+              <h3 class="font-extrabold text-base sm:text-lg text-[var(--foreground)]">Trip Budget & Currency Ledger</h3>
+              <p class="text-xs text-[var(--muted-foreground)]">Aggregates EUR (€), GBP (£ for Northern Ireland), USD ($), & Per-Person Splits</p>
+            </div>
+          </div>
+          <button
+            @click="closeExpenseModal"
+            class="p-2 rounded-xl text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] transition-colors text-sm font-bold"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs flex-1">
+          <!-- Summary Metric Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-center space-y-1">
+              <span class="text-[10px] uppercase font-bold text-[var(--muted-foreground)] tracking-wider">Republic of Ireland</span>
+              <div class="text-xl font-black text-emerald-400">€{{ expenseSummary.totalEUR }}</div>
+              <span class="text-[10px] text-[var(--muted-foreground)]">Euros (Bases 2, 3, 4)</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-center space-y-1">
+              <span class="text-[10px] uppercase font-bold text-[var(--muted-foreground)] tracking-wider">Northern Ireland</span>
+              <div class="text-xl font-black text-blue-400">£{{ expenseSummary.totalGBP }}</div>
+              <span class="text-[10px] text-[var(--muted-foreground)]">British Pounds (Base 1)</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-center space-y-1">
+              <span class="text-[10px] uppercase font-bold text-[var(--muted-foreground)] tracking-wider">Est. Total USD</span>
+              <div class="text-xl font-black text-[var(--foreground)]">${{ expenseSummary.totalUSD }}</div>
+              <span class="text-[10px] text-[var(--muted-foreground)]">Approx. Conversion</span>
+            </div>
+
+            <div class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-center space-y-1">
+              <div class="flex items-center justify-center gap-1 text-[10px] uppercase font-bold text-purple-400 tracking-wider">
+                <span>Split for</span>
+                <select v-model.number="familyCount" class="bg-transparent font-bold underline cursor-pointer text-purple-300">
+                  <option :value="1">1</option>
+                  <option :value="2">2</option>
+                  <option :value="3">3</option>
+                  <option :value="4">4</option>
+                  <option :value="5">5</option>
+                  <option :value="6">6</option>
+                </select>
+                <span>ppl</span>
+              </div>
+              <div class="text-lg font-black text-purple-300">€{{ expenseSummary.perPersonEUR }} / ${{ expenseSummary.perPersonUSD }}</div>
+              <span class="text-[10px] text-[var(--muted-foreground)]">Per Person Cost</span>
+            </div>
+          </div>
+
+          <!-- Irish Tipping & Currency Etiquette Cheatsheet -->
+          <div class="p-3.5 rounded-2xl bg-amber-500/[0.08] border border-amber-500/25 space-y-1.5">
+            <div class="flex items-center gap-2 text-amber-400 font-bold">
+              <span>💡</span>
+              <h4 class="text-xs">Irish Pub & Dining Tipping Rules of Thumb:</h4>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-[var(--foreground)]">
+              <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                <strong>🍻 Pubs & Bars:</strong>
+                <p class="text-[var(--muted-foreground)] mt-0.5">No tip expected when ordering at the bar counter. Round up change if seated with table service.</p>
+              </div>
+              <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                <strong>🍽️ Seated Dinners:</strong>
+                <p class="text-[var(--muted-foreground)] mt-0.5">10% – 12.5% is standard for great service. Always check if a "Service Charge" is already included!</p>
+              </div>
+              <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+                <strong>🚕 Cabs & Tours:</strong>
+                <p class="text-[var(--muted-foreground)] mt-0.5">Round up cab fares to nearest €2–€5. €5–€10 per person for private guided day tours.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Expense Form -->
+          <form @submit.prevent="addCustomExpense" class="p-3.5 rounded-2xl bg-[var(--card-hover)] border border-[var(--border)] space-y-2.5">
+            <span class="font-bold text-xs text-[var(--foreground)]">➕ Add Expense / Booking Cost:</span>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+              <input
+                v-model="newExpenseForm.title"
+                type="text"
+                placeholder="Item / Dinner / Activity"
+                required
+                class="sm:col-span-2 p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
+              />
+              <div class="flex items-center gap-1">
+                <select v-model="newExpenseForm.currency" class="p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold text-[var(--foreground)]">
+                  <option value="EUR">€ EUR</option>
+                  <option value="GBP">£ GBP</option>
+                </select>
+                <input
+                  v-model.number="newExpenseForm.amount"
+                  type="number"
+                  placeholder="Amount"
+                  required
+                  min="0"
+                  step="any"
+                  class="w-full p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs font-bold text-[var(--foreground)]"
+                />
+              </div>
+              <button
+                type="submit"
+                class="py-2 px-3 rounded-xl bg-[var(--accent)] hover:opacity-90 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                + Add Item
+              </button>
+            </div>
+          </form>
+
+          <!-- Expense Items List -->
+          <div class="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+            <div
+              v-for="exp in allExpenses"
+              :key="exp.id"
+              class="p-2.5 rounded-xl border border-[var(--border)] bg-[var(--background)] flex items-center justify-between gap-3 text-xs"
+            >
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-[var(--card-hover)] text-[var(--muted-foreground)] border border-[var(--border)]">
+                  {{ exp.category }}
+                </span>
+                <strong class="text-[var(--foreground)] truncate">{{ exp.title }}</strong>
+                <span v-if="exp.notes" class="text-[10px] text-[var(--muted-foreground)] hidden sm:inline truncate">· {{ exp.notes }}</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="font-mono font-bold text-sm text-[var(--foreground)]">
+                  {{ exp.currency === 'GBP' ? '£' : '€' }}{{ exp.amount }}
+                </span>
+                <button
+                  v-if="exp.isCustom"
+                  @click="deleteCustomExpense(exp.id)"
+                  class="text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                  title="Remove expense"
+                >
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- EMERGENCY & OFFLINE GLOVEBOX 1-PAGER MODAL                     -->
+    <!-- ============================================================= -->
+    <div
+      v-if="isGloveboxModalOpen"
+      class="modal-backdrop print-target"
+      @click="closeGloveboxModal"
+    >
+      <div
+        class="modal-sheet max-w-3xl flex flex-col space-y-4 max-h-[92vh] glovebox-container"
+        @click.stop
+      >
+        <!-- Header -->
+        <div class="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">🆘</span>
+            <div>
+              <h3 class="font-extrabold text-base sm:text-lg text-[var(--foreground)]">Emergency & Glovebox 1-Pager</h3>
+              <p class="text-xs text-[var(--muted-foreground)]">Essential offline contacts, 24/7 hospitals, breakdown numbers & hotel hotlines</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              @click="printGloveboxSheet"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white shadow-sm flex items-center gap-1.5 transition-all"
+            >
+              <span>🖨️</span>
+              <span>Print 1-Pager</span>
+            </button>
+            <button
+              @click="closeGloveboxModal"
+              class="p-2 rounded-xl text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] transition-colors text-sm font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs flex-1">
+          <!-- Critical Emergency Direct Contacts -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div class="p-3 rounded-xl bg-rose-500/15 border-2 border-rose-500/40 text-center space-y-1">
+              <span class="text-[10px] uppercase font-black text-rose-300 tracking-wider">🚨 Emergency Services</span>
+              <div class="text-2xl font-black text-rose-400">999 or 112</div>
+              <p class="text-[10px] text-rose-200">Garda (Police), Ambulance, Fire, Mountain & Coast Guard</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-amber-500/15 border-2 border-amber-500/40 text-center space-y-1">
+              <span class="text-[10px] uppercase font-black text-amber-300 tracking-wider">🚗 Breakdown Assistance</span>
+              <div class="text-lg font-black text-amber-300">0818 66 77 88</div>
+              <p class="text-[10px] text-amber-200">AA Ireland 24/7 Roadside (+353 1 617 9999)</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-blue-500/15 border-2 border-blue-500/40 text-center space-y-1">
+              <span class="text-[10px] uppercase font-black text-blue-300 tracking-wider">🏛️ Tourist Support</span>
+              <div class="text-lg font-black text-blue-300">+353 1 666 9354</div>
+              <p class="text-[10px] text-blue-200">Irish Tourist Assistance Service (ITAS)</p>
+            </div>
+          </div>
+
+          <!-- Regional 24/7 Emergency Rooms (A&E) -->
+          <div class="space-y-2">
+            <h4 class="font-extrabold text-xs uppercase tracking-wider text-[var(--muted-foreground)]">🏥 Regional 24/7 Emergency Hospitals:</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div
+                v-for="hosp in gloveboxInfo.hospitals"
+                :key="hosp.name"
+                class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="font-extrabold text-[var(--foreground)]">{{ hosp.city }}</span>
+                  <a :href="'tel:' + hosp.phone.replace(/[^0-9+]/g, '')" class="text-emerald-400 font-bold hover:underline">
+                    📞 {{ hosp.phone }}
+                  </a>
+                </div>
+                <div class="font-semibold text-xs text-[var(--foreground)]">{{ hosp.name }}</div>
+                <p class="text-[11px] text-[var(--muted-foreground)]">{{ hosp.address }} · {{ hosp.notes }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Base Camps & Lodgings -->
+          <div class="space-y-2">
+            <h4 class="font-extrabold text-xs uppercase tracking-wider text-[var(--muted-foreground)]">🏠 Lodging Bases & Contact Info:</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div
+                v-for="lodge in gloveboxInfo.lodgings"
+                :key="lodge.name"
+                class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="font-extrabold text-xs text-[var(--foreground)]">{{ lodge.base }}</span>
+                  <span class="font-mono text-[10px] text-[var(--muted-foreground)]">{{ lodge.dates }}</span>
+                </div>
+                <div class="font-semibold text-xs text-[var(--accent)]">{{ lodge.name }}</div>
+                <p class="text-[11px] text-[var(--muted-foreground)]">📍 {{ lodge.address }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Essential Irish Road & Driving Rules -->
+          <div class="p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-1.5">
+            <h4 class="font-extrabold text-xs text-[var(--foreground)]">🚗 Essential Irish Driving Rules:</h4>
+            <ul class="list-disc pl-5 space-y-1 text-[11px] text-[var(--muted-foreground)]">
+              <li v-for="(rule, rIdx) in gloveboxInfo.drivingTips" :key="rIdx">
+                {{ rule }}
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -2490,6 +2910,14 @@ Day 8: 11:00 AM - Dingle Sea Safari Boat Tour (Booking)"
       >
         <span>📝</span>
         <span>Notes</span>
+      </button>
+      <button
+        @click="openGloveboxModal"
+        class="mobile-nav-item text-rose-500 font-bold"
+        title="Emergency SOS Guide & Contacts"
+      >
+        <span>🆘</span>
+        <span class="text-rose-500 font-bold">SOS</span>
       </button>
     </nav>
 

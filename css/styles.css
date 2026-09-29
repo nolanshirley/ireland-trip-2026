@@ -986,17 +986,93 @@ body {
   transform: translateX(2px);
 }
 
+/* ── Day, Sunset / Golden Hour & Night Time Atmospheric Styling ── */
+.time-period-day {
+  border-left: 3px solid #38bdf8 !important;
+}
+
+.time-period-sunset {
+  border-left: 3px solid #f59e0b !important;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.05) 0%, rgba(244, 63, 94, 0.03) 100%) !important;
+  box-shadow: 0 0 16px -4px rgba(245, 158, 11, 0.12) !important;
+}
+
+.dark .time-period-sunset {
+  border-left: 3px solid #fbbf24 !important;
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.08) 0%, rgba(244, 63, 94, 0.05) 100%) !important;
+  box-shadow: 0 0 20px -3px rgba(245, 158, 11, 0.20) !important;
+}
+
+.time-period-night {
+  border-left: 3px solid #818cf8 !important;
+  background: linear-gradient(90deg, rgba(129, 140, 248, 0.04) 0%, rgba(99, 102, 241, 0.02) 100%) !important;
+}
+
+.dark .time-period-night {
+  border-left: 3px solid #a5b4fc !important;
+  background: linear-gradient(90deg, rgba(165, 180, 252, 0.06) 0%, rgba(99, 102, 241, 0.03) 100%) !important;
+}
+
+/* Ambient Mode Badges & Glows */
+.badge-sunset {
+  background: rgba(245, 158, 11, 0.18);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.40);
+}
+.dark .badge-sunset {
+  background: rgba(251, 191, 36, 0.22);
+  color: #fef08a;
+  border: 1px solid rgba(251, 191, 36, 0.50);
+}
+
+.badge-night {
+  background: rgba(99, 102, 241, 0.18);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+.dark .badge-night {
+  background: rgba(129, 140, 248, 0.22);
+  color: #c7d2fe;
+  border: 1px solid rgba(129, 140, 248, 0.45);
+}
+
+/* Daylight Span Bar */
+.daylight-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+  position: relative;
+  overflow: hidden;
+}
+.dark .daylight-track {
+  background: #1e293b;
+}
+
+.daylight-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #38bdf8 0%, #f59e0b 70%, #f43f5e 100%);
+  transition: width 0.4s ease;
+}
+
+/* Emergency Glovebox Sheet */
+.glovebox-container {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 1.25rem;
+}
+
 /* ── Print & Pocket PDF Booklet Stylesheet ───────────────────── */
 @media print {
   body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 11pt !important;
+    font-size: 10pt !important;
   }
 
   .mobile-bottom-nav,
-  .modal-backdrop,
-  header .flex.items-center,
+  .modal-backdrop:not(.print-target),
+  header,
   #main-tab-nav,
   button,
   .maps-btn,
@@ -1005,13 +1081,27 @@ body {
     display: none !important;
   }
 
+  .print-target {
+    position: static !important;
+    background: transparent !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .print-target .modal-sheet {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
   .card {
     background: #ffffff !important;
     color: #000000 !important;
     border: 1px solid #cccccc !important;
     box-shadow: none !important;
     break-inside: avoid;
-    margin-bottom: 12pt !important;
+    margin-bottom: 8pt !important;
   }
 
   [v-show="false"] {

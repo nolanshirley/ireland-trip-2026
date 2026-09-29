@@ -177,7 +177,8 @@ const app = createApp({
       { id: 'bases', label: '🏠 4 Base Camps & Currency', icon: '🏠' },
       { id: 'deadlines', label: '⚠️ Bookings & Deadlines', icon: '⚠️' },
       { id: 'weather', label: '🌦️ Weather & Packing', icon: '🌦️' },
-      { id: 'nature', label: '⛰️ Scenic Wonders & Trails', icon: '⛰️' }
+      { id: 'nature', label: '⛰️ Scenic Wonders & Trails', icon: '⛰️' },
+      { id: 'sos', label: '🆘 SOS & Emergency', icon: '🆘' }
     ];
 
     const packingProgress = computed(() => {
@@ -1889,10 +1890,221 @@ const app = createApp({
       reader.readAsText(file);
     };
 
+    // ── Multi-Currency Expense & Budget Tracker ───────────────
+    const isExpenseModalOpen = ref(false);
+    const familyCount = ref(4);
+    const customExpenses = ref([]);
+
+    const loadCustomExpenses = () => {
+      try {
+        customExpenses.value = JSON.parse(localStorage.getItem('ireland_custom_expenses') || '[]');
+      } catch (e) {
+        customExpenses.value = [];
+      }
+    };
+
+    const saveCustomExpenses = () => {
+      localStorage.setItem('ireland_custom_expenses', JSON.stringify(customExpenses.value));
+    };
+
+    const allExpenses = computed(() => {
+      const base = (typeof tripExpenseData !== 'undefined' ? tripExpenseData : []);
+      return [...base, ...customExpenses.value];
+    });
+
+    const expenseSummary = computed(() => {
+      let totalEUR = 0;
+      let totalGBP = 0;
+      allExpenses.value.forEach(e => {
+        const amt = parseFloat(e.amount) || 0;
+        if (e.currency === 'GBP') totalGBP += amt;
+        else totalEUR += amt;
+      });
+      const totalUSD = (totalEUR * 1.08) + (totalGBP * 1.30);
+      const count = Math.max(1, familyCount.value);
+      return {
+        totalEUR: totalEUR.toFixed(0),
+        totalGBP: totalGBP.toFixed(0),
+        totalUSD: totalUSD.toFixed(0),
+        perPersonEUR: (totalEUR / count).toFixed(0),
+        perPersonGBP: (totalGBP / count).toFixed(0),
+        perPersonUSD: (totalUSD / count).toFixed(0)
+      };
+    });
+
+    const newExpenseForm = ref({
+      category: 'Dining',
+      title: '',
+      currency: 'EUR',
+      amount: '',
+      payer: 'Split',
+      notes: ''
+    });
+
+    const openExpenseModal = () => {
+      loadCustomExpenses();
+      isExpenseModalOpen.value = true;
+      document.body.style.overflow = 'hidden';
+    };
+
+    const closeExpenseModal = () => {
+      isExpenseModalOpen.value = false;
+      document.body.style.overflow = '';
+    };
+
+    const addCustomExpense = () => {
+      if (!newExpenseForm.value.title.trim() || !newExpenseForm.value.amount) return;
+      const exp = {
+        id: 'exp_custom_' + Date.now(),
+        category: newExpenseForm.value.category,
+        title: newExpenseForm.value.title.trim(),
+        currency: newExpenseForm.value.currency,
+        amount: parseFloat(newExpenseForm.value.amount) || 0,
+        payer: newExpenseForm.value.payer || 'Split',
+        notes: newExpenseForm.value.notes.trim(),
+        isCustom: true
+      };
+      customExpenses.value = [exp, ...customExpenses.value];
+      saveCustomExpenses();
+      newExpenseForm.value = { category: 'Dining', title: '', currency: 'EUR', amount: '', payer: 'Split', notes: '' };
+    };
+
+    const deleteCustomExpense = (id) => {
+      customExpenses.value = customExpenses.value.filter(e => e.id !== id);
+      saveCustomExpenses();
+    };
+
+    // ── Emergency & Glovebox Sheet ────────────────────────────
+    const isGloveboxModalOpen = ref(false);
+    const gloveboxInfo = ref(typeof emergencyGloveboxData !== 'undefined' ? emergencyGloveboxData : {});
+
+    const openGloveboxModal = () => {
+      isGloveboxModalOpen.value = true;
+      document.body.style.overflow = 'hidden';
+    };
+
+    const closeGloveboxModal = () => {
+      isGloveboxModalOpen.value = false;
+      document.body.style.overflow = '';
+    };
+
+    const printGloveboxSheet = () => {
+      window.print();
+    };
+
+    // ── Standalone Trip File Export & Import (.ireland / JSON) ──
+    const exportTripFile = () => {
+      const exportData = {
+        appName: 'IrelandVacation2026',
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        sender: userSenderName.value || 'Family Member',
+        customActivities: customActivities.value,
+        customRestaurants: customRestaurants.value,
+        customTrails: customTrails.value,
+        customReservations: customReservations.value,
+        customNotes: customNotes.value,
+        customExpenses: customExpenses.value,
+        itemVotes: itemVotes.value,
+        hiddenItemIds: hiddenItemIds.value,
+        preferredProvider: userProvider.value,
+        palette: selectedPalette.value,
+        userRestaurantData: JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}'),
+        userMenus: JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}')
+      };
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ireland_trip_backup_${new Date().toISOString().slice(0, 10)}.ireland`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
+
+    const importTripFile = (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const payload = JSON.parse(evt.target.result);
+          if (!payload || typeof payload !== 'object') {
+            alert('Invalid trip file format.');
+            return;
+          }
+          const shouldMerge = confirm('Merge with current trip (OK) or completely Overwrite (Cancel)?');
+          if (shouldMerge) {
+            if (payload.customActivities) {
+              const existingIds = new Set(customActivities.value.map(a => a.id));
+              const newItems = payload.customActivities.filter(a => !existingIds.has(a.id));
+              customActivities.value = [...customActivities.value, ...newItems];
+              saveCustomActivities();
+            }
+            if (payload.customRestaurants) {
+              const existingIds = new Set(customRestaurants.value.map(r => r.id));
+              const newItems = payload.customRestaurants.filter(r => !existingIds.has(r.id));
+              customRestaurants.value = [...customRestaurants.value, ...newItems];
+              saveCustomRestaurants();
+            }
+            if (payload.customTrails) {
+              const existingIds = new Set(customTrails.value.map(t => t.id));
+              const newItems = payload.customTrails.filter(t => !existingIds.has(t.id));
+              customTrails.value = [...customTrails.value, ...newItems];
+              saveCustomTrails();
+            }
+            if (payload.customReservations) {
+              const existingIds = new Set(customReservations.value.map(b => b.id));
+              const newItems = payload.customReservations.filter(b => !existingIds.has(b.id));
+              customReservations.value = [...customReservations.value, ...newItems];
+              saveCustomReservations();
+            }
+            if (payload.customExpenses) {
+              const existingIds = new Set(customExpenses.value.map(x => x.id));
+              const newItems = payload.customExpenses.filter(x => !existingIds.has(x.id));
+              customExpenses.value = [...customExpenses.value, ...newItems];
+              saveCustomExpenses();
+            }
+            if (payload.itemVotes) {
+              itemVotes.value = { ...itemVotes.value, ...payload.itemVotes };
+              saveItemVotes();
+            }
+            if (payload.userMenus) {
+              const currentMenus = JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}');
+              localStorage.setItem('ireland_restaurant_menus', JSON.stringify({ ...currentMenus, ...payload.userMenus }));
+            }
+            alert('✅ Trip file merged successfully! All activities, notes, and menus are active.');
+          } else {
+            customActivities.value = payload.customActivities || [];
+            customRestaurants.value = payload.customRestaurants || [];
+            customTrails.value = payload.customTrails || [];
+            customReservations.value = payload.customReservations || [];
+            customExpenses.value = payload.customExpenses || [];
+            itemVotes.value = payload.itemVotes || {};
+            hiddenItemIds.value = payload.hiddenItemIds || [];
+            saveCustomActivities();
+            saveCustomRestaurants();
+            saveCustomTrails();
+            saveCustomReservations();
+            saveCustomExpenses();
+            saveItemVotes();
+            saveHiddenItemIds();
+            if (payload.userMenus) {
+              localStorage.setItem('ireland_restaurant_menus', JSON.stringify(payload.userMenus));
+            }
+            alert('✅ Trip file restored completely!');
+          }
+        } catch (err) {
+          alert('Failed to parse trip backup: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+
     onMounted(() => {
       initTheme();
       loadCustomStorageData();
       loadAllNotesFromStorage();
+      loadCustomExpenses();
       checkUrlSyncPayload();
     });
 
@@ -2024,7 +2236,27 @@ const app = createApp({
       incomingSummary,
       checkUrlSyncPayload,
       applyIncomingSync,
-      dismissIncomingSync
+      dismissIncomingSync,
+      // Multi-Currency Expense & Budget Tracker
+      isExpenseModalOpen,
+      openExpenseModal,
+      closeExpenseModal,
+      familyCount,
+      customExpenses,
+      allExpenses,
+      expenseSummary,
+      newExpenseForm,
+      addCustomExpense,
+      deleteCustomExpense,
+      // Emergency & Glovebox Sheet
+      isGloveboxModalOpen,
+      openGloveboxModal,
+      closeGloveboxModal,
+      gloveboxInfo,
+      printGloveboxSheet,
+      // Standalone Trip File Export & Import
+      exportTripFile,
+      importTripFile
     };
   }
 });

@@ -1209,3 +1209,66 @@ const distances = [
   { from: 'Navan Home', to: 'Mister S (Camden St, Dublin)', time: '50m', urgency: 'medium', transfer: false, notes: 'Evening dinner drive into Dublin.' },
   { from: 'Navan Home', to: 'Dublin Airport (DUB)', time: '45m', urgency: 'low', transfer: true, notes: 'Direct highway corridor for flight departure.' }
 ];
+
+// ── October Ireland Daylight & Civil Sunset Table (Oct 2–14) ───
+const daylightData = {
+  1:  { sunrise: '07:34', sunset: '19:03', goldenHour: '18:15', daylightHours: '11h 29m', dawn: '06:58', dusk: '19:39', sunsetHour: 19.05, goldenHourStart: 18.25 },
+  2:  { sunrise: '07:36', sunset: '19:00', goldenHour: '18:12', daylightHours: '11h 24m', dawn: '07:00', dusk: '19:36', sunsetHour: 19.00, goldenHourStart: 18.20 },
+  3:  { sunrise: '07:38', sunset: '18:58', goldenHour: '18:10', daylightHours: '11h 20m', dawn: '07:02', dusk: '19:34', sunsetHour: 18.96, goldenHourStart: 18.16 },
+  4:  { sunrise: '07:40', sunset: '18:55', goldenHour: '18:07', daylightHours: '11h 15m', dawn: '07:04', dusk: '19:31', sunsetHour: 18.91, goldenHourStart: 18.11 },
+  5:  { sunrise: '07:42', sunset: '18:53', goldenHour: '18:05', daylightHours: '11h 11m', dawn: '07:06', dusk: '19:29', sunsetHour: 18.88, goldenHourStart: 18.08 },
+  6:  { sunrise: '07:44', sunset: '18:50', goldenHour: '18:02', daylightHours: '11h 06m', dawn: '07:08', dusk: '19:26', sunsetHour: 18.83, goldenHourStart: 18.03 },
+  7:  { sunrise: '07:46', sunset: '18:48', goldenHour: '18:00', daylightHours: '11h 02m', dawn: '07:10', dusk: '19:24', sunsetHour: 18.80, goldenHourStart: 18.00 },
+  8:  { sunrise: '07:48', sunset: '18:46', goldenHour: '17:58', daylightHours: '10h 58m', dawn: '07:12', dusk: '19:22', sunsetHour: 18.76, goldenHourStart: 17.96 },
+  9:  { sunrise: '07:50', sunset: '18:43', goldenHour: '17:55', daylightHours: '10h 53m', dawn: '07:14', dusk: '19:19', sunsetHour: 18.71, goldenHourStart: 17.91 },
+  10: { sunrise: '07:52', sunset: '18:41', goldenHour: '17:53', daylightHours: '10h 49m', dawn: '07:16', dusk: '19:17', sunsetHour: 18.68, goldenHourStart: 17.88 },
+  11: { sunrise: '07:54', sunset: '18:38', goldenHour: '17:50', daylightHours: '10h 44m', dawn: '07:18', dusk: '19:14', sunsetHour: 18.63, goldenHourStart: 17.83 },
+  12: { sunrise: '07:56', sunset: '18:36', goldenHour: '17:48', daylightHours: '10h 40m', dawn: '07:20', dusk: '19:12', sunsetHour: 18.60, goldenHourStart: 17.80 },
+  13: { sunrise: '07:58', sunset: '18:34', goldenHour: '17:46', daylightHours: '10h 36m', dawn: '07:22', dusk: '19:10', sunsetHour: 18.56, goldenHourStart: 17.76 },
+  14: { sunrise: '08:00', sunset: '18:31', goldenHour: '17:43', daylightHours: '10h 31m', dawn: '07:24', dusk: '19:07', sunsetHour: 18.51, goldenHourStart: 17.71 }
+};
+
+// ── Emergency & Offline Glovebox Dataset ────────────────────────
+const emergencyGloveboxData = {
+  general: {
+    emergencyNumber: '999 or 112',
+    breakdownAssistance: 'AA Ireland: 0818 66 77 88 (+353 1 617 9999)',
+    policeGarda: 'Local Garda Station / 999',
+    touristAssistance: 'Irish Tourist Assistance Service: +353 1 666 9354',
+    usEmbassy: 'US Embassy Dublin: +353 1 668 8777 (42 Elgin Rd, Ballsbridge)'
+  },
+  hospitals: [
+    { city: 'Belfast (NI)', name: 'Royal Victoria Hospital (A&E)', phone: '+44 28 9024 0503', address: '274 Grosvenor Rd, Belfast BT12 6BA', notes: 'Major regional trauma center' },
+    { city: 'Galway', name: 'University Hospital Galway (UHG)', phone: '+353 91 544 544', address: 'Newcastle Rd, Galway H91 YR71', notes: '24/7 Full Emergency Department' },
+    { city: 'Kerry', name: 'University Hospital Kerry (Tralee)', phone: '+353 66 718 4000', address: 'Ratass, Tralee, Co. Kerry V92 NX46', notes: 'Nearest major A&E for Kerry/Dingle' },
+    { city: 'Dublin', name: 'St. James’s Hospital / Mater Hospital', phone: '+353 1 410 3000', address: 'James St, Dublin 8', notes: '24/7 Central Dublin Emergency' }
+  ],
+  lodgings: [
+    { base: 'Base 1 (NI)', name: 'Walnut Retreat', dates: 'Oct 2–5 (3 nights)', phone: '+44 28 3026 8800', address: 'Newry, Co. Down, Northern Ireland' },
+    { base: 'Base 2 (Galway)', name: 'Spiddal Coastal Villa', dates: 'Oct 5–8 (3 nights)', phone: '+353 91 553 111', address: 'Spiddal, Co. Galway, Ireland' },
+    { base: 'Base 3 (Kerry)', name: 'Milltown / Killarney House', dates: 'Oct 8–11 (3 nights)', phone: '+353 64 663 2222', address: 'Milltown, Co. Kerry, Ireland' },
+    { base: 'Base 4 (Dublin/Navan)', name: 'Navan Estate & Dublin Base', dates: 'Oct 11–14 (3 nights)', phone: '+353 46 902 3333', address: 'Navan, Co. Meath, Ireland' }
+  ],
+  drivingTips: [
+    'Drive on the LEFT side of the road at all times.',
+    'Speed limits: Republic of Ireland is in KM/H (White circle with red border); Northern Ireland is in MPH.',
+    'M50 Dublin Toll is barrier-free video tolling. Pay by 8:00 PM next day at eFlow.ie or Payzone retail outlets.',
+    'Narrow rural roads (boreens): Use designated passing spaces; reverse if the passing place is closer behind you.',
+    'Roundabouts: Yield to traffic coming from your right. Signal left before exiting.'
+  ]
+};
+
+// ── Multi-Currency Expense & Budget Tracker Dataset ─────────────
+const tripExpenseData = [
+  { id: 'exp_hotel_ni', category: 'Lodging', title: 'Walnut Retreat Newry (3 nights)', currency: 'GBP', amount: 480, payer: 'Split', notes: 'Northern Ireland base' },
+  { id: 'exp_hotel_galway', category: 'Lodging', title: 'Spiddal Villa Galway (3 nights)', currency: 'EUR', amount: 630, payer: 'Split', notes: 'West Coast / Connemara base' },
+  { id: 'exp_hotel_kerry', category: 'Lodging', title: 'Milltown House Killarney (3 nights)', currency: 'EUR', amount: 590, payer: 'Split', notes: 'Kerry / Dingle base' },
+  { id: 'exp_hotel_dublin', category: 'Lodging', title: 'Navan Estate / Dublin (3 nights)', currency: 'EUR', amount: 720, payer: 'Split', notes: 'East coast & finale base' },
+  { id: 'exp_rental_car', category: 'Transit', title: 'Rental 7-Seater / SUV (12 Days)', currency: 'EUR', amount: 860, payer: 'Dad', notes: 'Includes zero-deductible insurance & cross-border fee' },
+  { id: 'exp_misters', category: 'Dining', title: 'Mom’s Birthday Dinner @ Mister S Dublin', currency: 'EUR', amount: 320, payer: 'Family', notes: 'Confirmed anchor booking Oct 13' },
+  { id: 'exp_guinness', category: 'Activities', title: 'Guinness Storehouse VIP Experience', currency: 'EUR', amount: 140, payer: 'Split', notes: 'Oct 12 @ 10:30 AM confirmed' },
+  { id: 'exp_titanic', category: 'Activities', title: 'Titanic Belfast Discovery Tour', currency: 'GBP', amount: 96, payer: 'Split', notes: 'Oct 3 reservation' },
+  { id: 'exp_moher', category: 'Activities', title: 'Cliffs of Moher Visitor Pass & Parking', currency: 'EUR', amount: 48, payer: 'Split', notes: 'Oct 6 afternoon visit' },
+  { id: 'exp_black_cab', category: 'Activities', title: 'Belfast Black Cab Political Murals Tour', currency: 'GBP', amount: 75, payer: 'Dad', notes: 'Private cab for 4' },
+  { id: 'exp_fuel_tolls', category: 'Transit', title: 'Fuel & M50 / M1 Tolls Estimate', currency: 'EUR', amount: 250, payer: 'Split', notes: 'Diesel refills & eFlow tolling' }
+];
