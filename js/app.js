@@ -8,6 +8,7 @@ const app = createApp({
   components: {
     'heat-map': HeatMap,
     'distances-view': Distances,
+    'sights-drives': SightsDrives,
     'daily-planner': DailyPlanner,
     'weather-packing': WeatherPacking,
     'hiking-nature': HikingNature,
@@ -31,12 +32,11 @@ const app = createApp({
 
     const tabs = [
       { id: 'planner', label: '📅 Daily Schedule', shortLabel: 'Schedule', icon: '📅' },
-      { id: 'weather', label: '🌦️ Weather & Outfits', shortLabel: 'Weather', icon: '🌦️' },
-      { id: 'hiking', label: '🥾 Hiking & Trails', shortLabel: 'Trails', icon: '🥾' },
-      { id: 'restaurants', label: '🍴 Restaurants', shortLabel: 'Food', icon: '🍴' },
-      { id: 'heatmap', label: '🗺️ Map & Attractions', shortLabel: 'Map', icon: '🗺️' },
-      { id: 'distances', label: '📏 Distances', shortLabel: 'Distances', icon: '📏' },
-      { id: 'reservations', label: '📋 Reservations', shortLabel: 'Bookings', icon: '📋' }
+      { id: 'weather', label: '🌦️ Weather & Packing', shortLabel: 'Weather', icon: '🌦️' },
+      { id: 'hiking', label: '🥾 Trails & Nature', shortLabel: 'Trails', icon: '🥾' },
+      { id: 'restaurants', label: '🍴 Food & Pubs', shortLabel: 'Food', icon: '🍴' },
+      { id: 'sights', label: '🗺️ Sights & Drives', shortLabel: 'Sights & Drives', icon: '🗺️' },
+      { id: 'reservations', label: '📋 Bookings & Passes', shortLabel: 'Bookings', icon: '📋' }
     ];
 
     // Detail Modal / Bottom Sheet Reactive State

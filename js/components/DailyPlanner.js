@@ -232,6 +232,35 @@ const DailyPlanner = {
         this.dailyNotes = copy;
         localStorage.setItem('ireland_daily_notes', JSON.stringify(this.dailyNotes));
       }
+    },
+    isNorthernIreland(dayNumber) {
+      return dayNumber <= 4;
+    },
+    getDayTrails(dayNumber) {
+      if (!this.trails) return [];
+      return this.trails.filter(t => t.dayNumber === dayNumber);
+    },
+    getDayRestaurants(dayNumber) {
+      if (!this.restaurants) return [];
+      if (dayNumber === 6) {
+        return this.restaurants.filter(r => r.name.includes('Ruibin') || r.name.includes('Dough Bros') || r.name.includes('Moran'));
+      }
+      if (dayNumber === 12) {
+        return this.restaurants.filter(r => r.name.includes('Mister S') || r.name.includes('Fade Street'));
+      }
+      if (dayNumber === 1) {
+        return this.restaurants.filter(r => r.name.includes('Mourne Seafood'));
+      }
+      if (dayNumber === 3) {
+        return this.restaurants.filter(r => r.name.includes('Harry\'s Shack'));
+      }
+      if (dayNumber === 4) {
+        return this.restaurants.filter(r => r.name.includes('Holohans'));
+      }
+      if (dayNumber === 8) {
+        return this.restaurants.filter(r => r.name.includes('Mad Monk') || r.name.includes('Bricín'));
+      }
+      return [];
     }
   },
   template: `
@@ -470,6 +499,13 @@ const DailyPlanner = {
                     <span>📝</span>
                     <span>Note</span>
                   </span>
+                  <!-- Currency / Region Badge -->
+                  <span v-if="isNorthernIreland(day.dayNumber)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                    🇬🇧 NI (£ GBP · MPH)
+                  </span>
+                  <span v-else class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    🇮🇪 Republic (€ EUR · KM/H)
+                  </span>
                 </div>
                 <div class="text-xs text-[var(--muted-foreground)] mt-1 flex items-center gap-2 flex-wrap">
                   <span>🏠 <strong>Base:</strong> {{ day.base }}</span>
@@ -522,6 +558,33 @@ const DailyPlanner = {
 
           <!-- Day Body -->
           <div v-show="expandedDays[idx]" class="p-4 pt-3 border-t border-[var(--border)] space-y-4">
+            
+            <!-- Day Quick Hub Snapshot (Trails & Dining Linkages) -->
+            <div v-if="getDayTrails(day.dayNumber).length > 0 || getDayRestaurants(day.dayNumber).length > 0" class="p-3 rounded-xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-between gap-3 flex-wrap text-xs">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-[var(--foreground)]">🌟 Day {{ day.dayNumber }} Highlights:</span>
+                <!-- Trail links -->
+                <button
+                  v-for="t in getDayTrails(day.dayNumber)"
+                  :key="t.id"
+                  @click.stop="jumpToTrail(t.id)"
+                  class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
+                >
+                  <span>🥾</span>
+                  <span>{{ t.name }} ({{ t.difficulty }})</span>
+                </button>
+                <!-- Restaurant links -->
+                <button
+                  v-for="rest in getDayRestaurants(day.dayNumber)"
+                  :key="rest.id"
+                  @click.stop="jumpToRestaurant(rest.id)"
+                  class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all font-semibold flex items-center gap-1"
+                >
+                  <span>🍴</span>
+                  <span>{{ rest.name }}</span>
+                </button>
+              </div>
+            </div>
             
             <!-- What to Wear & Weather Header -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-blue-500/[0.08] border border-blue-500/25 text-xs">

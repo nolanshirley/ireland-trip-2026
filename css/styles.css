@@ -542,3 +542,36 @@ body {
   100% { transform: scale(1); }
 }
 
+/* ── Print & Pocket PDF Booklet Stylesheet ───────────────────── */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  .mobile-bottom-nav,
+  .modal-backdrop,
+  header .flex.items-center,
+  #main-tab-nav,
+  button,
+  .maps-btn,
+  footer {
+    display: none !important;
+  }
+
+  .card {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #cccccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    margin-bottom: 12pt !important;
+  }
+
+  [v-show="false"] {
+    display: block !important;
+  }
+}
+
+

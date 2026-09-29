@@ -112,6 +112,67 @@
       </div>
     </section>
 
+    <!-- Top Milestones & Key Highlights Quick-Jump Pill Bar -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
+      <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] flex-shrink-0 flex items-center gap-1">
+        <span>⚡ Quick Jump:</span>
+      </span>
+
+      <!-- Dad & Erin Birthday -->
+      <button
+        @click="handleSwitchTab({ tab: 'planner', dayNumber: 6 })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-all flex-shrink-0 shadow-sm"
+      >
+        <span>🎂</span>
+        <span>Dad & Erin (10/7 · Galway)</span>
+      </button>
+
+      <!-- Mom's Birthday -->
+      <button
+        @click="handleSwitchTab({ tab: 'planner', dayNumber: 12 })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold bg-pink-500/15 text-pink-300 border border-pink-500/30 hover:bg-pink-500/25 transition-all flex-shrink-0 shadow-sm"
+      >
+        <span>🎂</span>
+        <span>Mom (10/13 @ 5:15 PM · Mister S)</span>
+      </button>
+
+      <!-- Guinness Tour -->
+      <button
+        @click="handleSwitchTab({ tab: 'planner', dayNumber: 11 })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all flex-shrink-0 shadow-sm"
+      >
+        <span>🍺</span>
+        <span>Guinness Tour (10/12 @ 10:30 AM)</span>
+      </button>
+
+      <!-- Cliffs of Moher -->
+      <button
+        @click="handleSwitchTab({ tab: 'hiking', targetId: 'cliffs-of-moher' })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] transition-all flex-shrink-0"
+      >
+        <span>🌊</span>
+        <span>Cliffs of Moher</span>
+      </button>
+
+      <!-- Diamond Hill -->
+      <button
+        @click="handleSwitchTab({ tab: 'hiking', targetId: 'diamond-hill' })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] transition-all flex-shrink-0"
+      >
+        <span>⛰️</span>
+        <span>Diamond Hill (Connemara)</span>
+      </button>
+
+      <!-- Giant's Causeway -->
+      <button
+        @click="handleSwitchTab({ tab: 'hiking', targetId: 'giants-causeway' })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] transition-all flex-shrink-0"
+      >
+        <span>🏰</span>
+        <span>Giant's Causeway</span>
+      </button>
+    </div>
+
     <!-- Navigation Tabs (Middle Row) -->
     <nav id="main-tab-nav" class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[var(--border)] no-scrollbar scroll-smooth">
       <button
@@ -154,19 +215,19 @@
         <hiking-nature :trails="trailList" @switch-tab="handleSwitchTab" />
       </section>
 
-      <!-- Heat Map Tab -->
-      <section v-show="activeTab === 'heatmap'">
-        <heat-map :regions="regionList" :attractions="attractionMap" @switch-tab="handleSwitchTab" />
-      </section>
-
-      <!-- Distances Tab -->
-      <section v-show="activeTab === 'distances'">
-        <distances-view :distances="distanceList" />
-      </section>
-
       <!-- Restaurants Tab -->
       <section v-show="activeTab === 'restaurants'">
         <restaurants-view :restaurants="restaurantList" @switch-tab="handleSwitchTab" />
+      </section>
+
+      <!-- Unified Sights & Drives Tab -->
+      <section v-show="activeTab === 'sights'">
+        <sights-drives
+          :regions="regionList"
+          :attractions="attractionMap"
+          :distances="distanceList"
+          @switch-tab="handleSwitchTab"
+        />
       </section>
 
       <!-- Reservations Tab -->
@@ -528,14 +589,6 @@
         <span>📝</span>
         <span>Notes</span>
       </button>
-      <button
-        @click="openSettingsModal"
-        class="mobile-nav-item"
-        title="Theme & Text Settings"
-      >
-        <span>🎨</span>
-        <span>Theme</span>
-      </button>
     </nav>
 
     <!-- Footer -->
@@ -555,6 +608,7 @@
   <!-- Vue Components -->
   <script src="js/components/HeatMap.js"></script>
   <script src="js/components/Distances.js"></script>
+  <script src="js/components/SightsDrives.js"></script>
   <script src="js/components/DailyPlanner.js"></script>
   <script src="js/components/WeatherPacking.js"></script>
   <script src="js/components/HikingNature.js"></script>
