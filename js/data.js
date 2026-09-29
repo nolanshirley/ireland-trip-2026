@@ -1259,16 +1259,251 @@ const emergencyGloveboxData = {
 };
 
 // ── Multi-Currency Expense & Budget Tracker Dataset ─────────────
-const tripExpenseData = [
-  { id: 'exp_hotel_ni', category: 'Lodging', title: 'Walnut Retreat Newry (3 nights)', currency: 'GBP', amount: 480, payer: 'Split', notes: 'Northern Ireland base' },
-  { id: 'exp_hotel_galway', category: 'Lodging', title: 'Spiddal Villa Galway (3 nights)', currency: 'EUR', amount: 630, payer: 'Split', notes: 'West Coast / Connemara base' },
-  { id: 'exp_hotel_kerry', category: 'Lodging', title: 'Milltown House Killarney (3 nights)', currency: 'EUR', amount: 590, payer: 'Split', notes: 'Kerry / Dingle base' },
-  { id: 'exp_hotel_dublin', category: 'Lodging', title: 'Navan Estate / Dublin (3 nights)', currency: 'EUR', amount: 720, payer: 'Split', notes: 'East coast & finale base' },
-  { id: 'exp_rental_car', category: 'Transit', title: 'Rental 7-Seater / SUV (12 Days)', currency: 'EUR', amount: 860, payer: 'Dad', notes: 'Includes zero-deductible insurance & cross-border fee' },
-  { id: 'exp_misters', category: 'Dining', title: 'Mom’s Birthday Dinner @ Mister S Dublin', currency: 'EUR', amount: 320, payer: 'Family', notes: 'Confirmed anchor booking Oct 13' },
-  { id: 'exp_guinness', category: 'Activities', title: 'Guinness Storehouse VIP Experience', currency: 'EUR', amount: 140, payer: 'Split', notes: 'Oct 12 @ 10:30 AM confirmed' },
-  { id: 'exp_titanic', category: 'Activities', title: 'Titanic Belfast Discovery Tour', currency: 'GBP', amount: 96, payer: 'Split', notes: 'Oct 3 reservation' },
-  { id: 'exp_moher', category: 'Activities', title: 'Cliffs of Moher Visitor Pass & Parking', currency: 'EUR', amount: 48, payer: 'Split', notes: 'Oct 6 afternoon visit' },
-  { id: 'exp_black_cab', category: 'Activities', title: 'Belfast Black Cab Political Murals Tour', currency: 'GBP', amount: 75, payer: 'Dad', notes: 'Private cab for 4' },
-  { id: 'exp_fuel_tolls', category: 'Transit', title: 'Fuel & M50 / M1 Tolls Estimate', currency: 'EUR', amount: 250, payer: 'Split', notes: 'Diesel refills & eFlow tolling' }
+// Clean slate: all dummy money examples removed as requested so users can enter actual expenses
+const tripExpenseData = [];
+
+// ── City Shopping, Artistic Boutiques & Piano Stores ────────────
+const shoppingVenuesData = [
+  // 🎹 Piano Stores & Musical Instruments
+  {
+    id: 'precision-pianos',
+    name: 'Precision Pianos Dublin',
+    city: 'Dublin',
+    category: 'pianos',
+    categoryLabel: '🎹 Piano Showroom',
+    highlight: 'Acoustic Grands, Uprights & Restored Steinways / Yamahas',
+    desc: "Dublin's premier piano specialists with an expansive showroom of grand and upright acoustic pianos, digital instruments, and Japanese reconditioned Yamahas. Dedicated restoration, tuning, and regulation experts.",
+    address: 'Harold’s Cross Road, Dublin 6W',
+    mapsQuery: 'Precision+Pianos+Harold+Cross+Dublin',
+    phone: '+353 1 496 4600',
+    tags: ['Acoustic Pianos', 'Grand Pianos', 'Piano Showroom', 'Repairs']
+  },
+  {
+    id: 'waltons-music',
+    name: 'Waltons Music',
+    city: 'Dublin',
+    category: 'pianos',
+    categoryLabel: '🎹 Musical Instruments & Pianos',
+    highlight: 'Historic Irish Music Institution (Since 1922)',
+    desc: 'Legendary Dublin musical institution for over a century. Features acoustic and digital keyboards, traditional Irish bodhráns, tin whistles, Celtic harps, and sheet music.',
+    address: 'South Great George’s St / Blanchardstown, Dublin',
+    mapsQuery: 'Waltons+Music+Dublin',
+    phone: '+353 1 960 3232',
+    tags: ['Traditional Instruments', 'Keyboards', 'Celtic Harps', 'Sheet Music']
+  },
+  {
+    id: 'gandharva-loka',
+    name: 'Gandharva Loka World Music',
+    city: 'Dublin',
+    category: 'pianos',
+    categoryLabel: '🎵 Artistic World Instruments',
+    highlight: 'Handpans, Singing Bowls, Celtic Harps & Flutes',
+    desc: 'An enchanting musical sanctuary in the heart of Dublin offering rare acoustic instruments from Ireland and around the globe. Try out Irish harps, harmoniums, and hand-tuned chimes.',
+    address: "George's Street Arcade, Dublin 2",
+    mapsQuery: 'Gandharva+Loka+Georges+Street+Arcade+Dublin',
+    phone: '+353 1 475 8710',
+    tags: ['World Instruments', 'Celtic Harps', 'Boutique', 'Meditation']
+  },
+  {
+    id: 'pianos-plus',
+    name: 'Pianos Plus',
+    city: 'Dublin',
+    category: 'pianos',
+    categoryLabel: '🎹 Piano Showroom',
+    highlight: 'Acoustic & Digital Kawai / Roland Showroom',
+    desc: 'Specialist piano showroom offering new and pre-owned uprights, grand pianos, and digital stage pianos, with expert advice and rental services.',
+    address: 'Centrepoint Business Park, Oak Road, Dublin 12',
+    mapsQuery: 'Pianos+Plus+Dublin',
+    phone: '+353 1 405 0101',
+    tags: ['Kawai Pianos', 'Digital Stage', 'Acoustic Uprights']
+  },
+  {
+    id: 'obriain-pianos',
+    name: 'O’Briain Pianos',
+    city: 'Dublin',
+    category: 'pianos',
+    categoryLabel: '🎹 Vintage Piano Restoration',
+    highlight: 'Restored Classic Uprights & Grand Pianos',
+    desc: 'Master piano restorers offering hand-selected vintage and modern acoustic pianos, precision voicing, regulation, and restoration.',
+    address: 'Lucan, County Dublin',
+    mapsQuery: 'OBriain+Pianos+Dublin',
+    phone: '+353 87 279 0743',
+    tags: ['Vintage Pianos', 'Restoration', 'Tuning']
+  },
+
+  // 🎨 Artistic Shops, Prints & Creative Trinkets
+  {
+    id: 'jam-art-factory',
+    name: 'Jam Art Factory',
+    city: 'Dublin',
+    category: 'art',
+    categoryLabel: '🎨 Contemporary Irish Art & Trinkets',
+    highlight: 'Original Dublin Prints, Pins, Ceramics & Quirky Gifts',
+    desc: 'An independent gallery and design boutique spotlighting local Dublin illustrators, printmakers, and ceramicists. The best spot for modern artistic souvenirs and enamel trinkets.',
+    address: '14 Crown Alley (Temple Bar) & 64 Patrick St, Dublin',
+    mapsQuery: 'Jam+Art+Factory+Crown+Alley+Dublin',
+    phone: '+353 1 679 8572',
+    tags: ['Art Prints', 'Local Designers', 'Quirky Trinkets', 'Temple Bar']
+  },
+  {
+    id: 'irish-design-shop',
+    name: 'Irish Design Shop',
+    city: 'Dublin',
+    category: 'art',
+    categoryLabel: '🏺 Authentic Irish Crafts',
+    highlight: 'Handmade Jewelry, Ceramics, Textiles & Wooden Goods',
+    desc: 'Curated boutique run by jewelers celebrating contemporary craftsmanship from all 32 counties of Ireland. Features hand-thrown pottery, woven blankets, and beeswax candles.',
+    address: '41 Drury Street, Creative Quarter, Dublin 2',
+    mapsQuery: 'Irish+Design+Shop+Drury+Street+Dublin',
+    phone: '+353 1 679 8878',
+    tags: ['Handmade Crafts', 'Jewelry', 'Creative Quarter', 'Textiles']
+  },
+  {
+    id: 'article-powerscourt',
+    name: 'Article @ Powerscourt Townhouse',
+    city: 'Dublin',
+    category: 'art',
+    categoryLabel: '🏛️ Georgian Mansion Design Boutique',
+    highlight: 'Eclectic Homewares, Stationery, Prints & Artistic Trinkets',
+    desc: 'Housed inside Lord Powerscourt’s magnificent 18th-century Georgian townhouse. Filled with delightful stationery, artistic prints, and unusual decorative gifts.',
+    address: 'Powerscourt Townhouse Centre, South William St, Dublin 2',
+    mapsQuery: 'Article+Powerscourt+Townhouse+Dublin',
+    phone: '+353 1 679 9268',
+    tags: ['Georgian Townhouse', 'Stationery', 'Creative Quarter', 'Homewares']
+  },
+  {
+    id: 'georges-street-arcade',
+    name: 'George’s Street Arcade',
+    city: 'Dublin',
+    category: 'trinkets',
+    categoryLabel: '🛍️ Victorian Indoor Market',
+    highlight: 'Vintage Vinyl, Antiques, Tarot, Books & Quirky Trinkets',
+    desc: 'Victorian covered red-brick arcade running since 1881. Packed with bohemian market stalls, retro souvenirs, vintage clothing, and specialty records.',
+    address: 'South Great George’s Street, Dublin 2',
+    mapsQuery: 'Georges+Street+Arcade+Dublin',
+    tags: ['Victorian Market', 'Vintage Records', 'Trinkets', 'Antiques']
+  },
+
+  // 💍 Traditional Claddagh Rings & Heirloom Jewelry
+  {
+    id: 'thomas-dillons-claddagh',
+    name: 'Thomas Dillon’s Claddagh Gold',
+    city: 'Galway',
+    category: 'jewelry',
+    categoryLabel: '💍 The Original Claddagh Ring Maker',
+    highlight: 'Oldest Jewelers in Ireland (Since 1750) & Mini Museum',
+    desc: 'The original makers of the worldwide famous Irish Claddagh Ring (Love, Loyalty, Friendship). Includes the free Claddagh museum housing rings dating to the 1700s.',
+    address: '1 Quay Street, Latin Quarter, Galway',
+    mapsQuery: 'Thomas+Dillon+Claddagh+Gold+Galway',
+    phone: '+353 91 566 365',
+    tags: ['Claddagh Rings', 'Since 1750', 'Latin Quarter', 'Heirloom Gold']
+  },
+  {
+    id: 'courtville-antiques',
+    name: 'Courtville Antiques',
+    city: 'Dublin',
+    category: 'jewelry',
+    categoryLabel: '💍 Antique Celtic & Vintage Jewelry',
+    highlight: 'Victorian, Edwardian & Antique Irish Rings',
+    desc: 'Premier family antique jeweler inside Powerscourt Townhouse. Unmatched collection of historic Celtic jewelry, antique gemstones, and vintage Irish rings.',
+    address: 'Powerscourt Townhouse Centre, Dublin 2',
+    mapsQuery: 'Courtville+Antiques+Powerscourt+Dublin',
+    phone: '+353 1 679 4042',
+    tags: ['Antique Jewelry', 'Estate Rings', 'Vintage Gold']
+  },
+  {
+    id: 'brian-de-staic',
+    name: 'Brian de Staic Jewellery',
+    city: 'Dingle',
+    category: 'jewelry',
+    categoryLabel: '💍 Handcrafted Celtic & Ogham Jewelry',
+    highlight: 'Personalized Ancient Ogham Script Silver & Gold',
+    desc: 'Master Kerry silversmith crafting original Celtic jewelry engraved with the ancient Irish alphabet (Ogham). Handcrafted directly in Dingle town.',
+    address: 'The Wood & Green Street, Dingle, Co. Kerry',
+    mapsQuery: 'Brian+de+Staic+Jewellery+Dingle',
+    phone: '+353 66 915 1298',
+    tags: ['Ogham Script', 'Dingle Silversmith', 'Handcrafted']
+  },
+
+  // 📚 Literary Trinkets & Vintage Bookshops
+  {
+    id: 'winding-stair-books',
+    name: 'The Winding Stair Bookshop',
+    city: 'Dublin',
+    category: 'books',
+    categoryLabel: '📚 Historic Riverfront Bookshop',
+    highlight: 'Irish Poetry, Vintage Paperbacks & Literary Gifts',
+    desc: 'Iconic independent bookshop along the River Liffey by the Ha’penny Bridge. Features winding wooden staircases, local Irish literature, vintage prints, and cozy reading nooks.',
+    address: '40 Lower Ormond Quay, Dublin 1',
+    mapsQuery: 'The+Winding+Stair+Bookshop+Dublin',
+    phone: '+353 1 873 3292',
+    tags: ['Independent Bookstore', 'Ha’penny Bridge', 'Irish Literature']
+  },
+  {
+    id: 'charlie-byrnes',
+    name: 'Charlie Byrne’s Bookshop',
+    city: 'Galway',
+    category: 'books',
+    categoryLabel: '📚 Legendary Labyrinth Bookshop',
+    highlight: 'Over 100,000 New, Used, Rare & Irish Folklore Titles',
+    desc: 'One of the world’s most beloved bookshops. A sprawling maze of rooms filled floor-to-ceiling with bargain Irish poetry, mythology, maps, and art books.',
+    address: 'The Cornstore, Middle Street, Galway',
+    mapsQuery: 'Charlie+Byrnes+Bookshop+Galway',
+    phone: '+353 91 561 766',
+    tags: ['100k Books', 'Galway Icon', 'Mythology & Maps']
+  },
+
+  // 🧶 Irish Wool, Aran Knitwear & Pottery
+  {
+    id: 'avoca-dublin',
+    name: 'Avoca Flagship Store',
+    city: 'Dublin',
+    category: 'wool',
+    categoryLabel: '🧶 Handwoven Woolens & Artisan Goods',
+    highlight: 'Pure Wool Throws, Mohair Scarves & Ceramic Trinkets',
+    desc: 'Ireland’s oldest handweaving mill (est. 1723). Four floors of vibrant rainbow wool blankets, artisanal Irish jams, ceramic gifts, and rooftop café.',
+    address: '11–13 Suffolk Street, Dublin 2',
+    mapsQuery: 'Avoca+Suffolk+Street+Dublin',
+    phone: '+353 1 677 4215',
+    tags: ['Handwoven Blankets', 'Since 1723', 'Artisan Treats']
+  },
+  {
+    id: 'kilkenny-design',
+    name: 'Kilkenny Design Centre',
+    city: 'Dublin',
+    category: 'wool',
+    categoryLabel: '🛍️ National Showcase of Irish Craft',
+    highlight: 'Waterford Crystal, Nicholas Mosse Pottery & Knitwear',
+    desc: 'Facing the historic Trinity College gates. The national emporium for premium Irish craft, featuring pottery, Celtic scarves, crystal, and jewelry.',
+    address: '6 Nassau Street, Dublin 2',
+    mapsQuery: 'Kilkenny+Design+Centre+Nassau+Street+Dublin',
+    phone: '+353 1 677 7066',
+    tags: ['Pottery', 'Waterford Crystal', 'Aran Knitwear']
+  },
+  {
+    id: 'louis-mulcahy-pottery',
+    name: 'Louis Mulcahy Pottery Studio',
+    city: 'Dingle',
+    category: 'art',
+    categoryLabel: '🏺 Master Ceramic Studio',
+    highlight: 'Handmade Kerry Stoneware Glazed with Atlantic Hues',
+    desc: 'The workshop of Ireland’s most revered master potter, perched near the tip of Slea Head. Watch pots being thrown on the wheel and browse artisanal lamps and tableware.',
+    address: 'Clogher, Ballyferriter, Dingle Peninsula, Co. Kerry',
+    mapsQuery: 'Louis+Mulcahy+Pottery+Ballyferriter+Dingle',
+    phone: '+353 66 915 6229',
+    tags: ['Studio Pottery', 'Slea Head Drive', 'Atlantic Glazes']
+  },
+  {
+    id: 'st-georges-market',
+    name: 'St George’s Historic Market',
+    city: 'Belfast',
+    category: 'trinkets',
+    categoryLabel: '🛍️ Victorian Weekend Market',
+    highlight: 'Local Northern Irish Crafts, Art, Antiques & Baked Goods',
+    desc: 'Award-winning Victorian covered market open Fri–Sun. Browse handcrafted jewelry, Belfast art prints, live folk musicians, and delicious soda bread.',
+    address: '12–20 East Bridge Street, Belfast',
+    mapsQuery: 'St+Georges+Market+Belfast',
+    phone: '+44 28 9043 5704',
+    tags: ['Victorian Market', 'Live Music', 'Antiques', 'Weekend']
+  }
 ];

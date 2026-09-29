@@ -693,17 +693,17 @@
           <div>
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                🍻 QUICK PRESETS
+                ✍️ CORE INPUTS
               </span>
-              <span class="text-xs font-bold text-[var(--muted-foreground)]">1-Tap Logging</span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Flights · Transit · Food</span>
             </div>
-            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Common On-the-Road Costs</h4>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Trip Budget Estimator</h4>
             <p class="text-xs text-[var(--muted-foreground)] mt-1">
-              Log +€40 Pub Rounds, +€75 Fuel Tanks, +€18 Coffee/Scones, or +€3.50 M50 E-Flow tolls instantly.
+              Calculate total expenses from your flight tickets, transportation (car, fuel, tolls), and daily food allowance with fair-share splits.
             </p>
           </div>
           <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
-            <span>Log an Expense</span>
+            <span>Calculate Total Budget</span>
             <span>→</span>
           </div>
         </div>
@@ -1144,6 +1144,16 @@
         <span>Budget & Splits</span>
       </button>
 
+      <!-- City Shopping & Artistic Shops Quick Jump Pill -->
+      <button
+        @click="openShoppingView"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-extrabold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-all flex-shrink-0 shadow-sm"
+        title="View City Shopping, Trinkets, Irish Crafts & Piano Stores"
+      >
+        <span>🛍️</span>
+        <span>Shopping & Pianos</span>
+      </button>
+
       <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] flex-shrink-0 flex items-center gap-1">
         <span>⚡ Quick Jump:</span>
       </span>
@@ -1271,9 +1281,11 @@
       <!-- Unified Sights & Drives Tab -->
       <section v-show="activeTab === 'sights'">
         <sights-drives
+          ref="sightsDrivesRef"
           :regions="regionList"
           :attractions="attractionMap"
           :distances="distanceList"
+          :shopping-venues="shoppingVenues"
           @switch-tab="handleSwitchTab"
         />
       </section>

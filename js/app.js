@@ -23,6 +23,16 @@ const app = createApp({
     const distanceList = ref(distances);
     const weatherInfo = ref(weatherData);
     const outfitList = ref(outfitGuides);
+    const shoppingVenues = ref(typeof shoppingVenuesData !== 'undefined' ? shoppingVenuesData : []);
+    const sightsDrivesRef = ref(null);
+
+    const openShoppingView = () => {
+      activeTab.value = 'sights';
+      if (sightsDrivesRef.value && sightsDrivesRef.value.setSubTab) {
+        sightsDrivesRef.value.setSubTab('shopping');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     // ── Reactive Custom Entities & Local Database ─────────────
     const customActivities = ref([]);
@@ -316,6 +326,11 @@ const app = createApp({
       const { tab, targetId, dayIndex, dayNumber, trailId, searchQuery } = payload;
       if (tab) {
         activeTab.value = tab;
+      }
+      if (payload.subTab && tab === 'sights') {
+        if (sightsDrivesRef.value && sightsDrivesRef.value.setSubTab) {
+          sightsDrivesRef.value.setSubTab(payload.subTab);
+        }
       }
       if (searchQuery !== undefined) {
         targetSearchQuery.value = searchQuery;
@@ -2226,6 +2241,9 @@ const app = createApp({
       regionList,
       attractionMap,
       distanceList,
+      shoppingVenues,
+      sightsDrivesRef,
+      openShoppingView,
       timelineList,
       restaurantList,
       reservationList,

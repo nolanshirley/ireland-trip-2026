@@ -1,6 +1,6 @@
 // =============================================================
 //  Component: BudgetTracker & Family Expense Settlement Hub
-//  (Multi-Currency EUR/GBP/USD, Who Paid vs Who Owes, Tipping Guide)
+//  (Clean-Slate Budget Estimator + Primary Inputs + Ledger)
 // =============================================================
 
 const BudgetTracker = {
@@ -10,15 +10,34 @@ const BudgetTracker = {
   },
   data() {
     return {
+      // Primary Trip Budget Form Inputs (Clean Slate - no dummy examples)
+      budgetInputs: {
+        flightCost: '',
+        flightMode: 'per_person', // 'per_person' ($/person) or 'total'
+        flightCurrency: 'USD',
+        transitCost: '',
+        transitCurrency: 'EUR',
+        transitNotes: 'Rental 7-Seater/SUV + Diesel Fuel + M50/M1 Tolls',
+        foodCost: '',
+        foodMode: 'per_day', // 'per_day' (€/person/day) or 'total'
+        foodDays: 13,
+        foodCurrency: 'EUR',
+        lodgingCost: '',
+        lodgingCurrency: 'EUR',
+        activitiesCost: '',
+        activitiesCurrency: 'EUR'
+      },
+
+      // On-The-Road Logged Receipts (Starts empty with 0 dummy items)
       customExpenses: [],
       familyMembers: ['Dad', 'Mom', 'Erin', 'Noland'],
       newMemberName: '',
-      activeCategoryFilter: 'all', // 'all', 'Lodging', 'Transit', 'Dining', 'Activities', 'Misc'
-      activeCurrencyFilter: 'all', // 'all', 'EUR', 'GBP'
-      activePayerFilter: 'all', // 'all', or member name
+      activeCategoryFilter: 'all', // 'all', 'Dining', 'Transit', 'Lodging', 'Activities', 'Shopping', 'Misc'
+      activeCurrencyFilter: 'all', // 'all', 'EUR', 'GBP', 'USD'
+      activePayerFilter: 'all',
       searchQuery: '',
       showAddForm: false,
-      showTippingGuide: true,
+      showTippingGuide: false,
       eurToUsd: 1.08,
       gbpToUsd: 1.30,
       newExpense: {
@@ -28,7 +47,6 @@ const BudgetTracker = {
         amount: '',
         payer: 'Dad',
         splitWith: ['Dad', 'Mom', 'Erin', 'Noland'],
-        isPrepaid: false,
         notes: ''
       }
     };
@@ -37,12 +55,133 @@ const BudgetTracker = {
     this.loadStorage();
   },
   computed: {
-    allExpenses() {
-      const base = (this.baseExpenses && this.baseExpenses.length > 0)
-        ? this.baseExpenses
-        : (typeof tripExpenseData !== 'undefined' ? tripExpenseData : []);
-      return [...base, ...this.customExpenses];
+    // ── Primary Budget Form Computations ────────────────────────
+    travelerCount() {
+      return Math.max(1, this.familyMembers.length);
     },
+
+    flightTotalUsd() {
+      const amt = parseFloat(this.budgetInputs.flightCost) || 0;
+      const total = this.budgetInputs.flightMode === 'per_person' ? amt * this.travelerCount : amt;
+      return this.budgetInputs.flightCurrency === 'EUR' ? total * this.eurToUsd : total;
+    },
+
+    flightTotalEur() {
+      return this.eurToUsd > 0 ? this.flightTotalUsd / this.eurToUsd : 0;
+    },
+
+    transitTotalUsd() {
+      const amt = parseFloat(this.budgetInputs.transitCost) || 0;
+      return this.budgetInputs.transitCurrency === 'EUR' ? amt * this.eurToUsd : amt;
+    },
+
+    transitTotalEur() {
+      return this.eurToUsd > 0 ? this.transitTotalUsd / this.eurToUsd : 0;
+    },
+
+    foodTotalUsd() {
+      const amt = parseFloat(this.budgetInputs.foodCost) || 0;
+      const days = parseInt(this.budgetInputs.foodDays) || 13;
+      const total = this.budgetInputs.foodMode === 'per_day' ? amt * days * this.travelerCount : amt;
+      return this.budgetInputs.foodCurrency === 'EUR' ? total * this.eurToUsd : total;
+    },
+
+    foodTotalEur() {
+      return this.eurToUsd > 0 ? this.foodTotalUsd / this.eurToUsd : 0;
+    },
+
+    lodgingTotalUsd() {
+      const amt = parseFloat(this.budgetInputs.lodgingCost) || 0;
+      return this.budgetInputs.lodgingCurrency === 'EUR' ? amt * this.eurToUsd : amt;
+    },
+
+    lodgingTotalEur() {
+      return this.eurToUsd > 0 ? this.lodgingTotalUsd / this.eurToUsd : 0;
+    },
+
+    activitiesTotalUsd() {
+      const amt = parseFloat(this.budgetInputs.activitiesCost) || 0;
+      return this.budgetInputs.activitiesCurrency === 'EUR' ? amt * this.eurToUsd : amt;
+    },
+
+    activitiesTotalEur() {
+      return this.eurToUsd > 0 ? this.activitiesTotalUsd / this.eurToUsd : 0;
+    },
+
+    grandTotalEstimatedUsd() {
+      return (
+        this.flightTotalUsd +
+        this.transitTotalUsd +
+        this.foodTotalUsd +
+        this.lodgingTotalUsd +
+        this.activitiesTotalUsd
+      );
+    },
+
+    grandTotalEstimatedEur() {
+      return this.eurToUsd > 0 ? this.grandTotalEstimatedUsd / this.eurToUsd : 0;
+    },
+
+    perPersonEstimatedUsd() {
+      return this.grandTotalEstimatedUsd / this.travelerCount;
+    },
+
+    perPersonEstimatedEur() {
+      return this.eurToUsd > 0 ? this.perPersonEstimatedUsd / this.eurToUsd : 0;
+    },
+
+    estimatedBreakdown() {
+      const total = this.grandTotalEstimatedUsd || 1;
+      return [
+        {
+          key: 'flights',
+          label: 'Flights',
+          icon: '✈️',
+          usd: Math.round(this.flightTotalUsd),
+          eur: Math.round(this.flightTotalEur),
+          pct: Math.round((this.flightTotalUsd / total) * 100)
+        },
+        {
+          key: 'transit',
+          label: 'Transportation',
+          icon: '🚗',
+          usd: Math.round(this.transitTotalUsd),
+          eur: Math.round(this.transitTotalEur),
+          pct: Math.round((this.transitTotalUsd / total) * 100)
+        },
+        {
+          key: 'food',
+          label: 'Food & Dining',
+          icon: '🍽️',
+          usd: Math.round(this.foodTotalUsd),
+          eur: Math.round(this.foodTotalEur),
+          pct: Math.round((this.foodTotalUsd / total) * 100)
+        },
+        {
+          key: 'lodging',
+          label: 'Lodging / Stays',
+          icon: '🏨',
+          usd: Math.round(this.lodgingTotalUsd),
+          eur: Math.round(this.lodgingTotalEur),
+          pct: Math.round((this.lodgingTotalUsd / total) * 100)
+        },
+        {
+          key: 'activities',
+          label: 'Activities & Shopping',
+          icon: '🛍️',
+          usd: Math.round(this.activitiesTotalUsd),
+          eur: Math.round(this.activitiesTotalEur),
+          pct: Math.round((this.activitiesTotalUsd / total) * 100)
+        }
+      ].filter(item => item.usd > 0);
+    },
+
+    // ── Logged Ledger Computations ──────────────────────────────
+    allExpenses() {
+      // Filter out any legacy dummy ids that may have been saved previously in localStorage
+      return this.customExpenses.filter(e => !e.id || !e.id.startsWith('exp_hotel_') && !e.id.startsWith('exp_rental_car') && !e.id.startsWith('exp_misters') && !e.id.startsWith('exp_guinness') && !e.id.startsWith('exp_titanic') && !e.id.startsWith('exp_moher') && !e.id.startsWith('exp_black_cab') && !e.id.startsWith('exp_fuel_tolls'));
+    },
+
     filteredExpenses() {
       return this.allExpenses.filter(exp => {
         if (this.activeCategoryFilter !== 'all' && exp.category !== this.activeCategoryFilter) return false;
@@ -61,73 +200,26 @@ const BudgetTracker = {
         );
       });
     },
-    totalEur() {
+
+    actualSpentEur() {
       return this.allExpenses
         .filter(e => e.currency === 'EUR' || !e.currency)
         .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
     },
-    totalGbp() {
+
+    actualSpentGbp() {
       return this.allExpenses
         .filter(e => e.currency === 'GBP')
         .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
     },
-    totalUsdEquivalent() {
-      return (this.totalEur * this.eurToUsd) + (this.totalGbp * this.gbpToUsd);
-    },
-    prepaidTotals() {
-      let eur = 0;
-      let gbp = 0;
-      this.allExpenses.forEach(e => {
-        if (e.isPrepaid || e.category === 'Lodging' || (e.title && e.title.includes('Retreat')) || (e.title && e.title.includes('Villa')) || (e.title && e.title.includes('Rental'))) {
-          const amt = parseFloat(e.amount) || 0;
-          if (e.currency === 'GBP') gbp += amt;
-          else eur += amt;
-        }
-      });
-      return { eur, gbp, usd: (eur * this.eurToUsd) + (gbp * this.gbpToUsd) };
-    },
-    onTheRoadTotals() {
-      const eur = Math.max(0, this.totalEur - this.prepaidTotals.eur);
-      const gbp = Math.max(0, this.totalGbp - this.prepaidTotals.gbp);
-      return { eur, gbp, usd: (eur * this.eurToUsd) + (gbp * this.gbpToUsd) };
-    },
-    categoryBreakdown() {
-      const categories = ['Lodging', 'Transit', 'Dining', 'Activities', 'Misc'];
-      const icons = {
-        'Lodging': '🏨',
-        'Transit': '🚗',
-        'Dining': '🍽️',
-        'Activities': '🎟️',
-        'Misc': '🛍️'
-      };
-      const totalCombinedUsd = this.totalUsdEquivalent || 1;
 
-      return categories.map(cat => {
-        let eur = 0;
-        let gbp = 0;
-        let count = 0;
-        this.allExpenses.forEach(e => {
-          const itemCat = e.category || 'Misc';
-          if (itemCat === cat || (cat === 'Misc' && !categories.includes(itemCat))) {
-            const amt = parseFloat(e.amount) || 0;
-            if (e.currency === 'GBP') gbp += amt;
-            else eur += amt;
-            count++;
-          }
-        });
-        const usd = (eur * this.eurToUsd) + (gbp * this.gbpToUsd);
-        const percent = Math.min(100, Math.round((usd / totalCombinedUsd) * 100));
-        return {
-          name: cat,
-          icon: icons[cat] || '📦',
-          eur,
-          gbp,
-          usd: Math.round(usd),
-          percent,
-          count
-        };
-      });
+    actualSpentUsdEquivalent() {
+      const directUsd = this.allExpenses
+        .filter(e => e.currency === 'USD')
+        .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+      return (this.actualSpentEur * this.eurToUsd) + (this.actualSpentGbp * this.gbpToUsd) + directUsd;
     },
+
     memberBalances() {
       const members = this.familyMembers;
       const count = Math.max(1, members.length);
@@ -138,20 +230,19 @@ const BudgetTracker = {
 
       this.allExpenses.forEach(e => {
         const amt = parseFloat(e.amount) || 0;
-        const usd = e.currency === 'GBP' ? amt * this.gbpToUsd : amt * this.eurToUsd;
-        
-        // Payer
+        let usd = amt;
+        if (e.currency === 'EUR') usd = amt * this.eurToUsd;
+        else if (e.currency === 'GBP') usd = amt * this.gbpToUsd;
+
         const payer = e.payer;
         if (balances[payer]) {
           balances[payer].paidUsd += usd;
         } else {
-          // If split/family, distribute payment evenly
           members.forEach(m => {
             balances[m].paidUsd += usd / count;
           });
         }
 
-        // Beneficiaries
         const beneficiaries = (Array.isArray(e.splitWith) && e.splitWith.length > 0)
           ? e.splitWith.filter(m => balances[m])
           : members;
@@ -161,7 +252,6 @@ const BudgetTracker = {
         });
       });
 
-      // Calculate net balances
       Object.values(balances).forEach(b => {
         b.netUsd = Math.round(b.paidUsd - b.shareUsd);
         b.paidUsd = Math.round(b.paidUsd);
@@ -170,8 +260,8 @@ const BudgetTracker = {
 
       return Object.values(balances);
     },
+
     settlementSteps() {
-      // Simplified peer-to-peer settlement calculation
       const debtors = [];
       const creditors = [];
 
@@ -214,15 +304,24 @@ const BudgetTracker = {
   methods: {
     loadStorage() {
       try {
+        const savedInputs = localStorage.getItem('ireland_trip_budget_inputs');
+        if (savedInputs) {
+          this.budgetInputs = Object.assign(this.budgetInputs, JSON.parse(savedInputs));
+        }
+
         const savedExpenses = localStorage.getItem('ireland_custom_expenses');
-        if (savedExpenses) this.customExpenses = JSON.parse(savedExpenses);
-        
+        if (savedExpenses) {
+          const raw = JSON.parse(savedExpenses);
+          // Purge any legacy dummy items
+          this.customExpenses = raw.filter(e => !e.id || (!e.id.startsWith('exp_hotel_') && !e.id.startsWith('exp_rental_car') && !e.id.startsWith('exp_misters') && !e.id.startsWith('exp_guinness') && !e.id.startsWith('exp_titanic') && !e.id.startsWith('exp_moher') && !e.id.startsWith('exp_black_cab') && !e.id.startsWith('exp_fuel_tolls')));
+        }
+
         const savedMembers = localStorage.getItem('ireland_family_members');
         if (savedMembers) this.familyMembers = JSON.parse(savedMembers);
-        
+
         const savedEurRate = localStorage.getItem('ireland_rate_eur_usd');
         if (savedEurRate) this.eurToUsd = parseFloat(savedEurRate);
-        
+
         const savedGbpRate = localStorage.getItem('ireland_rate_gbp_usd');
         if (savedGbpRate) this.gbpToUsd = parseFloat(savedGbpRate);
 
@@ -232,24 +331,59 @@ const BudgetTracker = {
         console.error('Error loading budget data', e);
       }
     },
+
+    saveBudgetInputs() {
+      localStorage.setItem('ireland_trip_budget_inputs', JSON.stringify(this.budgetInputs));
+      if (window.TravelApp && window.TravelApp.notify) {
+        window.TravelApp.notify('Trip budget estimates updated', '💾');
+      }
+    },
+
+    resetBudgetInputs() {
+      if (confirm('Reset all budget form inputs to zero?')) {
+        this.budgetInputs = {
+          flightCost: '',
+          flightMode: 'per_person',
+          flightCurrency: 'USD',
+          transitCost: '',
+          transitCurrency: 'EUR',
+          transitNotes: 'Rental 7-Seater/SUV + Diesel Fuel + M50/M1 Tolls',
+          foodCost: '',
+          foodMode: 'per_day',
+          foodDays: 13,
+          foodCurrency: 'EUR',
+          lodgingCost: '',
+          lodgingCurrency: 'EUR',
+          activitiesCost: '',
+          activitiesCurrency: 'EUR'
+        };
+        this.saveBudgetInputs();
+      }
+    },
+
     saveExpenses() {
       localStorage.setItem('ireland_custom_expenses', JSON.stringify(this.customExpenses));
     },
+
     saveMembers() {
       localStorage.setItem('ireland_family_members', JSON.stringify(this.familyMembers));
     },
+
     saveRates() {
       localStorage.setItem('ireland_rate_eur_usd', this.eurToUsd.toString());
       localStorage.setItem('ireland_rate_gbp_usd', this.gbpToUsd.toString());
     },
+
     addFamilyMember() {
       const name = this.newMemberName.trim();
       if (name && !this.familyMembers.includes(name)) {
         this.familyMembers.push(name);
         this.newMemberName = '';
         this.saveMembers();
+        this.newExpense.splitWith = [...this.familyMembers];
       }
     },
+
     removeFamilyMember(name) {
       if (this.familyMembers.length <= 1) {
         alert('Keep at least 1 traveler in your party.');
@@ -257,7 +391,9 @@ const BudgetTracker = {
       }
       this.familyMembers = this.familyMembers.filter(m => m !== name);
       this.saveMembers();
+      this.newExpense.splitWith = this.newExpense.splitWith.filter(m => m !== name);
     },
+
     toggleSplitMember(member) {
       if (this.newExpense.splitWith.includes(member)) {
         if (this.newExpense.splitWith.length > 1) {
@@ -267,9 +403,11 @@ const BudgetTracker = {
         this.newExpense.splitWith.push(member);
       }
     },
+
     selectAllSplitMembers() {
       this.newExpense.splitWith = [...this.familyMembers];
     },
+
     submitExpense() {
       if (!this.newExpense.title.trim() || !this.newExpense.amount) return;
       const exp = {
@@ -280,7 +418,6 @@ const BudgetTracker = {
         amount: parseFloat(this.newExpense.amount) || 0,
         payer: this.newExpense.payer,
         splitWith: [...this.newExpense.splitWith],
-        isPrepaid: Boolean(this.newExpense.isPrepaid),
         notes: this.newExpense.notes.trim(),
         createdAt: new Date().toISOString(),
         isCustom: true
@@ -296,8 +433,9 @@ const BudgetTracker = {
       this.newExpense.notes = '';
       this.showAddForm = false;
     },
+
     deleteExpense(id) {
-      if (confirm('Remove this expense item?')) {
+      if (confirm('Remove this expense item from your ledger?')) {
         this.customExpenses = this.customExpenses.filter(e => e.id !== id);
         this.saveExpenses();
         if (window.TravelApp && window.TravelApp.notify) {
@@ -305,63 +443,69 @@ const BudgetTracker = {
         }
       }
     },
-    quickAddPreset(title, category, currency, amount, payer) {
-      const exp = {
-        id: 'exp_' + Date.now(),
-        title,
-        category,
-        currency,
-        amount,
-        payer: payer || this.familyMembers[0] || 'Dad',
-        splitWith: [...this.familyMembers],
-        isPrepaid: false,
-        notes: 'Quick preset entry',
-        createdAt: new Date().toISOString(),
-        isCustom: true
-      };
-      this.customExpenses.unshift(exp);
-      this.saveExpenses();
-      if (window.TravelApp && window.TravelApp.notify) {
-        const sym = currency === 'GBP' ? '£' : (currency === 'USD' ? '$' : '€');
-        window.TravelApp.notify(`Logged preset: ${title} (${sym}${amount})`, '💶');
+
+    clearAllCustomExpenses() {
+      if (confirm('Clear all logged receipt items? This cannot be undone.')) {
+        this.customExpenses = [];
+        this.saveExpenses();
+        if (window.TravelApp && window.TravelApp.notify) {
+          window.TravelApp.notify('Ledger cleared', '🧹');
+        }
       }
     },
+
+    exportCsv() {
+      let csv = 'Title,Category,Amount,Currency,Payer,SplitWith,Notes\n';
+      this.allExpenses.forEach(e => {
+        const split = Array.isArray(e.splitWith) ? e.splitWith.join(';') : '';
+        csv += `"${(e.title || '').replace(/"/g, '""')}","${e.category || ''}",${e.amount || 0},"${e.currency || 'EUR'}","${e.payer || ''}","${split}","${(e.notes || '').replace(/"/g, '""')}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ireland-trip-expenses-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+
     printBudgetSummary() {
       window.print();
     }
   },
   template: `
     <div class="space-y-6">
-      
-      <!-- Top Overview Banner -->
-      <div class="card p-5 sm:p-6 border-2 border-[var(--accent)]/30 bg-[var(--card)] shadow-lg space-y-4">
+
+      <!-- ======================================================= -->
+      <!-- TOP ESTIMATED BUDGET TOTALS & SUMMARY CARDS             -->
+      <!-- ======================================================= -->
+      <div class="card p-5 sm:p-6 border-2 border-[var(--accent)]/40 bg-[var(--card)] shadow-lg space-y-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
           <div class="space-y-1">
             <div class="flex items-center gap-2">
               <span class="text-2xl">💶</span>
               <h2 class="text-xl sm:text-2xl font-black text-[var(--foreground)] tracking-tight">
-                Trip Budget & Family Expense Hub
+                Trip Budget Calculator & Total Expenses
               </h2>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                Multi-Currency
-              </span>
             </div>
             <p class="text-xs text-[var(--muted-foreground)]">
-              Real-time aggregation across the Republic (€ EUR), Northern Ireland (£ GBP), fair-share splits, and settlement balances.
+              All fictional examples have been cleared. Fill in your flight costs, transportation, and estimated food budget below to calculate total trip expenses.
             </p>
           </div>
 
           <!-- Header Actions -->
           <div class="flex items-center gap-2 flex-wrap">
             <button
-              @click="showAddForm = !showAddForm"
-              class="px-4 py-2 rounded-xl text-xs font-extrabold bg-[var(--accent)] hover:opacity-90 text-white shadow-md transition-all flex items-center gap-1.5"
+              @click="resetBudgetInputs"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--background)] hover:bg-[var(--card-hover)] text-rose-400 border border-[var(--border)] transition-all flex items-center gap-1"
+              title="Reset all inputs to zero"
             >
-              <span>{{ showAddForm ? '✕ Close Form' : '➕ Add Expense' }}</span>
+              <span>🔄</span>
+              <span>Reset to $0</span>
             </button>
             <button
               @click="printBudgetSummary"
-              class="px-3 py-2 rounded-xl text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] shadow-sm transition-all flex items-center gap-1.5"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] shadow-sm transition-all flex items-center gap-1.5"
               title="Print budget summary"
             >
               <span>🖨️ Print / PDF</span>
@@ -369,613 +513,622 @@ const BudgetTracker = {
           </div>
         </div>
 
-        <!-- 4 Primary Metric Aggregations -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Republic of Ireland Euros -->
-          <div class="p-3.5 rounded-2xl bg-emerald-500/[0.08] border border-emerald-500/25 flex flex-col justify-between space-y-1">
+        <!-- 4 Primary Metric Display Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Total Estimated USD -->
+          <div class="p-4 rounded-2xl bg-[var(--background)] border-2 border-[var(--accent)]/40 flex flex-col justify-between space-y-1 shadow-sm">
             <div class="flex items-center justify-between text-xs">
-              <span class="font-extrabold uppercase text-[10px] tracking-wider text-emerald-500 dark:text-emerald-400">
-                🇮🇪 Republic of Ireland
+              <span class="font-black uppercase text-[10px] tracking-wider text-[var(--accent)]">
+                💰 Total Trip Budget
               </span>
-              <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Bases 2, 3, 4</span>
+              <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Combined USD</span>
             </div>
-            <div class="text-2xl sm:text-3xl font-black text-emerald-500 dark:text-emerald-400">
-              €{{ totalEur.toLocaleString('en-US', { maximumFractionDigits: 0 }) }}
+            <div class="text-3xl font-black text-[var(--foreground)]">
+              \${{ Math.round(grandTotalEstimatedUsd).toLocaleString('en-US') }}
             </div>
-            <p class="text-[11px] text-[var(--muted-foreground)]">
-              Galway, Kerry, Connemara & Dublin
-            </p>
-          </div>
-
-          <!-- Northern Ireland British Pounds -->
-          <div class="p-3.5 rounded-2xl bg-blue-500/[0.08] border border-blue-500/25 flex flex-col justify-between space-y-1">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-extrabold uppercase text-[10px] tracking-wider text-blue-500 dark:text-blue-400">
-                🇬🇧 Northern Ireland
-              </span>
-              <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Base 1 (Newry)</span>
-            </div>
-            <div class="text-2xl sm:text-3xl font-black text-blue-500 dark:text-blue-400">
-              £{{ totalGbp.toLocaleString('en-US', { maximumFractionDigits: 0 }) }}
-            </div>
-            <p class="text-[11px] text-[var(--muted-foreground)]">
-              Belfast Titanic, Giant's Causeway & Antrim
-            </p>
-          </div>
-
-          <!-- Combined Total USD Reference -->
-          <div class="p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] flex flex-col justify-between space-y-1">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-extrabold uppercase text-[10px] tracking-wider text-[var(--muted-foreground)]">
-                🇺🇸 Est. Total USD
-              </span>
-              <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Combined</span>
-            </div>
-            <div class="text-2xl sm:text-3xl font-black text-[var(--foreground)]">
-              \${{ Math.round(totalUsdEquivalent).toLocaleString('en-US') }}
-            </div>
-            <div class="flex items-center gap-1.5 text-[10px] text-[var(--muted-foreground)]">
-              <span>€1 = \${{ eurToUsd }}</span>
-              <span>·</span>
-              <span>£1 = \${{ gbpToUsd }}</span>
+            <div class="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+              ≈ €{{ Math.round(grandTotalEstimatedEur).toLocaleString('en-US') }}
             </div>
           </div>
 
           <!-- Per-Person Split -->
-          <div class="p-3.5 rounded-2xl bg-purple-500/[0.08] border border-purple-500/25 flex flex-col justify-between space-y-1">
+          <div class="p-4 rounded-2xl bg-purple-500/[0.08] border-2 border-purple-500/30 flex flex-col justify-between space-y-1 shadow-sm">
             <div class="flex items-center justify-between text-xs">
-              <span class="font-extrabold uppercase text-[10px] tracking-wider text-purple-400">
+              <span class="font-black uppercase text-[10px] tracking-wider text-purple-700 dark:text-purple-400">
                 👥 Fair Share / Person
               </span>
-              <span class="text-[10px] font-mono text-purple-300 font-bold">{{ familyMembers.length }} Travelers</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-800 dark:text-purple-300 font-bold">
+                {{ travelerCount }} Travelers
+              </span>
             </div>
-            <div class="text-xl sm:text-2xl font-black text-purple-300">
-              \${{ Math.round(totalUsdEquivalent / familyMembers.length).toLocaleString('en-US') }}
+            <div class="text-3xl font-black text-purple-800 dark:text-purple-300">
+              \${{ Math.round(perPersonEstimatedUsd).toLocaleString('en-US') }}
             </div>
-            <p class="text-[11px] text-[var(--muted-foreground)]">
-              ~€{{ Math.round(totalEur / familyMembers.length) }} + £{{ Math.round(totalGbp / familyMembers.length) }} each
+            <div class="text-xs font-bold text-purple-700 dark:text-purple-400">
+              ≈ €{{ Math.round(perPersonEstimatedEur).toLocaleString('en-US') }} each
+            </div>
+          </div>
+
+          <!-- Core Transit & Food Total -->
+          <div class="p-4 rounded-2xl bg-amber-500/[0.08] border-2 border-amber-500/30 flex flex-col justify-between space-y-1 shadow-sm">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-black uppercase text-[10px] tracking-wider text-amber-700 dark:text-amber-400">
+                🚗 Transport + 🍽️ Food
+              </span>
+              <span class="text-[10px] font-mono text-[var(--muted-foreground)]">On The Ground</span>
+            </div>
+            <div class="text-2xl font-black text-amber-800 dark:text-amber-300">
+              \${{ Math.round(transitTotalUsd + foodTotalUsd).toLocaleString('en-US') }}
+            </div>
+            <p class="text-[11px] text-[var(--foreground)] font-medium">
+              Car: \${{ Math.round(transitTotalUsd) }} · Food: \${{ Math.round(foodTotalUsd) }}
+            </p>
+          </div>
+
+          <!-- Flights Total -->
+          <div class="p-4 rounded-2xl bg-sky-500/[0.08] border-2 border-sky-500/30 flex flex-col justify-between space-y-1 shadow-sm">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-black uppercase text-[10px] tracking-wider text-sky-700 dark:text-sky-400">
+                ✈️ Total Flight Costs
+              </span>
+              <span class="text-[10px] font-mono text-[var(--muted-foreground)]">Round-Trip</span>
+            </div>
+            <div class="text-2xl font-black text-sky-800 dark:text-sky-300">
+              \${{ Math.round(flightTotalUsd).toLocaleString('en-US') }}
+            </div>
+            <p class="text-[11px] text-[var(--foreground)] font-medium">
+              \${{ Math.round(flightTotalUsd / travelerCount) }}/person for {{ travelerCount }} travelers
             </p>
           </div>
         </div>
 
-        <!-- Pre-Paid vs On-The-Road Reality Bar -->
-        <div class="p-3.5 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-2">
-          <div class="flex items-center justify-between text-xs font-bold">
-            <span class="flex items-center gap-1.5 text-[var(--foreground)]">
-              <span>💳</span>
-              <span>Pre-Booked vs. On-The-Road Spending:</span>
-            </span>
-            <span class="text-[11px] text-[var(--muted-foreground)]">
-              Pre-Paid: <strong>\${{ Math.round(prepaidTotals.usd) }}</strong> ({{ Math.round((prepaidTotals.usd / (totalUsdEquivalent || 1)) * 100) }}%) · 
-              On The Road: <strong>\${{ Math.round(onTheRoadTotals.usd) }}</strong>
-            </span>
+        <!-- Visual Distribution Bar -->
+        <div v-if="grandTotalEstimatedUsd > 0" class="space-y-2 pt-2 border-t border-[var(--border)]">
+          <div class="flex items-center justify-between text-xs font-bold text-[var(--foreground)]">
+            <span>📊 Budget Distribution:</span>
+            <span class="text-[11px] font-mono text-[var(--muted-foreground)]">100% of Estimated Trip</span>
           </div>
 
-          <div class="w-full h-3 rounded-full bg-[var(--card-hover)] overflow-hidden flex">
+          <div class="w-full h-3.5 rounded-full bg-[var(--card-hover)] overflow-hidden flex border border-[var(--border)]">
             <div
-              class="h-full bg-emerald-500 transition-all"
-              :style="{ width: Math.round((prepaidTotals.usd / (totalUsdEquivalent || 1)) * 100) + '%' }"
-              title="Pre-Booked: Hotels, rental car, reserved tours"
-            ></div>
-            <div
-              class="h-full bg-amber-500 transition-all flex-1"
-              title="On The Road: Dinners, pub rounds, gas, tolls"
+              v-for="cat in estimatedBreakdown"
+              :key="cat.key"
+              class="h-full transition-all"
+              :style="{ width: cat.pct + '%' }"
+              :class="{
+                'bg-sky-500': cat.key === 'flights',
+                'bg-blue-600': cat.key === 'transit',
+                'bg-amber-500': cat.key === 'food',
+                'bg-emerald-600': cat.key === 'lodging',
+                'bg-purple-600': cat.key === 'activities'
+              }"
+              :title="cat.label + ': $' + cat.usd + ' (' + cat.pct + '%)'"
             ></div>
           </div>
 
-          <div class="flex items-center justify-between text-[10px] text-[var(--muted-foreground)] font-mono">
-            <span class="text-emerald-400 font-bold">● Pre-Booked (Hotels & Car): €{{ prepaidTotals.eur }} + £{{ prepaidTotals.gbp }}</span>
-            <span class="text-amber-400 font-bold">● On The Road (Dinners, Pubs, Gas): €{{ onTheRoadTotals.eur }} + £{{ onTheRoadTotals.gbp }}</span>
+          <div class="flex items-center gap-3 overflow-x-auto text-[11px] font-bold text-[var(--foreground)] pt-1 flex-wrap">
+            <span v-for="cat in estimatedBreakdown" :key="cat.key" class="inline-flex items-center gap-1">
+              <span>{{ cat.icon }}</span>
+              <span>{{ cat.label }}:</span>
+              <span class="font-mono font-black text-[var(--accent)]">\${{ cat.usd.toLocaleString() }} ({{ cat.pct }}%)</span>
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- Quick 1-Tap Expense Presets Bar -->
-      <div class="card p-3 sm:p-4 border border-[var(--border)] space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] flex items-center gap-1">
-            <span>⚡ Fast 1-Tap Add Presets:</span>
-          </span>
-          <span class="text-[10px] text-[var(--muted-foreground)]">Quickly log on-the-road purchases</span>
-        </div>
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          <button
-            @click="quickAddPreset('Pub Round & Pints', 'Dining', 'EUR', 40, familyMembers[0])"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/30 whitespace-nowrap transition-all shadow-sm flex items-center gap-1"
-          >
-            <span>🍺</span>
-            <span>+ €40 Pub Round</span>
-          </button>
-
-          <button
-            @click="quickAddPreset('Diesel / Petrol Refill', 'Transit', 'EUR', 75, familyMembers[0])"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 border border-blue-500/30 whitespace-nowrap transition-all shadow-sm flex items-center gap-1"
-          >
-            <span>⛽</span>
-            <span>+ €75 Fuel Tank</span>
-          </button>
-
-          <button
-            @click="quickAddPreset('M50 eFlow Toll / Parking', 'Transit', 'EUR', 20, familyMembers[0])"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/30 whitespace-nowrap transition-all shadow-sm flex items-center gap-1"
-          >
-            <span>🅿️</span>
-            <span>+ €20 Toll/Park</span>
-          </button>
-
-          <button
-            @click="quickAddPreset('Coffee & Bakery Morning', 'Dining', 'EUR', 24, familyMembers[0])"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 border border-emerald-500/30 whitespace-nowrap transition-all shadow-sm flex items-center gap-1"
-          >
-            <span>🥐</span>
-            <span>+ €24 Breakfast</span>
-          </button>
-
-          <button
-            @click="quickAddPreset('Seated Pub / Restaurant Dinner', 'Dining', 'EUR', 160, familyMembers[0])"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/30 whitespace-nowrap transition-all shadow-sm flex items-center gap-1"
-          >
-            <span>🍽️</span>
-            <span>+ €160 Dinner</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Add Expense Form (Expandable / Inline) -->
-      <div v-if="showAddForm" class="card p-5 border-2 border-[var(--accent)] bg-[var(--card)] shadow-xl space-y-4 animate-fadeIn">
-        <div class="flex items-center justify-between border-b border-[var(--border)] pb-2">
-          <h3 class="font-extrabold text-sm text-[var(--foreground)] flex items-center gap-2">
-            <span>📝</span>
-            <span>Log a New Trip Expense</span>
-          </h3>
-          <button @click="showAddForm = false" class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] font-bold">
-            ✕ Close
-          </button>
-        </div>
-
-        <form @submit.prevent="submitExpense" class="space-y-3.5 text-xs">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="sm:col-span-2 space-y-1">
-              <label class="font-bold text-[var(--foreground)]">Expense Description / Title</label>
-              <input
-                v-model="newExpense.title"
-                type="text"
-                placeholder="e.g. Seafood Dinner @ Ruibin, Cliffs Parking, Ferry Pass..."
-                required
-                class="w-full p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)]"
-              />
-            </div>
-
-            <div class="space-y-1">
-              <label class="font-bold text-[var(--foreground)]">Category</label>
-              <select
-                v-model="newExpense.category"
-                class="w-full p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-semibold"
-              >
-                <option value="Dining">🍽️ Dining & Pubs</option>
-                <option value="Transit">🚗 Transit & Car</option>
-                <option value="Lodging">🏨 Lodging</option>
-                <option value="Activities">🎟️ Activities & Tours</option>
-                <option value="Misc">🛍️ Sundries / Misc</option>
-              </select>
-            </div>
+      <!-- ======================================================= -->
+      <!-- CORE BUDGET FORM INPUTS                                 -->
+      <!-- ======================================================= -->
+      <div class="card p-5 sm:p-6 border-2 border-[var(--border)] bg-[var(--card)] shadow-md space-y-5">
+        <div class="border-b border-[var(--border)] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="font-black text-base sm:text-lg text-[var(--foreground)] flex items-center gap-2">
+              <span>✍️</span>
+              <span>Calculate Your Total Trip Expenses</span>
+            </h3>
+            <p class="text-xs text-[var(--muted-foreground)]">
+              Enter amounts in USD (\$) or EUR (€). Calculations update automatically and save locally.
+            </p>
           </div>
+          <div class="text-[11px] font-mono text-[var(--muted-foreground)] flex items-center gap-2">
+            <span>Exchange: €1 = \${{ eurToUsd }}</span>
+          </div>
+        </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="space-y-1">
-              <label class="font-bold text-[var(--foreground)]">Currency & Amount</label>
-              <div class="flex items-center gap-1.5">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <!-- INPUT 1: FLIGHT COSTS -->
+          <div class="p-4 rounded-2xl bg-[var(--background)] border-2 border-sky-500/40 space-y-3 shadow-sm flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-xs uppercase tracking-wider text-sky-700 dark:text-sky-400 flex items-center gap-1.5">
+                  <span>✈️</span>
+                  <span>1. Flight Costs</span>
+                </label>
+                <!-- Mode Toggle: Per-Person vs Total -->
+                <div class="flex items-center rounded-lg bg-[var(--card)] p-0.5 border border-[var(--border)] text-[10px]">
+                  <button
+                    type="button"
+                    @click="budgetInputs.flightMode = 'per_person'; saveBudgetInputs()"
+                    :class="['px-2 py-0.5 rounded font-bold transition-all', budgetInputs.flightMode === 'per_person' ? 'bg-sky-600 text-white shadow-sm' : 'text-[var(--muted-foreground)]']"
+                  >
+                    / Person
+                  </button>
+                  <button
+                    type="button"
+                    @click="budgetInputs.flightMode = 'total'; saveBudgetInputs()"
+                    :class="['px-2 py-0.5 rounded font-bold transition-all', budgetInputs.flightMode === 'total' ? 'bg-sky-600 text-white shadow-sm' : 'text-[var(--muted-foreground)]']"
+                  >
+                    Total
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
                 <select
-                  v-model="newExpense.currency"
-                  class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-bold text-[var(--foreground)]"
+                  v-model="budgetInputs.flightCurrency"
+                  @change="saveBudgetInputs"
+                  class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-bold text-xs text-[var(--foreground)]"
                 >
+                  <option value="USD">$ USD</option>
                   <option value="EUR">€ EUR</option>
-                  <option value="GBP">£ GBP</option>
                 </select>
+
                 <input
-                  v-model.number="newExpense.amount"
+                  v-model.number="budgetInputs.flightCost"
+                  @input="saveBudgetInputs"
                   type="number"
-                  placeholder="0.00"
                   step="any"
                   min="0"
-                  required
-                  class="w-full p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-mono font-bold text-sm text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)]"
+                  :placeholder="budgetInputs.flightMode === 'per_person' ? 'e.g. 850 per person' : 'e.g. 3400 total'"
+                  class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-mono font-bold text-sm text-[var(--foreground)] focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <p class="text-[11px] text-[var(--muted-foreground)] leading-tight">
+                {{ budgetInputs.flightMode === 'per_person' ? 'Multiplies by ' + travelerCount + ' travelers: ' + familyMembers.join(', ') : 'Total flight cost for all travelers combined' }}
+              </p>
+            </div>
+
+            <div class="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs font-bold">
+              <span class="text-[var(--muted-foreground)]">Flight Subtotal:</span>
+              <span class="font-mono text-sky-700 dark:text-sky-400 font-black">\${{ Math.round(flightTotalUsd).toLocaleString() }}</span>
+            </div>
+          </div>
+
+          <!-- INPUT 2: TRANSPORTATION (RENTAL CAR, DIESEL, TOLLS) -->
+          <div class="p-4 rounded-2xl bg-[var(--background)] border-2 border-blue-500/40 space-y-3 shadow-sm flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-xs uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                  <span>🚗</span>
+                  <span>2. Transportation</span>
+                </label>
+                <select
+                  v-model="budgetInputs.transitCurrency"
+                  @change="saveBudgetInputs"
+                  class="p-1 px-2 rounded-lg bg-[var(--card)] border border-[var(--border)] font-bold text-[10px] text-[var(--foreground)]"
+                >
+                  <option value="EUR">€ EUR</option>
+                  <option value="USD">$ USD</option>
+                </select>
+              </div>
+
+              <input
+                v-model.number="budgetInputs.transitCost"
+                @input="saveBudgetInputs"
+                type="number"
+                step="any"
+                min="0"
+                placeholder="e.g. 950 (Car + fuel + tolls)"
+                class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-mono font-bold text-sm text-[var(--foreground)] focus:ring-2 focus:ring-blue-500"
+              />
+
+              <p class="text-[11px] text-[var(--muted-foreground)] leading-tight">
+                Rental 7-Seater/SUV, diesel fuel fill-ups (~€250), M50 barrier-free eFlow & M1 motorway tolls.
+              </p>
+            </div>
+
+            <div class="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs font-bold">
+              <span class="text-[var(--muted-foreground)]">Transit Subtotal:</span>
+              <span class="font-mono text-blue-700 dark:text-blue-400 font-black">
+                {{ budgetInputs.transitCurrency === 'EUR' ? '€' + (budgetInputs.transitCost || 0) + ' (~$' + Math.round(transitTotalUsd) + ')' : '$' + Math.round(transitTotalUsd) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- INPUT 3: ESTIMATED FOOD & DINING BUDGET -->
+          <div class="p-4 rounded-2xl bg-[var(--background)] border-2 border-amber-500/40 space-y-3 shadow-sm flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="font-black text-xs uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                  <span>🍽️</span>
+                  <span>3. Estimated Food Budget</span>
+                </label>
+                <!-- Mode Toggle: Per-Day vs Total -->
+                <div class="flex items-center rounded-lg bg-[var(--card)] p-0.5 border border-[var(--border)] text-[10px]">
+                  <button
+                    type="button"
+                    @click="budgetInputs.foodMode = 'per_day'; saveBudgetInputs()"
+                    :class="['px-2 py-0.5 rounded font-bold transition-all', budgetInputs.foodMode === 'per_day' ? 'bg-amber-600 text-white shadow-sm' : 'text-[var(--muted-foreground)]']"
+                  >
+                    / Day
+                  </button>
+                  <button
+                    type="button"
+                    @click="budgetInputs.foodMode = 'total'; saveBudgetInputs()"
+                    :class="['px-2 py-0.5 rounded font-bold transition-all', budgetInputs.foodMode === 'total' ? 'bg-amber-600 text-white shadow-sm' : 'text-[var(--muted-foreground)]']"
+                  >
+                    Total
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <select
+                  v-model="budgetInputs.foodCurrency"
+                  @change="saveBudgetInputs"
+                  class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-bold text-xs text-[var(--foreground)]"
+                >
+                  <option value="EUR">€ EUR</option>
+                  <option value="USD">$ USD</option>
+                </select>
+
+                <input
+                  v-model.number="budgetInputs.foodCost"
+                  @input="saveBudgetInputs"
+                  type="number"
+                  step="any"
+                  min="0"
+                  :placeholder="budgetInputs.foodMode === 'per_day' ? 'e.g. 55 / person / day' : 'e.g. 2800 total dining'"
+                  class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-mono font-bold text-sm text-[var(--foreground)] focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <p class="text-[11px] text-[var(--muted-foreground)] leading-tight">
+                {{ budgetInputs.foodMode === 'per_day' ? 'Calculates €' + (budgetInputs.foodCost || 0) + ' × 13 days × ' + travelerCount + ' travelers across Dublin, Galway & Kerry' : 'Total food, pub rounds, groceries, and dining budget' }}
+              </p>
+            </div>
+
+            <div class="pt-2 border-t border-[var(--border)] flex items-center justify-between text-xs font-bold">
+              <span class="text-[var(--muted-foreground)]">Food Subtotal:</span>
+              <span class="font-mono text-amber-700 dark:text-amber-400 font-black">\${{ Math.round(foodTotalUsd).toLocaleString() }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPTIONAL INPUTS: LODGING & ACTIVITIES / TRINKETS -->
+        <div class="pt-3 border-t border-[var(--border)] space-y-3">
+          <div class="flex items-center justify-between text-xs font-bold text-[var(--foreground)]">
+            <span class="flex items-center gap-1.5">
+              <span>➕</span>
+              <span>Optional Additional Buckets (Lodging &amp; Activities / Shopping):</span>
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Optional Lodging Input -->
+            <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+              <div class="flex items-center justify-between text-xs font-bold">
+                <span class="text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                  <span>🏨</span>
+                  <span>Lodging / Stays (Total Airbnb &amp; Hotels):</span>
+                </span>
+                <span class="text-[11px] font-mono text-emerald-700 dark:text-emerald-400">\${{ Math.round(lodgingTotalUsd) }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <select
+                  v-model="budgetInputs.lodgingCurrency"
+                  @change="saveBudgetInputs"
+                  class="p-2 rounded-lg bg-[var(--card)] border border-[var(--border)] font-bold text-xs"
+                >
+                  <option value="EUR">€ EUR</option>
+                  <option value="USD">$ USD</option>
+                </select>
+                <input
+                  v-model.number="budgetInputs.lodgingCost"
+                  @input="saveBudgetInputs"
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder="e.g. Total booked accommodations"
+                  class="w-full p-2 rounded-lg bg-[var(--card)] border border-[var(--border)] font-mono text-xs font-bold"
                 />
               </div>
             </div>
 
-            <div class="space-y-1">
-              <label class="font-bold text-[var(--foreground)]">Who Paid?</label>
-              <select
-                v-model="newExpense.payer"
-                class="w-full p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-semibold"
-              >
-                <option v-for="m in familyMembers" :key="m" :value="m">{{ m }}</option>
-                <option value="Split">Family Split (Evenly)</option>
-              </select>
-            </div>
-
-            <div class="space-y-1 flex flex-col justify-end">
-              <label class="flex items-center gap-2 p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] cursor-pointer">
-                <input type="checkbox" v-model="newExpense.isPrepaid" class="rounded text-[var(--accent)]" />
-                <span class="text-xs font-semibold text-[var(--foreground)]">Already Pre-Paid?</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- Who splits this expense? -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <label class="font-bold text-[var(--foreground)]">Split Amongst (Who participates?):</label>
-              <button
-                type="button"
-                @click="selectAllSplitMembers"
-                class="text-[11px] text-[var(--accent)] underline font-semibold"
-              >
-                Select All Family
-              </button>
-            </div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                v-for="m in familyMembers"
-                :key="m"
-                @click="toggleSplitMember(m)"
-                :class="[
-                  'px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1',
-                  newExpense.splitWith.includes(m)
-                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
-                    : 'bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
-                ]"
-              >
-                <span>{{ newExpense.splitWith.includes(m) ? '✓' : '+' }}</span>
-                <span>{{ m }}</span>
-              </button>
+            <!-- Optional Activities & Shopping Trinkets Input -->
+            <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
+              <div class="flex items-center justify-between text-xs font-bold">
+                <span class="text-purple-700 dark:text-purple-400 flex items-center gap-1">
+                  <span>🛍️</span>
+                  <span>Activities, Tours &amp; Shopping Trinkets:</span>
+                </span>
+                <span class="text-[11px] font-mono text-purple-700 dark:text-purple-400">\${{ Math.round(activitiesTotalUsd) }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <select
+                  v-model="budgetInputs.activitiesCurrency"
+                  @change="saveBudgetInputs"
+                  class="p-2 rounded-lg bg-[var(--card)] border border-[var(--border)] font-bold text-xs"
+                >
+                  <option value="EUR">€ EUR</option>
+                  <option value="USD">$ USD</option>
+                </select>
+                <input
+                  v-model.number="budgetInputs.activitiesCost"
+                  @input="saveBudgetInputs"
+                  type="number"
+                  step="any"
+                  min="0"
+                  placeholder="e.g. Tours, passes, gifts, piano/art shopping"
+                  class="w-full p-2 rounded-lg bg-[var(--card)] border border-[var(--border)] font-mono text-xs font-bold"
+                />
+              </div>
             </div>
           </div>
-
-          <div class="space-y-1">
-            <label class="font-bold text-[var(--foreground)]">Notes / Receipt Ref</label>
-            <input
-              v-model="newExpense.notes"
-              type="text"
-              placeholder="e.g. Split with Dad, card receipt in glovebox..."
-              class="w-full p-2 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--foreground)]"
-            />
-          </div>
-
-          <div class="pt-2 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              @click="showAddForm = false"
-              class="px-4 py-2 rounded-xl bg-[var(--card-hover)] text-[var(--muted-foreground)] font-bold"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="px-6 py-2 rounded-xl bg-[var(--accent)] hover:opacity-90 text-white font-black shadow-md transition-all"
-            >
-              Save Expense Item
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
 
-      <!-- Who Paid vs Who Owes Settlement Matrix -->
-      <div class="card p-5 border border-[var(--border)] space-y-4">
+      <!-- ======================================================= -->
+      <!-- ON-THE-ROAD LOGGED EXPENSE LEDGER (CLEAN SLATE)         -->
+      <!-- ======================================================= -->
+      <div class="card p-5 border border-[var(--border)] bg-[var(--card)] shadow-md space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-          <div class="space-y-0.5">
+          <div>
             <div class="flex items-center gap-2">
-              <span class="text-xl">🤝</span>
-              <h3 class="font-extrabold text-base text-[var(--foreground)]">
-                Family Balances & Settlement ("Who Pays Whom")
+              <span class="text-xl">🧾</span>
+              <h3 class="font-extrabold text-sm sm:text-base text-[var(--foreground)]">
+                On-The-Road Expense Ledger &amp; Receipts
               </h3>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[var(--muted)] text-[var(--foreground)]">
+                {{ allExpenses.length }} Logged
+              </span>
             </div>
             <p class="text-xs text-[var(--muted-foreground)]">
-              Calculates total paid vs. fair share per person so nobody gets stuck holding the bill.
+              Log actual receipts during the trip to track spending against your estimated budget and calculate who owes whom.
             </p>
           </div>
 
-          <!-- Edit Members Control -->
-          <div class="flex items-center gap-1.5 self-start sm:self-auto">
-            <input
-              v-model="newMemberName"
-              @keyup.enter="addFamilyMember"
-              type="text"
-              placeholder="Add person..."
-              class="px-2.5 py-1 text-xs rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] w-28"
-            />
+          <div class="flex items-center gap-2 flex-wrap">
             <button
-              @click="addFamilyMember"
-              class="px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--accent)] text-white hover:opacity-90"
+              @click="showAddForm = !showAddForm"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white shadow-sm transition-all flex items-center gap-1.5"
             >
-              + Add
+              <span>{{ showAddForm ? '✕ Close Form' : '➕ Log Receipt' }}</span>
+            </button>
+            <button
+              v-if="allExpenses.length > 0"
+              @click="exportCsv"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] shadow-sm transition-all flex items-center gap-1"
+            >
+              <span>📥 Export CSV</span>
+            </button>
+            <button
+              v-if="allExpenses.length > 0"
+              @click="clearAllCustomExpenses"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all"
+              title="Clear all logged items"
+            >
+              <span>🗑️ Clear</span>
             </button>
           </div>
         </div>
 
-        <!-- Member Balances Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div
-            v-for="b in memberBalances"
-            :key="b.name"
-            class="p-3.5 rounded-2xl border bg-[var(--background)] space-y-2 flex flex-col justify-between"
-            :class="[
-              b.netUsd > 10 ? 'border-emerald-500/40 bg-emerald-500/[0.03]' : (b.netUsd < -10 ? 'border-amber-500/40 bg-amber-500/[0.03]' : 'border-[var(--border)]')
-            ]"
-          >
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-1.5">
-                <span class="text-base font-extrabold text-[var(--foreground)]">{{ b.name }}</span>
-                <button
-                  v-if="familyMembers.length > 2"
-                  @click="removeFamilyMember(b.name)"
-                  class="text-[10px] text-rose-400 hover:text-rose-300 font-bold px-1"
-                  title="Remove person"
+        <!-- Add Expense Form -->
+        <div v-if="showAddForm" class="p-4 rounded-2xl border-2 border-[var(--accent)] bg-[var(--background)] shadow-inner space-y-3 animate-fadeIn">
+          <div class="flex items-center justify-between border-b border-[var(--border)] pb-2 text-xs font-bold">
+            <span>📝 Log a Real Purchase / Receipt</span>
+            <button @click="showAddForm = false" class="text-[var(--muted-foreground)] hover:text-[var(--foreground)]">✕</button>
+          </div>
+
+          <form @submit.prevent="submitExpense" class="space-y-3 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="sm:col-span-2 space-y-1">
+                <label class="font-bold text-[var(--foreground)]">Description / Where</label>
+                <input
+                  v-model="newExpense.title"
+                  type="text"
+                  placeholder="e.g. Lunch @ The Hairy Lemon, Cliffs Parking, Tesco groceries..."
+                  required
+                  class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]"
+                />
+              </div>
+
+              <div class="space-y-1">
+                <label class="font-bold text-[var(--foreground)]">Category</label>
+                <select
+                  v-model="newExpense.category"
+                  class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-bold text-[var(--foreground)]"
                 >
-                  ✕
+                  <option value="Dining">🍽️ Dining &amp; Pubs</option>
+                  <option value="Transit">🚗 Transit &amp; Fuel</option>
+                  <option value="Lodging">🏨 Lodging</option>
+                  <option value="Activities">🎟️ Activities &amp; Tours</option>
+                  <option value="Shopping">🛍️ Shopping &amp; Trinkets</option>
+                  <option value="Misc">📦 Misc</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div class="space-y-1">
+                <label class="font-bold text-[var(--foreground)]">Currency &amp; Amount</label>
+                <div class="flex items-center gap-1.5">
+                  <select
+                    v-model="newExpense.currency"
+                    class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-bold text-[var(--foreground)]"
+                  >
+                    <option value="EUR">€ EUR</option>
+                    <option value="GBP">£ GBP</option>
+                    <option value="USD">$ USD</option>
+                  </select>
+                  <input
+                    v-model.number="newExpense.amount"
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="0.00"
+                    required
+                    class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-mono font-bold text-sm text-[var(--foreground)]"
+                  />
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label class="font-bold text-[var(--foreground)]">Who Paid?</label>
+                <select
+                  v-model="newExpense.payer"
+                  class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] font-bold text-[var(--foreground)]"
+                >
+                  <option v-for="m in familyMembers" :key="m" :value="m">{{ m }}</option>
+                  <option value="Split">Split Evenly</option>
+                </select>
+              </div>
+
+              <div class="space-y-1">
+                <label class="font-bold text-[var(--foreground)]">Notes (Optional)</label>
+                <input
+                  v-model="newExpense.notes"
+                  type="text"
+                  placeholder="Receipt note or details"
+                  class="w-full p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1.5 pt-1">
+              <label class="font-bold text-[var(--foreground)]">Split Between:</label>
+              <div class="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  v-for="m in familyMembers"
+                  :key="m"
+                  @click="toggleSplitMember(m)"
+                  :class="[
+                    'px-2.5 py-1 rounded-lg text-xs font-bold border transition-all',
+                    newExpense.splitWith.includes(m)
+                      ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                      : 'bg-[var(--card)] text-[var(--muted-foreground)] border-[var(--border)]'
+                  ]"
+                >
+                  {{ newExpense.splitWith.includes(m) ? '✓ ' + m : '+ ' + m }}
+                </button>
+                <button
+                  type="button"
+                  @click="selectAllSplitMembers"
+                  class="text-[11px] text-[var(--accent)] underline ml-2"
+                >
+                  Select All
                 </button>
               </div>
-              <span
-                :class="[
-                  'px-2 py-0.5 rounded text-[10px] font-extrabold shadow-sm',
-                  b.netUsd > 1 ? 'bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400' :
-                  (b.netUsd < -1 ? 'bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400' : 'bg-slate-200 text-slate-800')
-                ]"
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
+              <button
+                type="button"
+                @click="showAddForm = false"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold text-[var(--muted-foreground)] hover:bg-[var(--card)]"
               >
-                {{ b.netUsd > 1 ? '+\$' + b.netUsd + ' (Gets Back)' : (b.netUsd < -1 ? '-\$' + Math.abs(b.netUsd) + ' (Owes)' : 'Settled up') }}
-              </span>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-1.5 rounded-xl text-xs font-black bg-[var(--accent)] text-white shadow-md hover:opacity-90"
+              >
+                Save Receipt
+              </button>
             </div>
-
-            <div class="space-y-1 text-xs">
-              <div class="flex justify-between text-[var(--muted-foreground)]">
-                <span>Total Paid:</span>
-                <strong class="text-[var(--foreground)]">\${{ b.paidUsd }}</strong>
-              </div>
-              <div class="flex justify-between text-[var(--muted-foreground)]">
-                <span>Fair Share:</span>
-                <span class="text-[var(--foreground)]">\${{ b.shareUsd }}</span>
-              </div>
-            </div>
-
-            <!-- Net Balance Highlight -->
-            <div class="pt-2 border-t border-[var(--border)] text-center font-mono font-bold text-xs">
-              <span :class="b.netUsd >= 0 ? 'text-emerald-400' : 'text-amber-400'">
-                {{ b.netUsd >= 0 ? 'Balance: +\$' + b.netUsd : 'Balance: -\$' + Math.abs(b.netUsd) }}
-              </span>
-            </div>
-          </div>
+          </form>
         </div>
 
-        <!-- Clear Settlement Instructions -->
-        <div v-if="settlementSteps.length > 0" class="p-4 rounded-2xl bg-indigo-500/[0.08] border border-indigo-500/25 space-y-2">
-          <div class="flex items-center gap-2 text-indigo-400 font-bold text-xs">
-            <span>✨</span>
-            <h4>Fastest Way to Settle Balances ({{ settlementSteps.length }} {{ settlementSteps.length === 1 ? 'transfer' : 'transfers' }}):</h4>
+        <!-- Ledger Table or Empty State -->
+        <div v-if="allExpenses.length === 0" class="text-center py-8 space-y-2 border-2 border-dashed border-[var(--border)] rounded-2xl">
+          <span class="text-3xl">🧾</span>
+          <div class="font-bold text-sm text-[var(--foreground)]">No individual receipts logged yet</div>
+          <p class="text-xs text-[var(--muted-foreground)] max-w-md mx-auto">
+            Your ledger starts with a clean slate. Tap "➕ Log Receipt" when you want to track actual purchases or settle dinner tabs during the trip!
+          </p>
+        </div>
+
+        <!-- Table of Logged Expenses -->
+        <div v-else class="overflow-x-auto space-y-2">
+          <div class="flex items-center justify-between text-xs text-[var(--muted-foreground)] pb-1">
+            <span>Showing {{ filteredExpenses.length }} of {{ allExpenses.length }} receipts</span>
+            <span class="font-bold text-[var(--foreground)] font-mono">
+              Total Logged: \${{ Math.round(actualSpentUsdEquivalent).toLocaleString() }}
+            </span>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)] text-[11px] uppercase font-bold">
+                <th class="py-2 px-2">Item</th>
+                <th class="py-2 px-2">Category</th>
+                <th class="py-2 px-2">Payer</th>
+                <th class="py-2 px-2 text-right">Amount</th>
+                <th class="py-2 px-2 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="e in filteredExpenses"
+                :key="e.id"
+                class="border-b border-[var(--border)] hover:bg-[var(--card-hover)] transition-colors"
+              >
+                <td class="py-2.5 px-2 font-bold text-[var(--foreground)]">
+                  <div>{{ e.title }}</div>
+                  <div v-if="e.notes" class="text-[11px] font-normal text-[var(--muted-foreground)]">{{ e.notes }}</div>
+                </td>
+                <td class="py-2.5 px-2">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--muted)] text-[var(--foreground)]">
+                    {{ e.category }}
+                  </span>
+                </td>
+                <td class="py-2.5 px-2 font-medium text-[var(--foreground)]">
+                  {{ e.payer }}
+                </td>
+                <td class="py-2.5 px-2 text-right font-mono font-bold text-[var(--foreground)]">
+                  {{ e.currency === 'GBP' ? '£' : (e.currency === 'USD' ? '$' : '€') }}{{ e.amount }}
+                </td>
+                <td class="py-2.5 px-2 text-center">
+                  <button
+                    @click="deleteExpense(e.id)"
+                    class="text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                    title="Delete expense"
+                  >
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Settlement Summary (Who Owes Whom) -->
+        <div v-if="allExpenses.length > 0 && settlementSteps.length > 0" class="p-4 rounded-2xl bg-[var(--background)] border border-[var(--border)] space-y-2.5">
+          <h4 class="font-extrabold text-xs uppercase tracking-wider text-[var(--foreground)] flex items-center gap-1.5">
+            <span>🤝</span>
+            <span>Fair-Share Settlement (Who Owes Whom):</span>
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div
               v-for="(step, sIdx) in settlementSteps"
               :key="sIdx"
-              class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-between"
+              class="p-2.5 rounded-xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-between text-xs"
             >
-              <div class="flex items-center gap-1.5 font-bold text-[var(--foreground)]">
-                <span>👤 {{ step.from }}</span>
-                <span class="text-[var(--muted-foreground)]">→ pays →</span>
-                <span>👤 {{ step.to }}</span>
+              <div class="font-bold text-[var(--foreground)]">
+                <span class="text-rose-700 dark:text-rose-400">{{ step.from }}</span>
+                <span class="text-[var(--muted-foreground)] font-normal"> owes </span>
+                <span class="text-emerald-700 dark:text-emerald-400">{{ step.to }}</span>
               </div>
-              <span class="font-mono font-black text-sm text-[var(--accent)]">
-                \${{ step.amountUsd }} <span class="text-xs text-[var(--muted-foreground)] font-normal">(~€{{ step.amountEur }})</span>
-              </span>
+              <div class="font-mono font-black text-[var(--accent)]">
+                \${{ step.amountUsd }} (~€{{ step.amountEur }})
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Category Visual Breakdown -->
-      <div class="card p-5 border border-[var(--border)] space-y-3">
-        <h3 class="font-extrabold text-base text-[var(--foreground)] flex items-center gap-2">
-          <span>📊</span>
-          <span>Spending Breakdown by Category</span>
-        </h3>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <div
-            v-for="cat in categoryBreakdown"
-            :key="cat.name"
-            @click="activeCategoryFilter = (activeCategoryFilter === cat.name ? 'all' : cat.name)"
-            :class="[
-              'p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between hover:scale-[1.01]',
-              activeCategoryFilter === cat.name
-                ? 'bg-[var(--accent)]/15 border-[var(--accent)] ring-2 ring-[var(--accent)]'
-                : 'bg-[var(--background)] hover:bg-[var(--card-hover)] border-[var(--border)]'
-            ]"
-          >
-            <div>
-              <div class="flex items-center justify-between">
-                <span class="text-2xl">{{ cat.icon }}</span>
-                <span class="text-xs font-mono font-bold text-[var(--muted-foreground)]">{{ cat.percent }}%</span>
-              </div>
-              <h4 class="font-bold text-sm text-[var(--foreground)] mt-2">{{ cat.name }}</h4>
-              <p class="text-[11px] text-[var(--muted-foreground)] font-mono mt-0.5">
-                \${{ cat.usd }} · {{ cat.count }} {{ cat.count === 1 ? 'item' : 'items' }}
-              </p>
-            </div>
-
-            <div class="w-full h-1.5 rounded-full bg-[var(--border)] overflow-hidden mt-3">
-              <div class="h-full bg-[var(--accent)] rounded-full" :style="{ width: cat.percent + '%' }"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Interactive Irish Tipping & Currency Etiquette Drawer -->
-      <div class="card p-4 sm:p-5 border border-amber-500/30 bg-amber-500/[0.04] space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2 text-amber-400 font-extrabold text-sm">
-            <span class="text-lg">💡</span>
-            <h3>Irish Pub & Dining Tipping Rules of Thumb:</h3>
-          </div>
-          <button
-            @click="showTippingGuide = !showTippingGuide"
-            class="text-xs text-amber-400 font-bold hover:underline"
-          >
-            {{ showTippingGuide ? '▲ Hide Guide' : '▼ Show Guide' }}
-          </button>
-        </div>
-
-        <div v-if="showTippingGuide" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs text-[var(--foreground)] animate-fadeIn">
-          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1">
-            <strong>🍻 Pubs & Bars (Counter):</strong>
-            <p class="text-[11px] text-[var(--muted-foreground)] leading-relaxed">
-              No tip is expected when ordering drinks at the bar. If ordering a large round with table service, rounding up change or leaving €1–€2 is appreciated.
-            </p>
-          </div>
-
-          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1">
-            <strong>🍽️ Seated Restaurants:</strong>
-            <p class="text-[11px] text-[var(--muted-foreground)] leading-relaxed">
-              10% to 12.5% is standard for good table service. Always check the receipt first—many Dublin/Galway spots already add an automatic 10% "Service Charge".
-            </p>
-          </div>
-
-          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1">
-            <strong>🚕 Taxis & Transfers:</strong>
-            <p class="text-[11px] text-[var(--muted-foreground)] leading-relaxed">
-              Round up to the nearest €2 or €5 (e.g. pay €20 on a €18.20 fare). Card / FreeNow contactless app is accepted in all Dublin/Galway cabs.
-            </p>
-          </div>
-
-          <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-1">
-            <strong>🪙 Cash vs. Cards:</strong>
-            <p class="text-[11px] text-[var(--muted-foreground)] leading-relaxed">
-              Apple Pay / Contactless cards work 99% of the time. Keep €30 in coins/cash for rural cliff parking meters (Moher/Dunloe) and trad music tip jars.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Detailed Expenses Directory & Filter Controls -->
-      <div class="card p-5 space-y-4 border border-[var(--border)]">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-          <div class="space-y-0.5">
-            <h3 class="font-extrabold text-base text-[var(--foreground)] flex items-center gap-2">
-              <span>📋</span>
-              <span>All Logged Expenses & Bookings</span>
-            </h3>
-            <p class="text-xs text-[var(--muted-foreground)]">
-              Showing {{ filteredExpenses.length }} of {{ allExpenses.length }} trip entries
-            </p>
-          </div>
-
-          <!-- Currency filter pills -->
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[10px] font-bold uppercase text-[var(--muted-foreground)]">Currency:</span>
-            <button
-              v-for="c in [
-                { id: 'all', label: 'All' },
-                { id: 'EUR', label: '€ EUR' },
-                { id: 'GBP', label: '£ GBP' }
-              ]"
-              :key="c.id"
-              @click="activeCurrencyFilter = c.id"
-              :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
-                activeCurrencyFilter === c.id
-                  ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
-                  : 'bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
-              ]"
-            >
-              {{ c.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Search Bar & Filters -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="🔍 Search expenses (e.g. 'Mister S', 'Hotel', 'Dad', 'Car')..."
-            class="w-full sm:max-w-md px-3.5 py-2 text-xs rounded-xl bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)]"
-          />
-
-          <!-- Category filter buttons -->
-          <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
-            <button
-              v-for="cat in ['all', 'Lodging', 'Transit', 'Dining', 'Activities']"
-              :key="cat"
-              @click="activeCategoryFilter = cat"
-              :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all',
-                activeCategoryFilter === cat
-                  ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm font-bold'
-                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-              ]"
-            >
-              {{ cat === 'all' ? 'All Categories' : cat }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Expense Cards / List -->
-        <div class="space-y-2">
-          <div
-            v-for="exp in filteredExpenses"
-            :key="exp.id"
-            class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-          >
-            <!-- Left: Icon, Category & Title -->
-            <div class="flex items-start sm:items-center gap-2.5 min-w-0">
-              <span class="text-xl flex-shrink-0">
-                {{ exp.category === 'Lodging' ? '🏨' : (exp.category === 'Transit' ? '🚗' : (exp.category === 'Dining' ? '🍽️' : (exp.category === 'Activities' ? '🎟️' : '📦'))) }}
-              </span>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 flex-wrap">
-                  <strong class="text-xs sm:text-sm text-[var(--foreground)]">{{ exp.title }}</strong>
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)]">
-                    {{ exp.category }}
-                  </span>
-                  <span v-if="exp.isPrepaid" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    ✓ Pre-Booked
-                  </span>
-                </div>
-                <p class="text-[11px] text-[var(--muted-foreground)] mt-0.5 truncate">
-                  Paid by <strong class="text-[var(--foreground)]">{{ exp.payer || 'Dad' }}</strong>
-                  <span v-if="exp.notes">· {{ exp.notes }}</span>
-                </p>
-              </div>
-            </div>
-
-            <!-- Right: Amount & Actions -->
-            <div class="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border)]">
-              <div class="text-right">
-                <div class="font-mono font-black text-sm sm:text-base text-[var(--foreground)]">
-                  {{ exp.currency === 'GBP' ? '£' : '€' }}{{ parseFloat(exp.amount).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) }}
-                </div>
-                <div class="text-[10px] text-[var(--muted-foreground)] font-mono">
-                  ~\${{ Math.round(exp.currency === 'GBP' ? exp.amount * gbpToUsd : exp.amount * eurToUsd) }} USD
-                </div>
-              </div>
-
-              <!-- Delete custom expense -->
-              <button
-                v-if="exp.isCustom"
-                @click.stop="deleteExpense(exp.id)"
-                class="text-xs text-rose-400 hover:text-rose-300 font-bold p-1 transition-transform hover:scale-110"
-                title="Remove expense"
-              >
-                🗑️
-              </button>
-            </div>
-          </div>
-
-          <div v-if="filteredExpenses.length === 0" class="card p-8 text-center text-xs text-[var(--muted-foreground)]">
-            No expenses found matching your filter criteria.
-          </div>
-        </div>
-      </div>
     </div>
   `
 };
