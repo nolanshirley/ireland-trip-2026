@@ -568,7 +568,12 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  min-height: 62px;
+  height: auto;
+  padding-top: 6px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 18px));
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
   background: var(--card);
   backdrop-filter: blur(16px);
   border-top: 1px solid var(--border);
@@ -576,8 +581,7 @@ body {
   align-items: center;
   justify-content: space-around;
   z-index: 40;
-  box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
-  padding: 0 4px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
 }
 
 @media (min-width: 768px) {
@@ -592,13 +596,14 @@ body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted-foreground);
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-radius: 8px;
   transition: color 0.15s ease, transform 0.15s ease;
-  min-width: 48px;
+  flex: 1;
+  max-width: 70px;
   user-select: none;
 }
 
@@ -610,6 +615,84 @@ body {
 
 .mobile-nav-item span:first-child {
   font-size: 18px;
+}
+
+@media (max-width: 767px) {
+  #app {
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 22px)) !important;
+  }
+}
+
+/* ── Action & Creation Confirmation Toast (Floating Above Bottom Nav) ── */
+.toast-container {
+  position: fixed;
+  bottom: calc(76px + env(safe-area-inset-bottom, 18px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  pointer-events: none;
+  width: auto;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .toast-container {
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    transform: none;
+  }
+}
+
+.toast-pill {
+  pointer-events: auto;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 9999px;
+  background: var(--card);
+  backdrop-filter: blur(20px);
+  border: 1.5px solid var(--accent);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: var(--foreground);
+  font-size: 12.5px;
+  font-weight: 700;
+  animation: toastPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.toast-pill:hover {
+  transform: scale(1.02);
+}
+
+.toast-pill:active {
+  transform: scale(0.98);
+}
+
+@keyframes toastPop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
 }
 
 /* ── Interactive Detail Modal / Bottom Sheet ─────────────────── */

@@ -2,7 +2,7 @@
 <html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🍀 Ireland Trip — October 2026 Interactive Travel Dashboard</title>
   
   <!-- Local Tailwind CSS Runtime (no internet needed) -->
@@ -2740,32 +2740,34 @@ Day 8: 11:00 AM - Dingle Sea Safari Boat Tour (Booking)"
       </div>
     </div>
 
+    <!-- Global Floating Action & Creation Toast (Mobile-Friendly Above Nav) -->
+    <transition name="toast-fade">
+      <div v-if="toast.show" class="toast-container" @click="hideToast">
+        <div class="toast-pill">
+          <span class="text-base flex-shrink-0 animate-bounce">{{ toast.icon }}</span>
+          <span class="truncate">{{ toast.message }}</span>
+          <button
+            v-if="toast.actionText"
+            @click.stop="triggerToastAction"
+            class="ml-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[var(--accent)] text-white hover:opacity-90 shadow-sm transition-transform active:scale-95"
+          >
+            {{ toast.actionText }}
+          </button>
+          <span class="text-[11px] text-[var(--muted-foreground)] ml-1 opacity-70">✕</span>
+        </div>
+      </div>
+    </transition>
+
     <!-- Mobile Bottom Navigation Bar (Fixed for thumb access on phones) -->
     <nav class="mobile-bottom-nav">
       <button
-        v-for="t in tabs"
+        v-for="t in mobileTabs"
         :key="t.id"
         @click="activeTab = t.id"
         :class="['mobile-nav-item', activeTab === t.id ? 'active' : '']"
       >
         <span>{{ t.icon }}</span>
         <span>{{ t.shortLabel }}</span>
-      </button>
-      <button
-        @click="openScratchpad"
-        class="mobile-nav-item"
-        title="Quick Notes & Scratchpad"
-      >
-        <span>📝</span>
-        <span>Notes</span>
-      </button>
-      <button
-        @click="openGloveboxModal"
-        class="mobile-nav-item text-rose-500 font-bold"
-        title="Emergency SOS Guide & Contacts"
-      >
-        <span>🆘</span>
-        <span class="text-rose-500 font-bold">SOS</span>
       </button>
     </nav>
 

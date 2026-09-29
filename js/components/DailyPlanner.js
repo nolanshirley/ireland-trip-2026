@@ -252,13 +252,20 @@ const DailyPlanner = {
       return this.globalRainMode || !!this.showRainBackups[idx];
     },
     toggleDayRainBackup(idx) {
-      this.showRainBackups[idx] = !this.isRainActive(idx);
+      const willBeActive = !this.isRainActive(idx);
+      this.showRainBackups[idx] = willBeActive;
+      if (window.TravelApp && window.TravelApp.notify) {
+        window.TravelApp.notify(willBeActive ? `Day ${idx + 1}: Indoor rain backup mode active` : `Day ${idx + 1}: Outdoor schedule restored`, '☔');
+      }
     },
     toggleGlobalRainMode() {
       this.globalRainMode = !this.globalRainMode;
       this.timeline.forEach((_, idx) => {
         this.showRainBackups[idx] = this.globalRainMode;
       });
+      if (window.TravelApp && window.TravelApp.notify) {
+        window.TravelApp.notify(this.globalRainMode ? 'All Days: Rain contingencies highlighted' : 'All Days: Standard outdoor itinerary restored', '☔');
+      }
     },
     formatHour(h) {
       if (h === 0 || h === 24) return '12 AM';

@@ -287,6 +287,10 @@ const BudgetTracker = {
       };
       this.customExpenses.unshift(exp);
       this.saveExpenses();
+      if (window.TravelApp && window.TravelApp.notify) {
+        const sym = exp.currency === 'GBP' ? '£' : (exp.currency === 'USD' ? '$' : '€');
+        window.TravelApp.notify(`Logged ${sym}${exp.amount}: ${exp.title}`, '💶');
+      }
       this.newExpense.title = '';
       this.newExpense.amount = '';
       this.newExpense.notes = '';
@@ -296,6 +300,9 @@ const BudgetTracker = {
       if (confirm('Remove this expense item?')) {
         this.customExpenses = this.customExpenses.filter(e => e.id !== id);
         this.saveExpenses();
+        if (window.TravelApp && window.TravelApp.notify) {
+          window.TravelApp.notify('Expense removed from ledger', '🗑️');
+        }
       }
     },
     quickAddPreset(title, category, currency, amount, payer) {
@@ -314,6 +321,10 @@ const BudgetTracker = {
       };
       this.customExpenses.unshift(exp);
       this.saveExpenses();
+      if (window.TravelApp && window.TravelApp.notify) {
+        const sym = currency === 'GBP' ? '£' : (currency === 'USD' ? '$' : '€');
+        window.TravelApp.notify(`Logged preset: ${title} (${sym}${amount})`, '💶');
+      }
     },
     printBudgetSummary() {
       window.print();

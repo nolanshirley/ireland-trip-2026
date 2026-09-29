@@ -86,6 +86,10 @@ const app = createApp({
       if (!hiddenItemIds.value.includes(id)) {
         hiddenItemIds.value = [...hiddenItemIds.value, id];
         saveHiddenItemIds();
+        showToast('Item hidden from itinerary', '🗑️', {
+          actionText: 'Undo',
+          actionFn: () => restoreItem(id)
+        });
       }
     };
 
@@ -93,6 +97,7 @@ const app = createApp({
       if (!id) return;
       hiddenItemIds.value = hiddenItemIds.value.filter(h => h !== id);
       saveHiddenItemIds();
+      showToast('Item restored to itinerary', '↩️');
     };
 
     const restoreAllHiddenItems = () => {
@@ -213,9 +218,57 @@ const app = createApp({
       { id: 'weather', label: '🌦️ Weather & Packing', shortLabel: 'Weather', icon: '🌦️' },
       { id: 'hiking', label: '🥾 Trails & Nature', shortLabel: 'Trails', icon: '🥾' },
       { id: 'restaurants', label: '🍴 Food & Pubs', shortLabel: 'Food', icon: '🍴' },
-      { id: 'sights', label: '🗺️ Sights & Drives', shortLabel: 'Sights & Drives', icon: '🗺️' },
+      { id: 'sights', label: '🗺️ Sights', shortLabel: 'Sights', icon: '🗺️' },
       { id: 'reservations', label: '📋 Bookings & Passes', shortLabel: 'Bookings', icon: '📋' }
     ];
+
+    // Mobile Bottom Navigation Tabs (excludes budget, SOS, and notes to prevent crowding)
+    const mobileTabs = computed(() => {
+      return tabs.filter(t => t.id !== 'budget');
+    });
+
+    // ── Global Action & Creation Notifications (Toast) ─────────
+    const toast = ref({
+      show: false,
+      message: '',
+      icon: '✨',
+      actionText: null,
+      actionFn: null,
+      timeoutId: null
+    });
+
+    const showToast = (message, icon = '✨', options = {}) => {
+      if (toast.value.timeoutId) {
+        clearTimeout(toast.value.timeoutId);
+      }
+      toast.value = {
+        show: true,
+        message,
+        icon,
+        actionText: options.actionText || null,
+        actionFn: options.actionFn || null,
+        timeoutId: setTimeout(() => {
+          toast.value.show = false;
+        }, options.duration || 3200)
+      };
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(12); } catch (e) {}
+      }
+    };
+
+    const hideToast = () => {
+      if (toast.value.timeoutId) {
+        clearTimeout(toast.value.timeoutId);
+      }
+      toast.value.show = false;
+    };
+
+    const triggerToastAction = () => {
+      if (typeof toast.value.actionFn === 'function') {
+        toast.value.actionFn();
+      }
+      hideToast();
+    };
 
     // Detail Modal / Bottom Sheet Reactive State
     const selectedDetailItem = ref(null);
@@ -846,6 +899,7 @@ const app = createApp({
       newNoteForm.value = { tab: 'general', targetName: '', content: '', code: '' };
       isAddingNewNote.value = false;
       loadAllNotesFromStorage();
+      showToast('Note saved offline', '📝');
     };
 
     // CRUD: Update Note
@@ -889,6 +943,7 @@ const app = createApp({
       note.code = newCode;
       note.isEditing = false;
       loadAllNotesFromStorage();
+      showToast('Note updated', '💾');
     };
 
     // CRUD: Delete Note
@@ -924,6 +979,7 @@ const app = createApp({
       }
 
       loadAllNotesFromStorage();
+      showToast('Note deleted', '🗑️');
     };
 
     const copyNoteContent = (note) => {
@@ -987,6 +1043,11 @@ const app = createApp({
         [id]: { up: newUp, down: newDown, userVoted: newUserVoted }
       };
       saveItemVotes();
+      if (newUserVoted === 'up') {
+        showToast('Upvoted for family sync', '👍');
+      } else if (newUserVoted === 'down') {
+        showToast('Downvote recorded for family sync', '👎');
+      }
     };
 
     const setItemStatus = (category, id, newStatus) => {
@@ -1032,6 +1093,7 @@ const app = createApp({
         customReservations.value = customReservations.value.filter(b => b.id !== id);
         saveCustomReservations();
       }
+      showToast('Custom item deleted', '🗑️');
     };
 
     // ── Universal Trip Creator & Importer Modal ────────────────
@@ -1179,7 +1241,7 @@ const app = createApp({
 
       closeCreator();
       handleSwitchTab({ tab: 'planner', dayIndex: dayIdx });
-      alert(`🎉 Successfully added "${savedActivityName}" to Day ${targetDay} schedule!`);
+      showToast(`Added "${savedActivityName}" to Day ${targetDay}`, '✨');
     };
 
     const saveDiningSpot = () => {
@@ -1232,7 +1294,7 @@ const app = createApp({
 
       closeCreator();
       handleSwitchTab({ tab: 'restaurants' });
-      alert(`🎉 Successfully added "${savedRestName}" to Food & Pubs directory!`);
+      showToast(`Added "${savedRestName}" to Food & Pubs`, '🍴');
     };
 
     const saveHikingTrail = () => {
@@ -1272,7 +1334,7 @@ const app = createApp({
 
       closeCreator();
       handleSwitchTab({ tab: 'hiking' });
-      alert(`🎉 Successfully added "${savedTrailName}" to Hiking & Nature guide!`);
+      showToast(`Added "${savedTrailName}" to Hiking guide`, '🥾');
     };
 
     const saveBookingPass = () => {
@@ -1307,7 +1369,7 @@ const app = createApp({
 
       closeCreator();
       handleSwitchTab({ tab: 'reservations' });
-      alert(`🎉 Successfully added "${savedBookingName}" to Bookings tracker!`);
+      showToast(`Added "${savedBookingName}" to Bookings`, '📋');
     };
 
     // ── Bulk Smart Importer Engine ─────────────────────────────
@@ -1477,7 +1539,7 @@ const app = createApp({
       bulkImportPreview.value = [];
       bulkImportStatus.value = '';
       closeCreator();
-      alert(`🎉 Successfully imported ${count} new items into your trip!`);
+      showToast(`Successfully imported ${count} items!`, '📦');
     };
 
     const clearBulkImport = () => {
@@ -1534,6 +1596,7 @@ const app = createApp({
     const copyShareLink = () => {
       navigator.clipboard.writeText(shareSyncUrl.value).then(() => {
         shareCopied.value = true;
+        showToast('Trip sync link copied to clipboard', '🔗');
         setTimeout(() => { shareCopied.value = false; }, 2500);
       }).catch(() => {
         const input = document.createElement('textarea');
@@ -1543,6 +1606,7 @@ const app = createApp({
         document.execCommand('copy');
         document.body.removeChild(input);
         shareCopied.value = true;
+        showToast('Trip sync link copied to clipboard', '🔗');
         setTimeout(() => { shareCopied.value = false; }, 2500);
       });
     };
@@ -1818,7 +1882,10 @@ const app = createApp({
           delete existing[id];
           localStorage.setItem('ireland_restaurant_menus', JSON.stringify(existing));
         } catch (e) {}
-      }
+      },
+      notify: showToast,
+      showToast,
+      hideToast
     };
 
     const exportAllTripNotes = () => {
@@ -2137,6 +2204,11 @@ const app = createApp({
       trailList,
       activeTab,
       tabs,
+      mobileTabs,
+      toast,
+      showToast,
+      hideToast,
+      triggerToastAction,
       isDark,
       toggleDark,
       selectedDetailItem,

@@ -371,7 +371,9 @@ const Restaurants = {
         if (window.TravelApp && window.TravelApp.saveRestaurantMenu) {
           window.TravelApp.saveRestaurantMenu(id, menuObj);
         }
-        alert(`📄 Menu "${file.name}" uploaded successfully for ${r.name}!`);
+        if (window.TravelApp && window.TravelApp.notify) {
+          window.TravelApp.notify(`Menu uploaded for ${r.name}`, '📄');
+        }
       };
       reader.readAsDataURL(file);
     },
@@ -413,6 +415,9 @@ const Restaurants = {
         this.saveUserMenus();
         if (window.TravelApp && window.TravelApp.deleteRestaurantMenu) {
           window.TravelApp.deleteRestaurantMenu(id);
+        }
+        if (window.TravelApp && window.TravelApp.notify) {
+          window.TravelApp.notify(`Menu removed for ${r.name}`, '🗑️');
         }
       }
     },
