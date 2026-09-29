@@ -30,6 +30,46 @@ const app = createApp({
     // Active Tab State (default to planner)
     const activeTab = ref('planner');
 
+    // Interactive Top Dashboard Lens State
+    const topDashboardLens = ref(localStorage.getItem('ireland_top_dashboard_lens') || 'milestones');
+    const setTopDashboardLens = (lens) => {
+      topDashboardLens.value = lens;
+      localStorage.setItem('ireland_top_dashboard_lens', lens);
+    };
+
+    const dashboardLenses = [
+      { id: 'milestones', label: '🎯 Critical Milestones', icon: '🎯' },
+      { id: 'bases', label: '🏠 4 Base Camps & Currency', icon: '🏠' },
+      { id: 'deadlines', label: '⚠️ Bookings & Deadlines', icon: '⚠️' },
+      { id: 'weather', label: '🌦️ Weather & Packing', icon: '🌦️' },
+      { id: 'nature', label: '⛰️ Scenic Wonders & Trails', icon: '⛰️' }
+    ];
+
+    const packingProgress = computed(() => {
+      try {
+        const saved = localStorage.getItem('ireland_packing_checklist_v2');
+        if (saved) {
+          const list = JSON.parse(saved);
+          const packed = list.filter(i => i.packed).length;
+          const total = list.length || 18;
+          return { packed, total, percent: Math.round((packed / total) * 100) };
+        }
+      } catch (e) {}
+      return { packed: 0, total: 18, percent: 0 };
+    });
+
+    const confirmedBookingsCount = computed(() => {
+      return reservationList.value.filter(r => (r.status || '').toLowerCase().includes('confirmed') || (r.status || '').toLowerCase().includes('booked')).length;
+    });
+
+    const strictDeadlinesCount = computed(() => {
+      return reservationList.value.filter(r => r.cancelPolicy && (r.cancelPolicy.includes('48hr') || r.cancelPolicy.includes('24hr'))).length;
+    });
+
+    const totalDriveHours = computed(() => {
+      return timelineList.value.reduce((sum, d) => sum + (parseFloat(d.driveHours) || 0), 0).toFixed(1);
+    });
+
     const tabs = [
       { id: 'planner', label: '📅 Daily Schedule', shortLabel: 'Schedule', icon: '📅' },
       { id: 'weather', label: '🌦️ Weather & Packing', shortLabel: 'Weather', icon: '🌦️' },
@@ -570,7 +610,14 @@ const app = createApp({
       triggerCalendar,
       selectProvider,
       setProviderPreference,
-      openProviderSettings,
+      // Top Dashboard Lens & Dynamic Stats
+      topDashboardLens,
+      setTopDashboardLens,
+      dashboardLenses,
+      packingProgress,
+      confirmedBookingsCount,
+      strictDeadlinesCount,
+      totalDriveHours,
       // Scratchpad & Backup
       isScratchpadOpen,
       tripScratchpad,

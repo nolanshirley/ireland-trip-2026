@@ -95,34 +95,500 @@
       </div>
     </header>
 
-    <!-- Overview Stat Cards -->
-    <section class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="card p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-xl">🗓️</div>
-        <div>
-          <div class="text-xs text-[var(--muted-foreground)]">Trip Dates</div>
-          <div class="text-base sm:text-lg font-bold">Oct 2 – 14 (12 Nts)</div>
+    <!-- Interactive Top Dashboard Command Center -->
+    <section class="card p-4 sm:p-5 space-y-4 border-2 border-[var(--border)] shadow-md">
+      <!-- Lens Selection Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📊</span>
+          <div>
+            <h2 class="text-sm sm:text-base font-extrabold text-[var(--foreground)] tracking-tight">Trip Command Center</h2>
+            <p class="text-[11px] text-[var(--muted-foreground)]">Tap any dimension below to customize your top summary metrics & deep links</p>
+          </div>
+        </div>
+
+        <!-- Dashboard Lens Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+          <button
+            v-for="lens in dashboardLenses"
+            :key="lens.id"
+            @click="setTopDashboardLens(lens.id)"
+            :class="[
+              'px-2.5 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 border',
+              topDashboardLens === lens.id
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                : 'bg-[var(--background)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+            ]"
+          >
+            <span>{{ lens.icon }}</span>
+            <span>{{ lens.label }}</span>
+          </button>
         </div>
       </div>
-      <div class="card p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl">🌦️</div>
-        <div>
-          <div class="text-xs text-[var(--muted-foreground)]">October Weather</div>
-          <div class="text-base sm:text-lg font-bold">8°C – 15°C (Autumn)</div>
+
+      <!-- LENS 1: Critical Milestones & Key Anchors (Default) -->
+      <div v-if="topDashboardLens === 'milestones'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+        <!-- Dad & Erin Double Bday -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 6 })"
+          class="p-3.5 rounded-xl border border-blue-400 bg-blue-500/[0.06] hover:bg-blue-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400">
+                🎂 DOUBLE BIRTHDAY
+              </span>
+              <span class="text-xs font-mono font-bold text-blue-400">Day 6 · Oct 7</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Dad & Erin's Double Birthday</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Galway Base · Dinner @ Ruibin or Dough Bros + Latin Quarter trad pub crawl
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-blue-500/20 flex items-center justify-between text-[11px] font-bold text-blue-400">
+            <span>View Day 6 Schedule</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <!-- Mom's Birthday Dinner -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 12 })"
+          class="p-3.5 rounded-xl border border-pink-400 bg-pink-500/[0.06] hover:bg-pink-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400">
+                🎂 MOM'S BDAY DINNER
+              </span>
+              <span class="text-xs font-mono font-bold text-pink-400">Day 12 · Oct 13</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Mister S @ 5:15 PM (Dublin)</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Confirmed anchor table · High-end steakhouse · <strong class="text-pink-600 dark:text-pink-300">24h cancellation window</strong>
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-pink-500/20 flex items-center justify-between text-[11px] font-bold text-pink-400">
+            <span>View Day 12 Schedule</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <!-- Guinness VIP Tour -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 11 })"
+          class="p-3.5 rounded-xl border border-amber-400 bg-amber-500/[0.06] hover:bg-amber-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400">
+                🍺 VIP TOUR
+              </span>
+              <span class="text-xs font-mono font-bold text-amber-400">Day 11 · Oct 12</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Guinness Storehouse @ 10:30 AM</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              VIP Bar Experience · Depart Navan Base by 9:15 AM · Dublin city day
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-amber-500/20 flex items-center justify-between text-[11px] font-bold text-amber-400">
+            <span>View Day 11 Schedule</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <!-- Departure / Return -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 13 })"
+          class="p-3.5 rounded-xl border border-emerald-400 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                ✈️ RETURN FLIGHT
+              </span>
+              <span class="text-xs font-mono font-bold text-emerald-400">Day 13 · Oct 14</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Dublin Airport (DUB) @ 11:30 AM</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Navan pack-out by 8:30 AM · Rental car return @ T2 · Flight departure
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between text-[11px] font-bold text-emerald-400">
+            <span>View Day 13 Schedule</span>
+            <span>→</span>
+          </div>
         </div>
       </div>
-      <div class="card p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-xl">🥾</div>
-        <div>
-          <div class="text-xs text-[var(--muted-foreground)]">Nature & Trails</div>
-          <div class="text-base sm:text-lg font-bold">{{ trailList.length }} Scenic Routes</div>
+
+      <!-- LENS 2: 4 Base Hubs & Currency Shift -->
+      <div v-else-if="topDashboardLens === 'bases'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+        <!-- Base 1: Belfast -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 1 })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400">
+                🇬🇧 NI (£ GBP · MPH)
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Days 1–4</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">🏠 Belfast Base</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Oct 2–6 · Titanic Quarter, Giant's Causeway, Carrick-a-Rede & Mourne Mountains
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Jump to Belfast Days</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <!-- Base 2: Galway -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 5 })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                🇮🇪 Republic (€ EUR · KM/H)
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Days 5–7</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">🏠 Galway Base</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Oct 6–9 · Connemara, Diamond Hill summit, Sky Road, Burren & Double Birthday
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Jump to Galway Days</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <!-- Base 3: Killarney -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 8 })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                🇮🇪 Republic (€ EUR · KM/H)
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Days 8–10</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">🏠 Killarney Base</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Oct 9–12 · Ring of Kerry, Dingle Slea Head, Gap of Dunloe & Torc Waterfall
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Jump to Kerry Days</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <!-- Base 4: Navan / Dublin -->
+        <div
+          @click="handleSwitchTab({ tab: 'planner', dayNumber: 11 })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                🇮🇪 Republic (€ EUR · KM/H)
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Days 11–13</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">🏠 Navan / Dublin</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Oct 12–14 · Boyne Valley, Guinness VIP Tour, Mister S Mom's Bday & Airport
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Jump to Dublin Days</span>
+            <span>→</span>
+          </div>
         </div>
       </div>
-      <div class="card p-4 flex items-center gap-3 border-l-4 border-pink-500">
-        <div class="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-xl">🎂</div>
-        <div>
-          <div class="text-xs text-[var(--muted-foreground)]">Birthdays & Celebrations</div>
-          <div class="text-xs sm:text-sm font-bold text-pink-400">Dad & Erin (10/7) · Mom (10/13)</div>
+
+      <!-- LENS 3: Bookings & Cancellation Deadlines -->
+      <div v-else-if="topDashboardLens === 'deadlines'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+        <div
+          @click="activeTab = 'reservations'"
+          class="p-3.5 rounded-xl border border-emerald-400 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                ✅ CONFIRMED
+              </span>
+              <span class="text-xs font-bold text-emerald-400">{{ confirmedBookingsCount }} Bookings</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">All Lodgings & Tours Booked</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Belfast, Galway, Killarney, Navan Airbnb/lodgings + Guinness VIP passes secured
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between text-[11px] font-bold text-emerald-400">
+            <span>View All Bookings</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="handleSwitchTab({ tab: 'restaurants', targetId: 'mister-s' })"
+          class="p-3.5 rounded-xl border border-pink-400 bg-pink-500/[0.06] hover:bg-pink-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400">
+                ⚠️ 24HR STRICT
+              </span>
+              <span class="text-xs font-bold text-pink-400">Oct 13 @ 5:15 PM</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Mister S (Mom's Bday)</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Cancel cutoff: Oct 12 @ 5:15 PM · Formal attire requested · Dublin steak dinner
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-pink-500/20 flex items-center justify-between text-[11px] font-bold text-pink-400">
+            <span>View Restaurant Profile</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="activeTab = 'reservations'"
+          class="p-3.5 rounded-xl border border-amber-400 bg-amber-500/[0.06] hover:bg-amber-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400">
+                ⚠️ 48HR WINDOW
+              </span>
+              <span class="text-xs font-bold text-amber-400">Holohans & Mad Monk</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Dining Cancellation Cutoffs</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Holohans Belfast (Oct 5) and Mad Monk Killarney (Oct 9) require 48h advance notice
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-amber-500/20 flex items-center justify-between text-[11px] font-bold text-amber-400">
+            <span>Inspect Deadlines</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="activeTab = 'reservations'"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400">
+                📋 DOOR PINS
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">4 Bases</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Offline Keyless Entry</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Save & copy door codes, lockbox combinations & check-in notes for all 4 accommodations
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Manage Entry Codes</span>
+            <span>→</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LENS 4: Weather & Packing Readiness -->
+      <div v-else-if="topDashboardLens === 'weather'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+        <div
+          @click="activeTab = 'weather'"
+          class="p-3.5 rounded-xl border border-blue-400 bg-blue-500/[0.06] hover:bg-blue-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400">
+                🌡️ 8°C – 15°C
+              </span>
+              <span class="text-xs font-bold text-blue-400">Autumn</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Layering Rule of Thumb</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              "4 seasons in 1 day": Moisture-wicking base + fleece mid-layer + Gore-Tex waterproof outer shell
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-blue-500/20 flex items-center justify-between text-[11px] font-bold text-blue-400">
+            <span>View 14-Day Forecast</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="activeTab = 'weather'"
+          class="p-3.5 rounded-xl border border-emerald-400 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                🧳 {{ packingProgress.percent }}% PACKED
+              </span>
+              <span class="text-xs font-bold text-emerald-400">{{ packingProgress.packed }}/{{ packingProgress.total }} Items</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Interactive Packing Checklist</h4>
+            <div class="w-full h-1.5 rounded-full bg-[var(--border)] overflow-hidden mt-1.5">
+              <div class="h-full bg-emerald-400 rounded-full" :style="{ width: packingProgress.percent + '%' }"></div>
+            </div>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Boots, shells, birthday dresses, UK Type G power adapters & fleece
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between text-[11px] font-bold text-emerald-400">
+            <span>Check Off Items</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="activeTab = 'planner'"
+          class="p-3.5 rounded-xl border border-amber-400 bg-amber-500/[0.06] hover:bg-amber-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400">
+                🌧️ RAIN CONTINGENCY
+              </span>
+              <span class="text-xs font-bold text-amber-400">10 Backups</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Indoor & Low-Wind Alternates</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Kylemore Abbey, Titanic Belfast, Muckross House & coastal scenic drives if trails get soaked
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-amber-500/20 flex items-center justify-between text-[11px] font-bold text-amber-400">
+            <span>Toggle Rain Mode</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="activeTab = 'weather'"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400">
+                💨 15–40 KM/H
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Atlantic Gusts</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Cliff Wind Precaution</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Do not use umbrellas on coastal cliffs (Moher / Dunluce) — hooded waterproof shells are essential
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>View Outfit Guide</span>
+            <span>→</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LENS 5: Scenic Wonders & Nature Trails -->
+      <div v-else-if="topDashboardLens === 'nature'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+        <div
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'diamond-hill' })"
+          class="p-3.5 rounded-xl border border-red-400 bg-red-500/[0.06] hover:bg-red-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-200 dark:bg-red-300 text-red-950 border border-red-400">
+                🔴 STRENUOUS SUMMIT
+              </span>
+              <span class="text-xs font-bold text-red-400">Connemara</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Diamond Hill Upper Trail</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              3.7 km · 400m elevation gain · 360° panoramic Atlantic & Twelve Bens summit views
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-red-500/20 flex items-center justify-between text-[11px] font-bold text-red-400">
+            <span>View Trail Details</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'cliffs-of-moher' })"
+          class="p-3.5 rounded-xl border border-amber-400 bg-amber-500/[0.06] hover:bg-amber-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400">
+                🟡 MODERATE COASTAL
+              </span>
+              <span class="text-xs font-bold text-amber-400">County Clare</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Cliffs of Moher Coastal Walk</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              8 km cliff-edge trail · 214m drop into the Atlantic · O'Brien's Tower landmark
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-amber-500/20 flex items-center justify-between text-[11px] font-bold text-amber-400">
+            <span>View Trail Details</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'giants-causeway' })"
+          class="p-3.5 rounded-xl border border-emerald-400 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                🟢 CHILL WONDER
+              </span>
+              <span class="text-xs font-bold text-emerald-400">Antrim Coast</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Giant's Causeway & Red Trail</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              3 km · 40,000 interlocking basalt columns + Carrick-a-Rede Rope Bridge nearby
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between text-[11px] font-bold text-emerald-400">
+            <span>View Trail Details</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="handleSwitchTab({ tab: 'hiking', targetId: 'gap-of-dunloe' })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400">
+                🟡 SCENIC GLACIAL
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Killarney</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Gap of Dunloe Pass</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              11 km narrow mountain gorge, 5 glacial lakes & wishing bridge · Optional pony trap
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>View Trail Details</span>
+            <span>→</span>
+          </div>
         </div>
       </div>
     </section>
@@ -185,6 +651,24 @@
       >
         <span>🏰</span>
         <span>Giant's Causeway</span>
+      </button>
+
+      <!-- Gap of Dunloe -->
+      <button
+        @click="handleSwitchTab({ tab: 'hiking', targetId: 'gap-of-dunloe' })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] transition-all flex-shrink-0"
+      >
+        <span>🌲</span>
+        <span>Gap of Dunloe</span>
+      </button>
+
+      <!-- Rock of Cashel -->
+      <button
+        @click="handleSwitchTab({ tab: 'planner', dayNumber: 10 })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] transition-all flex-shrink-0"
+      >
+        <span>🏰</span>
+        <span>Rock of Cashel</span>
       </button>
     </div>
 
