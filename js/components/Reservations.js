@@ -79,14 +79,14 @@ const Reservations = {
           </p>
         </div>
 
-        <!-- Guinness Tour Early Morning Alert -->
+        <!-- Guinness Tour Alert -->
         <div class="card p-4 border-l-4 border-amber-500 bg-amber-500/[0.04]">
           <div class="flex items-center gap-2 mb-1">
-            <span class="text-xl">⏰</span>
-            <h4 class="font-bold text-sm text-[var(--foreground)]">Early Morning Tour</h4>
+            <span class="text-xl">🍺</span>
+            <h4 class="font-bold text-sm text-[var(--foreground)]">Guinness VIP Tour</h4>
           </div>
           <p class="text-xs text-[var(--muted-foreground)]">
-            <strong>Oct 12 @ 6:30 AM</strong>: Guinness Storehouse Bar Tour. Departure from Navan required early.
+            <strong>Oct 12 @ 10:30 AM</strong>: Guinness Storehouse Bar Tour. Depart Navan base by 9:15 AM.
           </p>
         </div>
 
