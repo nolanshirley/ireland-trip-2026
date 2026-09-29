@@ -75,9 +75,9 @@ const Distances = {
       return '✅ Easy';
     },
     getRouteMapsUrl(d) {
-      const origin = encodeURIComponent(`${d.from}, Ireland`);
-      const dest = encodeURIComponent(`${d.to}, Ireland`);
-      return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=driving`;
+      const origin = encodeURIComponent(`${(d.from || '').replace(/\+/g, ' ')}, Ireland`);
+      const dest = encodeURIComponent(`${(d.to || '').replace(/\+/g, ' ')}, Ireland`);
+      return `https://maps.apple.com/?saddr=${origin}&daddr=${dest}&dirflg=d`;
     }
   },
   template: `
@@ -212,7 +212,7 @@ const Distances = {
                     :href="getRouteMapsUrl(d)"
                     target="_blank"
                     class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all shadow-sm"
-                    title="Open Google Maps Driving Directions"
+                    title="Open Apple Maps Driving Directions"
                   >
                     <span>🚗 Route</span>
                     <span>↗</span>

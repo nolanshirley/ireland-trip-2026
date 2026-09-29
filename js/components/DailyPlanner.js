@@ -216,7 +216,13 @@ const DailyPlanner = {
     },
     getGoogleMapsUrl(query) {
       if (!query) return '#';
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    },
+    getAppleMapsUrl(query) {
+      if (!query) return '#';
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
     },
     onItemClick(item, day) {
       this.$emit('open-detail', { item, day });
@@ -542,24 +548,24 @@ const DailyPlanner = {
               <div>
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-extrabold text-base text-[var(--foreground)]">{{ day.date }}: {{ day.title }}</span>
-                  <span v-if="day.special" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-pink-500/20 text-pink-300 border border-pink-500/50">
+                  <span v-if="day.special" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400 shadow-sm">
                     🎂 {{ day.specialText || 'BIRTHDAY CELEBRATION' }}
                   </span>
-                  <span v-if="day.isTransfer" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400">
+                  <span v-if="day.isTransfer" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 shadow-sm">
                     🔄 BASE TRANSFER
                   </span>
-                  <span v-if="getReservedCount(day) > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                  <span v-if="getReservedCount(day) > 0" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
                     💡 {{ getReservedCount(day) }} SUGGESTED / BOOKED
                   </span>
-                  <span v-if="hasNote(idx)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span v-if="hasNote(idx)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm flex items-center gap-1">
                     <span>📝</span>
                     <span>Note</span>
                   </span>
                   <!-- Currency / Region Badge -->
-                  <span v-if="isNorthernIreland(day.dayNumber)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                  <span v-if="isNorthernIreland(day.dayNumber)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 shadow-sm">
                     🇬🇧 NI (£ GBP · MPH)
                   </span>
-                  <span v-else class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <span v-else class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
                     🇮🇪 Republic (€ EUR · KM/H)
                   </span>
                 </div>
@@ -766,23 +772,23 @@ const DailyPlanner = {
 
                         <!-- Action Badges & Map Button -->
                         <div class="flex items-center gap-1.5 flex-wrap">
-                          <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
                             💡 SUGGESTED ITINERARY
                           </span>
-                          <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)]">
+                          <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
                             {{ item.tag }}
                           </span>
-                          <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
                             ⏱️ {{ item.note }}
                           </span>
-                          <!-- 1-Tap Google Maps Button -->
+                          <!-- 1-Tap Apple Maps Button -->
                           <a
                             v-if="item.mapsQuery"
                             :href="getGoogleMapsUrl(item.mapsQuery)"
                             target="_blank"
                             @click.stop
                             class="maps-btn text-[10px] py-0.5 px-2"
-                            title="Open in Google Maps Navigation"
+                            title="Open in Apple Maps Navigation"
                           >
                             <span>📍 Map</span>
                           </a>
@@ -878,14 +884,14 @@ const DailyPlanner = {
                       <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)]">
                         {{ item.tag }}
                       </span>
-                      <!-- 1-Tap Google Maps Button -->
+                      <!-- 1-Tap Apple Maps Button -->
                       <a
                         v-if="item.mapsQuery"
                         :href="getGoogleMapsUrl(item.mapsQuery)"
                         target="_blank"
                         @click.stop
                         class="maps-btn text-[10px] py-0.5 px-2"
-                        title="Open in Google Maps"
+                        title="Open in Apple Maps"
                       >
                         <span>📍 Map</span>
                       </a>

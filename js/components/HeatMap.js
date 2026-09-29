@@ -79,7 +79,8 @@ const HeatMap = {
       return 'text-zinc-500';
     },
     getAttractionMapsUrl(name) {
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ', Ireland')}`;
+      const clean = (name + ', Ireland').replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
     },
     getScheduleLink(name) {
       for (const [key, val] of Object.entries(this.attractionScheduleMap)) {
@@ -249,7 +250,7 @@ const HeatMap = {
                     :href="getAttractionMapsUrl(att.name)"
                     target="_blank"
                     class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] transition-all"
-                    title="Search attraction on Google Maps"
+                    title="Search attraction on Apple Maps"
                   >
                     <span>📍 Maps</span>
                     <span>↗</span>

@@ -178,7 +178,13 @@ const HikingNature = {
     },
     getGoogleMapsUrl(query) {
       if (!query) return '#';
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    },
+    getAppleMapsUrl(query) {
+      if (!query) return '#';
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
     },
     jumpToSchedule(trail) {
       this.$emit('switch-tab', {
@@ -376,7 +382,7 @@ const HikingNature = {
                   :href="getGoogleMapsUrl(trail.mapsQuery)"
                   target="_blank"
                   class="maps-btn text-xs py-1 px-2.5"
-                  title="Open Trailhead in Google Maps"
+                  title="Open Trailhead in Apple Maps"
                 >
                   <span>📍 Map</span>
                 </a>

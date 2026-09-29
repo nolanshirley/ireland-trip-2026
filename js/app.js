@@ -116,7 +116,14 @@ const app = createApp({
 
     const getGoogleMapsUrl = (query) => {
       if (!query) return '#';
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    };
+
+    const getAppleMapsUrl = (query) => {
+      if (!query) return '#';
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
     };
 
     // ── Color Palettes & Accessibility Tokens ──────────────────

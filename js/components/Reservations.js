@@ -156,7 +156,13 @@ const Reservations = {
     },
     getGoogleMapsUrl(query) {
       if (!query) return '#';
-      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
+    },
+    getAppleMapsUrl(query) {
+      if (!query) return '#';
+      const clean = query.replace(/\+/g, ' ');
+      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
     },
     jumpToRestaurant(restaurantId) {
       this.$emit('switch-tab', { tab: 'restaurants', targetId: restaurantId });
@@ -349,7 +355,7 @@ const Reservations = {
                       :href="getGoogleMapsUrl(r.mapsQuery)"
                       target="_blank"
                       class="maps-btn text-[10px] py-0.5 px-2"
-                      title="Open in Google Maps"
+                      title="Open in Apple Maps"
                     >
                       <span>Map</span>
                     </a>

@@ -289,11 +289,11 @@ body {
   z-index: 10;
 }
 
-.heat-9 { background-color: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); }
-.heat-7 { background-color: rgba(59, 130, 246, 0.22); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.40); }
-.heat-5 { background-color: rgba(245, 158, 11, 0.22); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.40); }
-.heat-3 { background-color: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
-.heat-1 { background-color: rgba(113, 113, 122, 0.15); color: #a1a1aa; border: 1px solid rgba(113, 113, 122, 0.25); }
+.heat-9 { background-color: #6ee7b7; color: #022c22; font-weight: 800; border: 1px solid #34d399; }
+.heat-7 { background-color: #7dd3fc; color: #082f49; font-weight: 800; border: 1px solid #38bdf8; }
+.heat-5 { background-color: #fcd34d; color: #451a03; font-weight: 800; border: 1px solid #f59e0b; }
+.heat-3 { background-color: #fca5a5; color: #450a0a; font-weight: 800; border: 1px solid #f87171; }
+.heat-1 { background-color: #e4e4e7; color: #27272a; font-weight: 700; border: 1px solid #d4d4d8; }
 
 /* ── Visual Time-Block Ribbon Strip ─────────────────────────── */
 .timeline-strip-container {
@@ -410,34 +410,133 @@ body {
   min-width: 0;
 }
 
-/* ── Energy Pacing Badges ────────────────────────────────────── */
+/* ── Energy Pacing Badges (High Contrast Dark Text) ───────────── */
 .energy-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 9999px;
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .energy-chill {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: #a7f3d0 !important;
+  color: #022c22 !important;
+  border: 1px solid #34d399 !important;
+}
+.dark .energy-chill {
+  background: #6ee7b7 !important;
+  color: #022c22 !important;
+  border: 1px solid #34d399 !important;
 }
 
 .energy-moderate {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: #fde68a !important;
+  color: #451a03 !important;
+  border: 1px solid #fbbf24 !important;
+}
+.dark .energy-moderate {
+  background: #fcd34d !important;
+  color: #451a03 !important;
+  border: 1px solid #f59e0b !important;
 }
 
 .energy-strenuous {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: #fecaca !important;
+  color: #450a0a !important;
+  border: 1px solid #f87171 !important;
+}
+.dark .energy-strenuous {
+  background: #fca5a5 !important;
+  color: #450a0a !important;
+  border: 1px solid #f87171 !important;
+}
+
+/* ── High-Contrast Highlighted Tags & Badges (Dark Text) ──────── */
+.tag-badge-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.tag-highlight-emerald, .badge-emerald {
+  background: #a7f3d0 !important;
+  color: #022c22 !important;
+  border: 1px solid #34d399 !important;
+  font-weight: 800 !important;
+}
+.dark .tag-highlight-emerald, .dark .badge-emerald {
+  background: #6ee7b7 !important;
+  color: #022c22 !important;
+  border: 1px solid #34d399 !important;
+}
+
+.tag-highlight-amber, .badge-amber {
+  background: #fde68a !important;
+  color: #451a03 !important;
+  border: 1px solid #fbbf24 !important;
+  font-weight: 800 !important;
+}
+.dark .tag-highlight-amber, .dark .badge-amber {
+  background: #fcd34d !important;
+  color: #451a03 !important;
+  border: 1px solid #f59e0b !important;
+}
+
+.tag-highlight-blue, .badge-blue {
+  background: #bae6fd !important;
+  color: #082f49 !important;
+  border: 1px solid #38bdf8 !important;
+  font-weight: 800 !important;
+}
+.dark .tag-highlight-blue, .dark .badge-blue {
+  background: #7dd3fc !important;
+  color: #082f49 !important;
+  border: 1px solid #38bdf8 !important;
+}
+
+.tag-highlight-pink, .badge-pink {
+  background: #fbcfe8 !important;
+  color: #500724 !important;
+  border: 1px solid #f472b6 !important;
+  font-weight: 800 !important;
+}
+.dark .tag-highlight-pink, .dark .badge-pink {
+  background: #f9a8d4 !important;
+  color: #500724 !important;
+  border: 1px solid #f472b6 !important;
+}
+
+.tag-highlight-purple, .badge-purple {
+  background: #e9d5ff !important;
+  color: #3b0764 !important;
+  border: 1px solid #c084fc !important;
+  font-weight: 800 !important;
+}
+.dark .tag-highlight-purple, .dark .badge-purple {
+  background: #d8b4fe !important;
+  color: #3b0764 !important;
+  border: 1px solid #c084fc !important;
+}
+
+.tag-highlight-red, .badge-red {
+  background: #fecaca !important;
+  color: #450a0a !important;
+  border: 1px solid #f87171 !important;
+  font-weight: 800 !important;
+}
+.dark .tag-highlight-red, .dark .badge-red {
+  background: #fca5a5 !important;
+  color: #450a0a !important;
+  border: 1px solid #f87171 !important;
 }
 
 /* ── 1-Tap Google Maps Button ───────────────────────────────── */
