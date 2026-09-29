@@ -1060,8 +1060,27 @@ const app = createApp({
       mustOrder: '',
       notes: '',
       resAdvice: 'Walk-ins or call ahead',
-      status: 'proposed'
+      status: 'proposed',
+      menuFileName: '',
+      menuData: null,
+      menuFileType: ''
     });
+
+    const handleCreatorMenuUpload = (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (file.size > 15 * 1024 * 1024) {
+        alert('File size exceeds 15MB. Please choose a smaller file.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        newDiningForm.value.menuFileName = file.name;
+        newDiningForm.value.menuFileType = file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
+        newDiningForm.value.menuData = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
 
     const newTrailForm = ref({
       name: '',
@@ -1181,6 +1200,20 @@ const app = createApp({
         createdAt: new Date().toISOString()
       };
 
+      if (newDiningForm.value.menuData) {
+        newRest.menu = {
+          fileName: newDiningForm.value.menuFileName,
+          fileType: newDiningForm.value.menuFileType,
+          data: newDiningForm.value.menuData,
+          uploadedAt: new Date().toISOString()
+        };
+        try {
+          const menus = JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}');
+          menus[newRest.id] = newRest.menu;
+          localStorage.setItem('ireland_restaurant_menus', JSON.stringify(menus));
+        } catch (e) {}
+      }
+
       customRestaurants.value.push(newRest);
       saveCustomRestaurants();
       voteItem(newRest.id, 'up');
@@ -1190,6 +1223,9 @@ const app = createApp({
       newDiningForm.value.name = '';
       newDiningForm.value.mustOrder = '';
       newDiningForm.value.notes = '';
+      newDiningForm.value.menuFileName = '';
+      newDiningForm.value.menuData = null;
+      newDiningForm.value.menuFileType = '';
 
       closeCreator();
       handleSwitchTab({ tab: 'restaurants' });
@@ -1466,7 +1502,8 @@ const app = createApp({
         votes: itemVotes.value || {},
         notes: customNotes.value || [],
         scratchpad: localStorage.getItem('ireland_trip_scratchpad') || '',
-        hiddenItemIds: hiddenItemIds.value || []
+        hiddenItemIds: hiddenItemIds.value || [],
+        menus: JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}')
       };
 
       try {
@@ -1523,7 +1560,7 @@ const app = createApp({
     const isIncomingSyncModalOpen = ref(false);
 
     const incomingSummary = computed(() => {
-      if (!incomingSyncPayload.value) return { stops: 0, dining: 0, trails: 0, bookings: 0, votes: 0, sender: 'Family' };
+      if (!incomingSyncPayload.value) return { stops: 0, dining: 0, trails: 0, bookings: 0, votes: 0, menus: 0, sender: 'Family' };
       const p = incomingSyncPayload.value;
       return {
         stops: (p.activities && p.activities.length) || 0,
@@ -1531,6 +1568,7 @@ const app = createApp({
         trails: (p.trails && p.trails.length) || 0,
         bookings: (p.reservations && p.reservations.length) || 0,
         votes: (p.votes && Object.keys(p.votes).length) || 0,
+        menus: (p.menus && Object.keys(p.menus).length) || 0,
         sender: p.sender || 'Family Member'
       };
     });
@@ -1542,7 +1580,7 @@ const app = createApp({
           const payloadStr = hash.slice(6);
           if (payloadStr) {
             const decoded = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payloadStr)))));
-            if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes || decoded.hiddenItemIds)) {
+            if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes || decoded.hiddenItemIds || decoded.menus)) {
               incomingSyncPayload.value = decoded;
               isIncomingSyncModalOpen.value = true;
             }
@@ -1579,6 +1617,9 @@ const app = createApp({
         itemVotes.value = (p.votes && typeof p.votes === 'object') ? { ...p.votes } : {};
         hiddenItemIds.value = Array.isArray(p.hiddenItemIds) ? [...p.hiddenItemIds] : [];
         saveHiddenItemIds();
+        if (p.menus && typeof p.menus === 'object') {
+          localStorage.setItem('ireland_restaurant_menus', JSON.stringify(p.menus));
+        }
         if (p.notes && Array.isArray(p.notes)) {
           customNotes.value = [...p.notes];
           localStorage.setItem('ireland_custom_notes', JSON.stringify(customNotes.value));
@@ -1671,6 +1712,14 @@ const app = createApp({
           saveHiddenItemIds();
         }
 
+        if (p.menus && typeof p.menus === 'object') {
+          try {
+            const existingMenus = JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}');
+            const mergedMenus = { ...existingMenus, ...p.menus };
+            localStorage.setItem('ireland_restaurant_menus', JSON.stringify(mergedMenus));
+          } catch (e) {}
+        }
+
         if (p.notes && Array.isArray(p.notes)) {
           const currentNotes = [...customNotes.value];
           p.notes.forEach(incNote => {
@@ -1709,7 +1758,7 @@ const app = createApp({
         handleSwitchTab({ tab: 'planner', dayIndex: firstMergedDayIndex });
       }
 
-      alert('🎉 Trip updates successfully synced! All new stops, dining spots, removals, and family votes are live in your view.');
+      alert('🎉 Trip updates successfully synced! All new stops, dining spots, menus, removals, and family votes are live in your view.');
     };
 
     const dismissIncomingSync = () => {
@@ -1737,7 +1786,21 @@ const app = createApp({
       restoreItem,
       restoreAllHiddenItems,
       isItemHidden,
-      getHiddenItemIds: () => hiddenItemIds.value
+      getHiddenItemIds: () => hiddenItemIds.value,
+      saveRestaurantMenu: (id, menu) => {
+        try {
+          const existing = JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}');
+          existing[id] = menu;
+          localStorage.setItem('ireland_restaurant_menus', JSON.stringify(existing));
+        } catch (e) {}
+      },
+      deleteRestaurantMenu: (id) => {
+        try {
+          const existing = JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}');
+          delete existing[id];
+          localStorage.setItem('ireland_restaurant_menus', JSON.stringify(existing));
+        } catch (e) {}
+      }
     };
 
     const exportAllTripNotes = () => {
@@ -1749,6 +1812,7 @@ const app = createApp({
         dailyNotes: JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}'),
         reservationNotes: JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}'),
         restaurantUserData: JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}'),
+        restaurantMenus: JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}'),
         trailUserData: JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}'),
         customNotes: JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]'),
         customActivities: customActivities.value,
@@ -1784,6 +1848,7 @@ const app = createApp({
           if (data.dailyNotes) localStorage.setItem('ireland_daily_notes', JSON.stringify(data.dailyNotes));
           if (data.reservationNotes) localStorage.setItem('ireland_reservation_notes', JSON.stringify(data.reservationNotes));
           if (data.restaurantUserData) localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(data.restaurantUserData));
+          if (data.restaurantMenus || data.menus) localStorage.setItem('ireland_restaurant_menus', JSON.stringify(data.restaurantMenus || data.menus));
           if (data.trailUserData) localStorage.setItem('ireland_trail_user_data', JSON.stringify(data.trailUserData));
           if (data.customNotes) localStorage.setItem('ireland_custom_notes', JSON.stringify(data.customNotes));
           if (data.hiddenItemIds) {
@@ -1815,7 +1880,7 @@ const app = createApp({
           if (data.palette) setPalette(data.palette);
           if (data.fontScale) setFontScale(data.fontScale);
 
-          alert('✅ Trip notes, stops, and custom data successfully imported! Refreshing view...');
+          alert('✅ Trip notes, stops, menus, and custom data successfully imported! Refreshing view...');
           window.location.reload();
         } catch (err) {
           alert('⚠️ Failed to import backup file: Invalid JSON format.');
@@ -1928,6 +1993,7 @@ const app = createApp({
       creatorTab,
       newScheduleForm,
       newDiningForm,
+      handleCreatorMenuUpload,
       newTrailForm,
       newBookingForm,
       openCreator,

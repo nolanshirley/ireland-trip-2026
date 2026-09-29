@@ -16,6 +16,8 @@ const Restaurants = {
       searchQuery: '',
       sortBy: 'route', // 'route', 'birthday', 'rating', 'price-asc', 'price-desc', 'name'
       userRestaurantData: {}, // { [id]: { rating: 0, notes: '', favorite: false } }
+      userMenus: {}, // { [id]: { fileName, fileType, data, uploadedAt } }
+      activePreviewMenu: null,
       activeNoteRestId: null,
       isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768)
     };
@@ -35,6 +37,7 @@ const Restaurants = {
   },
   created() {
     this.loadUserRestaurantData();
+    this.loadUserMenus();
   },
   computed: {
     cities() {
@@ -291,6 +294,116 @@ const Restaurants = {
       const name = (r.name || '').toLowerCase();
       if (r.id === 'mister-s' || name.includes('mister s') || name.includes('birthday')) return true;
       return false;
+    },
+    loadUserMenus() {
+      try {
+        const saved = localStorage.getItem('ireland_restaurant_menus');
+        if (saved) {
+          this.userMenus = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error('Error loading restaurant menus', e);
+      }
+    },
+    saveUserMenus() {
+      localStorage.setItem('ireland_restaurant_menus', JSON.stringify(this.userMenus));
+    },
+    hasMenu(r) {
+      if (!r) return false;
+      const id = r.id || r.name;
+      return Boolean((this.userMenus && this.userMenus[id] && (this.userMenus[id].data || this.userMenus[id].url)) || r.menu || r.menuUrl);
+    },
+    getMenu(r) {
+      if (!r) return null;
+      const id = r.id || r.name;
+      if (this.userMenus && this.userMenus[id]) {
+        return this.userMenus[id];
+      }
+      if (r.menu) {
+        return typeof r.menu === 'object' ? r.menu : { fileName: `${r.name}_Menu.pdf`, fileType: 'application/pdf', data: r.menu };
+      }
+      if (r.menuUrl) {
+        return { fileName: `${r.name} Online Menu`, fileType: 'link', url: r.menuUrl };
+      }
+      return null;
+    },
+    triggerMenuUpload(id) {
+      const refName = 'menuInput_' + id;
+      const inputEl = this.$refs[refName];
+      if (inputEl) {
+        if (Array.isArray(inputEl)) {
+          inputEl[0]?.click();
+        } else {
+          inputEl.click();
+        }
+      }
+    },
+    handleMenuFileChange(r, event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (file.size > 15 * 1024 * 1024) {
+        alert('File size exceeds 15MB limit. Please choose a smaller PDF or image.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const id = r.id || r.name;
+        const menuObj = {
+          fileName: file.name,
+          fileType: file.type || (file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+          data: e.target.result,
+          uploadedAt: new Date().toISOString()
+        };
+        this.userMenus[id] = menuObj;
+        this.userMenus = { ...this.userMenus };
+        this.saveUserMenus();
+        if (window.TravelApp && window.TravelApp.saveRestaurantMenu) {
+          window.TravelApp.saveRestaurantMenu(id, menuObj);
+        }
+        alert(`📄 Menu "${file.name}" uploaded successfully for ${r.name}!`);
+      };
+      reader.readAsDataURL(file);
+    },
+    downloadMenu(r) {
+      const menu = this.getMenu(r);
+      if (!menu) return;
+      if (menu.data) {
+        const a = document.createElement('a');
+        a.href = menu.data;
+        a.download = menu.fileName || `${r.name || 'Restaurant'}_Menu.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else if (menu.url) {
+        window.open(menu.url, '_blank');
+      }
+    },
+    openMenuPreview(r) {
+      const menu = this.getMenu(r);
+      if (menu) {
+        this.activePreviewMenu = {
+          id: r.id || r.name,
+          restaurantName: r.name,
+          restaurantCity: r.city,
+          ...menu
+        };
+        document.body.style.overflow = 'hidden';
+      }
+    },
+    closeMenuPreview() {
+      this.activePreviewMenu = null;
+      document.body.style.overflow = '';
+    },
+    removeMenu(r) {
+      const id = r.id || r.name;
+      if (confirm(`Remove the attached menu file for "${r.name}"?`)) {
+        delete this.userMenus[id];
+        this.userMenus = { ...this.userMenus };
+        this.saveUserMenus();
+        if (window.TravelApp && window.TravelApp.deleteRestaurantMenu) {
+          window.TravelApp.deleteRestaurantMenu(id);
+        }
+      }
     },
     removeRestaurant(r) {
       if (!r) return;
@@ -665,6 +778,70 @@ const Restaurants = {
                 />
               </div>
             </div>
+
+            <!-- Attached Menu Document Bar (Upload, View & Download) -->
+            <div class="p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] flex items-center justify-between gap-2 mb-2 text-xs">
+              <div v-if="hasMenu(r)" class="flex items-center gap-2 min-w-0 flex-1">
+                <span class="text-base flex-shrink-0">📄</span>
+                <div class="min-w-0 flex-1">
+                  <div class="font-bold text-[var(--foreground)] truncate text-[11px]">
+                    {{ getMenu(r).fileName || 'Menu Document' }}
+                  </div>
+                  <div class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                    <span>✓ Offline Menu Document</span>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="flex items-center gap-2 min-w-0 flex-1">
+                <span class="text-base flex-shrink-0 opacity-60">📋</span>
+                <span class="text-[11px] text-[var(--muted-foreground)]">No menu attached yet</span>
+              </div>
+
+              <!-- Menu Actions -->
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <input
+                  type="file"
+                  accept=".pdf,image/*,.doc,.docx"
+                  class="hidden"
+                  :ref="'menuInput_' + (r.id || r.name)"
+                  @change="handleMenuFileChange(r, $event)"
+                />
+
+                <template v-if="hasMenu(r)">
+                  <button
+                    @click.stop="openMenuPreview(r)"
+                    class="px-2.5 py-1 rounded-lg bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] font-bold text-[11px] flex items-center gap-1 transition-colors shadow-sm"
+                    title="View attached menu document"
+                  >
+                    <span>👁️ View</span>
+                  </button>
+                  <button
+                    @click.stop="downloadMenu(r)"
+                    class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 font-bold text-[11px] flex items-center gap-1 transition-colors shadow-sm"
+                    title="Download menu file to your device"
+                  >
+                    <span>📥 Save</span>
+                  </button>
+                  <button
+                    @click.stop="removeMenu(r)"
+                    class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                    title="Remove attached menu"
+                  >
+                    🗑️
+                  </button>
+                </template>
+
+                <template v-else>
+                  <button
+                    @click.stop="triggerMenuUpload(r.id || r.name)"
+                    class="px-2.5 py-1 rounded-lg bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 border border-[var(--accent)]/30 font-bold text-[11px] flex items-center gap-1 transition-colors shadow-sm"
+                    title="Upload PDF or photo of menu"
+                  >
+                    <span>📎 Attach Menu</span>
+                  </button>
+                </template>
+              </div>
+            </div>
           </div>
 
           <!-- Bottom: Booking Time/Details if present -->
@@ -681,6 +858,87 @@ const Restaurants = {
           <button @click="resetFilters" class="text-xs text-[var(--accent)] underline font-semibold">
             Reset Filters
           </button>
+        </div>
+      </div>
+
+      <!-- Menu Document Preview Modal / Bottom Sheet -->
+      <div
+        v-if="activePreviewMenu"
+        class="modal-backdrop"
+        @click="closeMenuPreview"
+      >
+        <div class="modal-sheet space-y-4 max-w-4xl" @click.stop>
+          <!-- Header -->
+          <div class="flex items-center justify-between border-b border-[var(--border)] pb-3">
+            <div class="flex items-center gap-2.5">
+              <span class="text-2xl">📄</span>
+              <div>
+                <h3 class="font-extrabold text-base text-[var(--foreground)]">
+                  {{ activePreviewMenu.restaurantName }} · Menu
+                </h3>
+                <p class="text-xs text-[var(--muted-foreground)]">
+                  {{ activePreviewMenu.fileName }} · {{ activePreviewMenu.restaurantCity }}
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                @click="downloadMenu({ name: activePreviewMenu.restaurantName, id: activePreviewMenu.id })"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white flex items-center gap-1.5 shadow-sm transition-all"
+              >
+                <span>📥 Download File</span>
+              </button>
+              <button
+                @click="closeMenuPreview"
+                class="w-8 h-8 rounded-full bg-[var(--card-hover)] hover:bg-[var(--border)] flex items-center justify-center text-sm font-bold text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <!-- Viewer Content -->
+          <div class="min-h-[320px] max-h-[75vh] overflow-auto flex items-center justify-center bg-zinc-950/20 rounded-xl p-2">
+            <!-- PDF Document Embed -->
+            <object
+              v-if="activePreviewMenu.fileType === 'application/pdf' || activePreviewMenu.fileName?.toLowerCase().endsWith('.pdf')"
+              :data="activePreviewMenu.data"
+              type="application/pdf"
+              class="w-full h-[70vh] rounded-lg border border-[var(--border)] bg-white"
+            >
+              <div class="p-8 text-center space-y-3">
+                <span class="text-3xl">📄</span>
+                <p class="text-sm font-bold text-[var(--foreground)]">{{ activePreviewMenu.fileName }}</p>
+                <p class="text-xs text-[var(--muted-foreground)]">Tap below to open or download the PDF document:</p>
+                <button
+                  @click="downloadMenu({ name: activePreviewMenu.restaurantName, id: activePreviewMenu.id })"
+                  class="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] text-white shadow-md"
+                >
+                  📥 Download PDF
+                </button>
+              </div>
+            </object>
+
+            <!-- Image Menu -->
+            <img
+              v-else-if="activePreviewMenu.fileType?.startsWith('image/') || activePreviewMenu.data?.startsWith('data:image')"
+              :src="activePreviewMenu.data"
+              :alt="activePreviewMenu.restaurantName + ' Menu'"
+              class="max-h-[70vh] max-w-full rounded-lg object-contain shadow-md"
+            />
+
+            <!-- Generic Document / Link Fallback -->
+            <div v-else class="p-8 text-center space-y-3">
+              <span class="text-3xl">📄</span>
+              <h4 class="font-bold text-sm text-[var(--foreground)]">{{ activePreviewMenu.fileName }}</h4>
+              <button
+                @click="downloadMenu({ name: activePreviewMenu.restaurantName, id: activePreviewMenu.id })"
+                class="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] text-white shadow-sm"
+              >
+                📥 Download Document
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
