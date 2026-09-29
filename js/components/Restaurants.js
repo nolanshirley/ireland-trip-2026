@@ -11,14 +11,22 @@ const Restaurants = {
     return {
       selectedCity: 'all',
       selectedCuisine: 'all',
-      statusFilter: 'all', // 'all', 'birthday', 'booked', 'recommended'
-      searchQuery: ''
+      statusFilter: 'all', // 'all', 'favorites', 'birthday', 'booked', 'recommended'
+      searchQuery: '',
+      userRestaurantData: {}, // { [id]: { rating: 0, notes: '', favorite: false } }
+      activeNoteRestId: null
     };
+  },
+  created() {
+    this.loadUserRestaurantData();
   },
   computed: {
     cities() {
       const set = new Set(this.restaurants.map(r => r.city));
       return ['all', ...Array.from(set)];
+    },
+    favoritesCount() {
+      return this.restaurants.filter(r => this.isFavorite(r)).length;
     },
     cuisineStats() {
       const map = {};
@@ -58,6 +66,7 @@ const Restaurants = {
         if (this.selectedCuisine !== 'all' && r.cuisineType !== this.selectedCuisine) return false;
 
         // Status filter
+        if (this.statusFilter === 'favorites' && !this.isFavorite(r)) return false;
         if (this.statusFilter === 'booked' && !r.booked) return false;
         if (this.statusFilter === 'birthday' && !r.birthdayEvent && !r.special) return false;
         if (this.statusFilter === 'recommended' && r.booked) return false;
@@ -65,18 +74,74 @@ const Restaurants = {
         // Search query
         if (!this.searchQuery.trim()) return true;
         const q = this.searchQuery.toLowerCase();
+        const userNotes = this.getNotes(r).toLowerCase();
         return (
           r.name.toLowerCase().includes(q) ||
           r.city.toLowerCase().includes(q) ||
           r.cuisine.toLowerCase().includes(q) ||
           (r.cuisineType && r.cuisineType.toLowerCase().includes(q)) ||
           (r.birthdayEvent && r.birthdayEvent.toLowerCase().includes(q)) ||
-          (r.notes && r.notes.toLowerCase().includes(q))
+          (r.notes && r.notes.toLowerCase().includes(q)) ||
+          userNotes.includes(q)
         );
       });
     }
   },
   methods: {
+    loadUserRestaurantData() {
+      try {
+        const saved = localStorage.getItem('ireland_restaurant_user_data');
+        if (saved) {
+          this.userRestaurantData = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error('Error loading user restaurant data', e);
+      }
+    },
+    saveUserRestaurantData() {
+      localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(this.userRestaurantData));
+    },
+    ensureRestData(r) {
+      const id = r.id || r.name;
+      if (!this.userRestaurantData[id]) {
+        this.userRestaurantData[id] = { rating: 0, notes: '', favorite: false };
+      }
+      return id;
+    },
+    toggleFavorite(r) {
+      const id = this.ensureRestData(r);
+      this.userRestaurantData[id].favorite = !this.userRestaurantData[id].favorite;
+      this.userRestaurantData = { ...this.userRestaurantData };
+      this.saveUserRestaurantData();
+    },
+    isFavorite(r) {
+      const id = r.id || r.name;
+      return Boolean(this.userRestaurantData[id] && this.userRestaurantData[id].favorite);
+    },
+    setRating(r, stars) {
+      const id = this.ensureRestData(r);
+      if (this.userRestaurantData[id].rating === stars) {
+        this.userRestaurantData[id].rating = 0; // Toggle off
+      } else {
+        this.userRestaurantData[id].rating = stars;
+      }
+      this.userRestaurantData = { ...this.userRestaurantData };
+      this.saveUserRestaurantData();
+    },
+    getRating(r) {
+      const id = r.id || r.name;
+      return (this.userRestaurantData[id] && this.userRestaurantData[id].rating) || 0;
+    },
+    saveNotes(r, val) {
+      const id = this.ensureRestData(r);
+      this.userRestaurantData[id].notes = val;
+      this.userRestaurantData = { ...this.userRestaurantData };
+      this.saveUserRestaurantData();
+    },
+    getNotes(r) {
+      const id = r.id || r.name;
+      return (this.userRestaurantData[id] && this.userRestaurantData[id].notes) || '';
+    },
     selectCuisineFilter(c) {
       this.selectedCuisine = this.selectedCuisine === c ? 'all' : c;
     },
@@ -205,6 +270,7 @@ const Restaurants = {
             <button
               v-for="st in [
                 { id: 'all', label: 'All Statuses' },
+                { id: 'favorites', label: '❤️ Favorites (' + favoritesCount + ')' },
                 { id: 'birthday', label: '🎂 Birthday Venues' },
                 { id: 'booked', label: '✅ Booked Only' },
                 { id: 'recommended', label: '💡 Recommendations' }
@@ -216,6 +282,7 @@ const Restaurants = {
                 statusFilter === st.id
                   ? 'bg-[var(--accent)] text-white shadow'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)]',
+                st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-400 border border-rose-500/30 font-semibold' : '',
                 st.id === 'birthday' && statusFilter !== 'birthday' ? 'text-pink-400 border border-pink-500/30' : ''
               ]"
             >
@@ -249,7 +316,7 @@ const Restaurants = {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="🔍 Search by name, cuisine (e.g. 'seafood', 'boxty'), dish, or birthday..."
+            placeholder="🔍 Search by name, cuisine (e.g. 'seafood', 'boxty'), dish, or notes..."
             class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
           />
 
@@ -273,7 +340,7 @@ const Restaurants = {
           :class="[
             r.birthdayEvent || r.special
               ? 'ring-2 ring-pink-500/60 bg-pink-500/[0.03]'
-              : (r.booked ? 'ring-1 ring-emerald-500/40 bg-emerald-500/[0.02]' : '')
+              : (isFavorite(r) ? 'ring-1 ring-rose-500/50 bg-rose-500/[0.02]' : (r.booked ? 'ring-1 ring-emerald-500/40 bg-emerald-500/[0.02]' : ''))
           ]"
         >
           <div>
@@ -286,14 +353,23 @@ const Restaurants = {
               <span>{{ r.birthdayEvent }}</span>
             </div>
 
-            <!-- Top Row: Name + Status Badge -->
+            <!-- Top Row: Name + Favorite Heart + Status Badge -->
             <div class="flex items-start justify-between gap-2 mb-2">
-              <div>
-                <h3 class="font-bold text-base text-[var(--foreground)] leading-snug">{{ r.name }}</h3>
-                <div class="text-xs text-[var(--muted-foreground)] flex items-center gap-1.5 mt-0.5">
-                  <span>📍 {{ r.city }}</span>
-                  <span>·</span>
-                  <span class="font-mono text-[var(--accent)]">{{ getPriceLabel(r.price) }}</span>
+              <div class="flex items-start gap-1.5">
+                <button
+                  @click.stop="toggleFavorite(r)"
+                  class="text-base transition-transform active:scale-125 hover:scale-110 mt-0.5"
+                  :title="isFavorite(r) ? 'Remove from favorites' : 'Add to favorites'"
+                >
+                  {{ isFavorite(r) ? '❤️' : '🤍' }}
+                </button>
+                <div>
+                  <h3 class="font-bold text-base text-[var(--foreground)] leading-snug">{{ r.name }}</h3>
+                  <div class="text-xs text-[var(--muted-foreground)] flex items-center gap-1.5 mt-0.5">
+                    <span>📍 {{ r.city }}</span>
+                    <span>·</span>
+                    <span class="font-mono text-[var(--accent)]">{{ getPriceLabel(r.price) }}</span>
+                  </div>
                 </div>
               </div>
               <div class="flex items-center gap-1.5 flex-wrap justify-end">
@@ -313,7 +389,7 @@ const Restaurants = {
             </div>
 
             <!-- Cuisine Type Tags -->
-            <div class="flex items-center gap-1.5 flex-wrap mb-3">
+            <div class="flex items-center gap-1.5 flex-wrap mb-2.5">
               <span
                 @click="selectCuisineFilter(r.cuisineType)"
                 class="cursor-pointer inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30 hover:bg-[var(--accent)]/25 transition-colors"
@@ -329,6 +405,42 @@ const Restaurants = {
             <p class="text-xs text-[var(--muted-foreground)] leading-relaxed mb-3">
               {{ r.notes }}
             </p>
+
+            <!-- Personal 5-Star Rating & Notes Box (Saved Offline) -->
+            <div class="p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] space-y-2 mb-2">
+              <div class="flex items-center justify-between">
+                <div class="text-[11px] font-semibold text-[var(--foreground)] flex items-center gap-1">
+                  <span>⭐ Rating:</span>
+                  <span class="text-amber-400 font-bold text-xs">
+                    {{ getRating(r) > 0 ? getRating(r) + '/5' : 'Unrated' }}
+                  </span>
+                </div>
+                <!-- 5 Interactive Stars -->
+                <div class="flex items-center gap-0.5 text-sm cursor-pointer select-none">
+                  <span
+                    v-for="s in 5"
+                    :key="s"
+                    @click.stop="setRating(r, s)"
+                    class="transition-transform hover:scale-125"
+                    :class="s <= getRating(r) ? 'text-amber-400' : 'text-zinc-600 hover:text-amber-300'"
+                    :title="'Rate ' + s + ' stars'"
+                  >
+                    ★
+                  </span>
+                </div>
+              </div>
+
+              <!-- Personal Dishes to Try / Order Notes -->
+              <div>
+                <input
+                  :value="getNotes(r)"
+                  @input="saveNotes(r, $event.target.value)"
+                  type="text"
+                  placeholder="📝 Dishes to try / table notes..."
+                  class="w-full text-[11px] px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+                />
+              </div>
+            </div>
           </div>
 
           <!-- Bottom: Booking Time/Details if present -->

@@ -235,8 +235,115 @@ const app = createApp({
       }
     };
 
+    // ── Universal Trip Scratchpad & Notes Backup / Export ────
+    const isScratchpadOpen = ref(false);
+    const tripScratchpad = ref('');
+    const isCopiedScratchpad = ref(false);
+    const backupStats = ref({ daily: 0, bookings: 0, restaurants: 0, trails: 0 });
+
+    const openScratchpad = () => {
+      loadTripScratchpad();
+      calculateBackupStats();
+      isScratchpadOpen.value = true;
+      document.body.style.overflow = 'hidden';
+    };
+
+    const closeScratchpad = () => {
+      isScratchpadOpen.value = false;
+      document.body.style.overflow = '';
+    };
+
+    const loadTripScratchpad = () => {
+      const saved = localStorage.getItem('ireland_trip_scratchpad');
+      tripScratchpad.value = saved || '';
+    };
+
+    const saveTripScratchpad = (val) => {
+      tripScratchpad.value = val;
+      localStorage.setItem('ireland_trip_scratchpad', val);
+      calculateBackupStats();
+    };
+
+    const copyScratchpad = () => {
+      if (!tripScratchpad.value) return;
+      navigator.clipboard.writeText(tripScratchpad.value).then(() => {
+        isCopiedScratchpad.value = true;
+        setTimeout(() => {
+          isCopiedScratchpad.value = false;
+        }, 1800);
+      });
+    };
+
+    const calculateBackupStats = () => {
+      try {
+        const daily = JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}');
+        const bookings = JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}');
+        const rest = JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}');
+        const trails = JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}');
+        backupStats.value = {
+          daily: Object.values(daily).filter(v => v && v.trim()).length,
+          bookings: Object.values(bookings).filter(v => (v.code && v.code.trim()) || (v.notes && v.notes.trim())).length,
+          restaurants: Object.values(rest).filter(v => v.rating > 0 || (v.notes && v.notes.trim()) || v.favorite).length,
+          trails: Object.values(trails).filter(v => v.completed || (v.notes && v.notes.trim()) || v.favorite).length
+        };
+      } catch (e) {
+        console.error('Error calculating backup stats', e);
+      }
+    };
+
+    const exportAllTripNotes = () => {
+      const backupData = {
+        exportDate: new Date().toISOString(),
+        tripTitle: 'Ireland Vacation October 2026',
+        scratchpad: localStorage.getItem('ireland_trip_scratchpad') || '',
+        dailyNotes: JSON.parse(localStorage.getItem('ireland_daily_notes') || '{}'),
+        reservationNotes: JSON.parse(localStorage.getItem('ireland_reservation_notes') || '{}'),
+        restaurantUserData: JSON.parse(localStorage.getItem('ireland_restaurant_user_data') || '{}'),
+        trailUserData: JSON.parse(localStorage.getItem('ireland_trail_user_data') || '{}'),
+        packingChecklist: JSON.parse(localStorage.getItem('ireland_packing_checklist_v2') || '[]'),
+        theme: localStorage.getItem('ireland_theme') || 'dark',
+        palette: localStorage.getItem('ireland_palette') || 'emerald',
+        fontScale: localStorage.getItem('ireland_font_scale') || 'md'
+      };
+
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute('href', dataStr);
+      downloadAnchor.setAttribute('download', `ireland_trip_backup_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    };
+
+    const importNotesFromFile = (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.scratchpad !== undefined) localStorage.setItem('ireland_trip_scratchpad', data.scratchpad);
+          if (data.dailyNotes) localStorage.setItem('ireland_daily_notes', JSON.stringify(data.dailyNotes));
+          if (data.reservationNotes) localStorage.setItem('ireland_reservation_notes', JSON.stringify(data.reservationNotes));
+          if (data.restaurantUserData) localStorage.setItem('ireland_restaurant_user_data', JSON.stringify(data.restaurantUserData));
+          if (data.trailUserData) localStorage.setItem('ireland_trail_user_data', JSON.stringify(data.trailUserData));
+          if (data.packingChecklist) localStorage.setItem('ireland_packing_checklist_v2', JSON.stringify(data.packingChecklist));
+          if (data.palette) setPalette(data.palette);
+          if (data.fontScale) setFontScale(data.fontScale);
+
+          alert('✅ Trip notes and custom data successfully imported! Refreshing view...');
+          window.location.reload();
+        } catch (err) {
+          alert('⚠️ Failed to import backup file: Invalid JSON format.');
+        }
+      };
+      reader.readAsText(file);
+    };
+
     onMounted(() => {
       initTheme();
+      loadTripScratchpad();
     });
 
     return {
@@ -273,12 +380,24 @@ const app = createApp({
       decreaseFontSize,
       isSettingsModalOpen,
       openSettingsModal,
-      closeSettingsModal
+      closeSettingsModal,
+      // Scratchpad & Backup
+      isScratchpadOpen,
+      tripScratchpad,
+      isCopiedScratchpad,
+      backupStats,
+      openScratchpad,
+      closeScratchpad,
+      saveTripScratchpad,
+      copyScratchpad,
+      exportAllTripNotes,
+      importNotesFromFile
     };
   }
 });
 
 app.mount('#app');
+
 
 
 

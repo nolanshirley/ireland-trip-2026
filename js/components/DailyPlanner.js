@@ -23,7 +23,9 @@ const DailyPlanner = {
       dayStartHour: 6, // 6:00 AM
       dayEndHour: 24, // 12:00 AM (Midnight)
       showRainBackups: {}, // Toggle state per day
-      globalRainMode: false // Global master switch
+      globalRainMode: false, // Global master switch
+      dailyNotes: {}, // { [dayIndex]: string }
+      savingNoteDay: null
     };
   },
   created() {
@@ -33,6 +35,7 @@ const DailyPlanner = {
       this.expandedDays[this.targetDayIndex] = true;
     }
     this.showRainBackups = {};
+    this.loadDailyNotes();
   },
   watch: {
     targetDayIndex: {
@@ -198,6 +201,37 @@ const DailyPlanner = {
     },
     jumpToRestaurant(restaurantId) {
       this.$emit('switch-tab', { tab: 'restaurants', targetId: restaurantId });
+    },
+    loadDailyNotes() {
+      try {
+        const saved = localStorage.getItem('ireland_daily_notes');
+        if (saved) {
+          this.dailyNotes = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error('Error loading daily notes', e);
+      }
+    },
+    saveDailyNote(idx, text) {
+      this.dailyNotes = { ...this.dailyNotes, [idx]: text };
+      localStorage.setItem('ireland_daily_notes', JSON.stringify(this.dailyNotes));
+      this.savingNoteDay = idx;
+      setTimeout(() => {
+        if (this.savingNoteDay === idx) {
+          this.savingNoteDay = null;
+        }
+      }, 1200);
+    },
+    hasNote(idx) {
+      return Boolean(this.dailyNotes && this.dailyNotes[idx] && this.dailyNotes[idx].trim().length > 0);
+    },
+    clearDailyNote(idx) {
+      if (confirm('Clear note for Day ' + (idx + 1) + '?')) {
+        const copy = { ...this.dailyNotes };
+        delete copy[idx];
+        this.dailyNotes = copy;
+        localStorage.setItem('ireland_daily_notes', JSON.stringify(this.dailyNotes));
+      }
     }
   },
   template: `
@@ -431,6 +465,10 @@ const DailyPlanner = {
                   </span>
                   <span v-if="getReservedCount(day) > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                     💡 {{ getReservedCount(day) }} SUGGESTED / BOOKED
+                  </span>
+                  <span v-if="hasNote(idx)" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <span>📝</span>
+                    <span>Note</span>
                   </span>
                 </div>
                 <div class="text-xs text-[var(--muted-foreground)] mt-1 flex items-center gap-2 flex-wrap">
@@ -775,6 +813,36 @@ const DailyPlanner = {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Day Notes & Offline Journal Box -->
+            <div class="mt-4 pt-3 border-t border-[var(--border)] bg-[var(--card)]/40 p-3.5 rounded-xl border border-[var(--border)]/60 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-[var(--foreground)]">
+                  <span>📝</span>
+                  <span>Day {{ day.dayNumber }} Personal Notes & Journal</span>
+                  <span v-if="hasNote(idx)" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-400 font-semibold">Saved Offline</span>
+                </div>
+                <div class="flex items-center gap-2 text-[11px] text-[var(--muted-foreground)]">
+                  <span v-if="savingNoteDay === idx" class="text-emerald-400 font-bold animate-pulse">💾 Saved!</span>
+                  <button
+                    v-if="hasNote(idx)"
+                    @click.stop="clearDailyNote(idx)"
+                    class="text-rose-400 hover:text-rose-300 transition-colors"
+                    title="Clear this day's note"
+                  >
+                    Clear Note
+                  </button>
+                </div>
+              </div>
+              <textarea
+                :value="dailyNotes[idx] || ''"
+                @input="saveDailyNote(idx, $event.target.value)"
+                @click.stop
+                placeholder="Jot down parking spot, gate codes, gas mileage, departure time adjustments, or daily memories..."
+                rows="2"
+                class="w-full text-xs p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none leading-relaxed resize-y"
+              ></textarea>
             </div>
 
           </div>

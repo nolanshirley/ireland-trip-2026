@@ -13,18 +13,30 @@ const HikingNature = {
     return {
       searchQuery: '',
       regionFilter: 'all',
-      statusFilter: 'all', // 'all', 'Suggested', 'Planned', 'Optional'
-      difficultyFilter: 'all' // 'all', 'Easy', 'Moderate', 'Strenuous'
+      statusFilter: 'all', // 'all', 'favorites', 'completed', 'Suggested', 'Planned', 'Optional'
+      difficultyFilter: 'all', // 'all', 'Easy', 'Moderate', 'Strenuous'
+      userTrailData: {} // { [trailId]: { completed: false, notes: '', favorite: false } }
     };
   },
+  created() {
+    this.loadUserTrailData();
+  },
   computed: {
+    completedCount() {
+      return this.trails.filter(t => this.isCompleted(t)).length;
+    },
+    favoritesCount() {
+      return this.trails.filter(t => this.isFavorite(t)).length;
+    },
     filteredTrails() {
       return this.trails.filter(t => {
         // Region
         if (this.regionFilter !== 'all' && t.region !== this.regionFilter) return false;
 
         // Status
-        if (this.statusFilter !== 'all' && t.status !== this.statusFilter) return false;
+        if (this.statusFilter === 'favorites' && !this.isFavorite(t)) return false;
+        if (this.statusFilter === 'completed' && !this.isCompleted(t)) return false;
+        if (this.statusFilter !== 'all' && this.statusFilter !== 'favorites' && this.statusFilter !== 'completed' && t.status !== this.statusFilter) return false;
 
         // Difficulty
         if (this.difficultyFilter !== 'all' && !t.difficulty.toLowerCase().includes(this.difficultyFilter.toLowerCase())) return false;
@@ -32,13 +44,15 @@ const HikingNature = {
         // Search
         if (!this.searchQuery.trim()) return true;
         const q = this.searchQuery.toLowerCase();
+        const userNotes = this.getTrailNotes(t).toLowerCase();
         return (
           t.name.toLowerCase().includes(q) ||
           t.regionName.toLowerCase().includes(q) ||
           t.highlights.toLowerCase().includes(q) ||
           t.gear.toLowerCase().includes(q) ||
           t.base.toLowerCase().includes(q) ||
-          (t.rainBackup && t.rainBackup.toLowerCase().includes(q))
+          (t.rainBackup && t.rainBackup.toLowerCase().includes(q)) ||
+          userNotes.includes(q)
         );
       });
     },
@@ -47,6 +61,56 @@ const HikingNature = {
     }
   },
   methods: {
+    loadUserTrailData() {
+      try {
+        const saved = localStorage.getItem('ireland_trail_user_data');
+        if (saved) {
+          this.userTrailData = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error('Error loading user trail data', e);
+      }
+    },
+    saveUserTrailData() {
+      localStorage.setItem('ireland_trail_user_data', JSON.stringify(this.userTrailData));
+    },
+    ensureTrailData(trail) {
+      const id = trail.id || trail.name;
+      if (!this.userTrailData[id]) {
+        this.userTrailData[id] = { completed: false, notes: '', favorite: false };
+      }
+      return id;
+    },
+    toggleCompleted(trail) {
+      const id = this.ensureTrailData(trail);
+      this.userTrailData[id].completed = !this.userTrailData[id].completed;
+      this.userTrailData = { ...this.userTrailData };
+      this.saveUserTrailData();
+    },
+    isCompleted(trail) {
+      const id = trail.id || trail.name;
+      return Boolean(this.userTrailData[id] && this.userTrailData[id].completed);
+    },
+    toggleFavorite(trail) {
+      const id = this.ensureTrailData(trail);
+      this.userTrailData[id].favorite = !this.userTrailData[id].favorite;
+      this.userTrailData = { ...this.userTrailData };
+      this.saveUserTrailData();
+    },
+    isFavorite(trail) {
+      const id = trail.id || trail.name;
+      return Boolean(this.userTrailData[id] && this.userTrailData[id].favorite);
+    },
+    saveTrailNotes(trail, text) {
+      const id = this.ensureTrailData(trail);
+      this.userTrailData[id].notes = text;
+      this.userTrailData = { ...this.userTrailData };
+      this.saveUserTrailData();
+    },
+    getTrailNotes(trail) {
+      const id = trail.id || trail.name;
+      return (this.userTrailData[id] && this.userTrailData[id].notes) || '';
+    },
     getStatusBadge(status) {
       if (status === 'Suggested' || status === 'Confirmed') {
         return {
@@ -145,6 +209,8 @@ const HikingNature = {
           <button
             v-for="st in [
               { id: 'all', label: 'All Statuses' },
+              { id: 'favorites', label: '❤️ Favorites (' + favoritesCount + ')' },
+              { id: 'completed', label: '✅ Completed (' + completedCount + '/' + trails.length + ')' },
               { id: 'Suggested', label: '💡 Suggested' },
               { id: 'Planned', label: '📍 Planned' },
               { id: 'Optional', label: '🌱 Optional' }
@@ -155,7 +221,9 @@ const HikingNature = {
               'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
               statusFilter === st.id
                 ? 'bg-[var(--accent)] text-white shadow-sm'
-                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+              st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-400 border border-rose-500/30' : '',
+              st.id === 'completed' && statusFilter !== 'completed' ? 'text-emerald-400 border border-emerald-500/30' : ''
             ]"
           >
             {{ st.label }}
@@ -189,7 +257,7 @@ const HikingNature = {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="🔍 Search trails by name, terrain, highlights (e.g. 'Diamond Hill', 'Cliffs', 'Waterfall', 'Basalt')..."
+            placeholder="🔍 Search trails by name, terrain, highlights (e.g. 'Diamond Hill', 'Cliffs', 'Waterfall', 'Basalt', or notes)..."
             class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
           />
         </div>
@@ -202,20 +270,45 @@ const HikingNature = {
           :key="trail.name"
           :id="'trail-' + trail.id"
           class="card p-5 space-y-4 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
-          :class="trail.status === 'Suggested' || trail.status === 'Confirmed' ? 'ring-1 ring-emerald-500/30' : ''"
+          :class="[
+            isCompleted(trail)
+              ? 'ring-2 ring-emerald-500/60 bg-emerald-500/[0.03]'
+              : (isFavorite(trail) ? 'ring-1 ring-rose-500/50 bg-rose-500/[0.02]' : (trail.status === 'Suggested' || trail.status === 'Confirmed' ? 'ring-1 ring-emerald-500/30' : ''))
+          ]"
         >
           <div class="space-y-3">
             <!-- Header: Trail Name, 1-Tap Maps & Status -->
             <div class="flex items-start justify-between gap-3">
-              <div>
-                <h3 class="font-extrabold text-base text-[var(--foreground)] leading-snug">{{ trail.name }}</h3>
-                <div class="text-xs text-[var(--muted-foreground)] flex items-center gap-1.5 mt-0.5 flex-wrap">
-                  <span>📍 {{ trail.regionName }}</span>
-                  <span>·</span>
-                  <span>🏠 {{ trail.base }}</span>
+              <div class="flex items-start gap-1.5">
+                <button
+                  @click.stop="toggleFavorite(trail)"
+                  class="text-base transition-transform active:scale-125 hover:scale-110 mt-0.5"
+                  :title="isFavorite(trail) ? 'Remove from favorites' : 'Add to favorites'"
+                >
+                  {{ isFavorite(trail) ? '❤️' : '🤍' }}
+                </button>
+                <div>
+                  <h3 class="font-extrabold text-base text-[var(--foreground)] leading-snug">{{ trail.name }}</h3>
+                  <div class="text-xs text-[var(--muted-foreground)] flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span>📍 {{ trail.regionName }}</span>
+                    <span>·</span>
+                    <span>🏠 {{ trail.base }}</span>
+                  </div>
                 </div>
               </div>
               <div class="flex items-center gap-2 flex-wrap justify-end">
+                <button
+                  @click.stop="toggleCompleted(trail)"
+                  :class="[
+                    'px-2.5 py-1 rounded-full text-xs font-bold transition-all flex items-center gap-1 border',
+                    isCompleted(trail)
+                      ? 'bg-emerald-500 text-white border-emerald-400 shadow-sm'
+                      : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+                  ]"
+                  :title="isCompleted(trail) ? 'Mark as not completed' : 'Mark as hiked/completed'"
+                >
+                  <span>{{ isCompleted(trail) ? '✓ Hiked' : '○ To Hike' }}</span>
+                </button>
                 <a
                   v-if="trail.mapsQuery"
                   :href="getGoogleMapsUrl(trail.mapsQuery)"
@@ -272,6 +365,17 @@ const HikingNature = {
             <!-- Split Option Callout -->
             <div v-if="trail.splitOption" class="text-xs text-[var(--muted-foreground)] italic">
               👥 <strong>Group Split Option:</strong> {{ trail.splitOption }}
+            </div>
+
+            <!-- Field Notes (Saved Offline) -->
+            <div class="pt-2 border-t border-[var(--border)]/60">
+              <input
+                :value="getTrailNotes(trail)"
+                @input="saveTrailNotes(trail, $event.target.value)"
+                type="text"
+                placeholder="📝 Field notes (e.g. Trailhead gate code, scenic viewpoint spot, photo notes)..."
+                class="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none"
+              />
             </div>
           </div>
 
