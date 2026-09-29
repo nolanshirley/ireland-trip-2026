@@ -25,7 +25,7 @@ const WeatherPacking = {
         { cat: '👕 Base & Mid Layers', item: 'Quick-dry hiking trousers (avoid heavy cotton jeans on wet trails)', packed: false },
         { cat: '👕 Base & Mid Layers', item: 'Knit sweaters, cardigans, or henleys for cozy pub crawls', packed: false },
         { cat: '🎂 Dad & Erin’s Birthday Outfit', item: 'Smart casual celebration outfit (button-down/sweater + chinos/jeans) for Ruibin / Dough Bros (Oct 7)', packed: false },
-        { cat: '🎂 Mom’s Birthday Outfit', item: 'Cocktail dress, elegant jumpsuit, or tailored blazer + trousers for Mister S (Oct 13)', packed: false },
+        { cat: '🎂 Mom’s Birthday Outfit', item: 'Cocktail dress, elegant jumpsuit, or tailored blazer + trousers for Mister S (Oct 13 @ 5:15 PM)', packed: false },
         { cat: '🧤 Accessories', item: 'Fleece beanie / windproof earband & neck gaiter (for cliff winds)', packed: false },
         { cat: '🧤 Accessories', item: 'Lightweight water-resistant gloves', packed: false },
         { cat: '🔌 Gear & Electronics', item: 'UK / Ireland Type G plug power adapters & portable power bank', packed: false },

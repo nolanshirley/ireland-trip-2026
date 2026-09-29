@@ -75,7 +75,7 @@ const Reservations = {
             <h4 class="font-bold text-sm text-[var(--foreground)]">Mom's Birthday Dinner</h4>
           </div>
           <p class="text-xs text-[var(--muted-foreground)]">
-            <strong>Oct 13 @ Mister S (Dublin)</strong>. Confirmed table. <span class="text-pink-400 font-semibold">24h cancellation window.</span>
+            <strong>Oct 13 @ 5:15 PM @ Mister S (Dublin)</strong>. Confirmed table. <span class="text-pink-400 font-semibold">24h cancellation window.</span>
           </p>
         </div>
 
