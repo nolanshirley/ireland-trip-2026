@@ -171,9 +171,27 @@ const app = createApp({
     // Active Tab State (default to planner)
     const activeTab = ref('planner');
 
+    // Collapsible State for Trip Command Center (collapsed by default on mobile)
+    const isCommandCenterCollapsed = ref(
+      localStorage.getItem('ireland_command_center_collapsed') !== null
+        ? localStorage.getItem('ireland_command_center_collapsed') === 'true'
+        : (typeof window !== 'undefined' && window.innerWidth < 768)
+    );
+
+    const toggleCommandCenter = () => {
+      isCommandCenterCollapsed.value = !isCommandCenterCollapsed.value;
+      try {
+        localStorage.setItem('ireland_command_center_collapsed', isCommandCenterCollapsed.value.toString());
+      } catch (e) {}
+    };
+
     // Interactive Top Dashboard Lens State
     const topDashboardLens = ref(localStorage.getItem('ireland_top_dashboard_lens') || 'milestones');
     const setTopDashboardLens = (lens) => {
+      if (lens === 'budget') {
+        handleSwitchTab({ tab: 'budget' });
+        return;
+      }
       topDashboardLens.value = lens;
       localStorage.setItem('ireland_top_dashboard_lens', lens);
     };
@@ -181,6 +199,7 @@ const app = createApp({
     const dashboardLenses = [
       { id: 'milestones', label: '🎯 Critical Milestones', icon: '🎯' },
       { id: 'bases', label: '🏠 4 Base Camps & Currency', icon: '🏠' },
+      { id: 'budget', label: '💶 Budget & Splits', icon: '💶' },
       { id: 'deadlines', label: '⚠️ Bookings & Deadlines', icon: '⚠️' },
       { id: 'weather', label: '🌦️ Weather & Packing', icon: '🌦️' },
       { id: 'nature', label: '⛰️ Scenic Wonders & Trails', icon: '⛰️' },
@@ -312,17 +331,28 @@ const app = createApp({
       nextTick(() => {
         setTimeout(() => {
           const cleanId = (targetId || trailId || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
-          const el = (cleanId ? document.getElementById(cleanId) : null) ||
-                     (cleanId ? document.getElementById('trail-' + cleanId) : null) ||
-                     (cleanId ? document.getElementById('restaurant-' + cleanId) : null) ||
-                     (cleanId ? document.getElementById('res-' + cleanId) : null) ||
-                     (dayNumber ? document.getElementById('day-card-' + dayNumber) : null) ||
-                     (dayIndex !== undefined ? document.getElementById('day-' + dayIndex) : null) ||
-                     document.getElementById('active-day-focus-card');
+          let el = null;
+          if (cleanId) {
+            el = document.getElementById(cleanId) ||
+                 document.getElementById('trail-' + cleanId) ||
+                 document.getElementById('restaurant-' + cleanId) ||
+                 document.getElementById('res-' + cleanId);
+          } else if (tab === 'planner') {
+            if (dayNumber) el = document.getElementById('day-card-' + dayNumber);
+            else if (dayIndex !== undefined) el = document.getElementById('day-' + dayIndex);
+            else el = document.getElementById('active-day-focus-card');
+          }
+
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             el.classList.add('card-highlight');
             setTimeout(() => el.classList.remove('card-highlight'), 2200);
+          } else {
+            // Scroll to the main tab navigation if no specific item target was requested (e.g. Budget)
+            const mainNav = document.getElementById('main-tab-nav');
+            if (mainNav) {
+              mainNav.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
           }
         }, 150);
       });
@@ -2248,6 +2278,8 @@ const app = createApp({
       topDashboardLens,
       setTopDashboardLens,
       dashboardLenses,
+      isCommandCenterCollapsed,
+      toggleCommandCenter,
       packingProgress,
       confirmedBookingsCount,
       strictDeadlinesCount,

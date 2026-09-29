@@ -103,12 +103,12 @@
 
         <!-- Multi-Currency Budget & Expense Tracker Trigger -->
         <button
-          @click="activeTab = 'budget'"
+          @click="handleSwitchTab({ tab: 'budget' })"
           class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm"
           title="Open Multi-Currency Expense Ledger (€ EUR / £ GBP / $ USD) & Tipping Guide"
         >
           <span>💶</span>
-          <span class="hidden sm:inline">Budget</span>
+          <span>Budget</span>
         </button>
 
         <!-- Emergency & Offline Glovebox 1-Pager Trigger -->
@@ -400,17 +400,40 @@
     </div>
 
     <!-- Interactive Top Dashboard Command Center -->
-    <section class="card p-4 sm:p-5 space-y-4 border-2 border-[var(--border)] shadow-md">
-      <!-- Lens Selection Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">📊</span>
-          <div>
-            <h2 class="text-sm sm:text-base font-extrabold text-[var(--foreground)] tracking-tight">Trip Command Center</h2>
-            <p class="text-[11px] text-[var(--muted-foreground)]">Tap any dimension below to customize your top summary metrics & deep links</p>
+    <section class="card p-4 sm:p-5 space-y-4 border-2 border-[var(--border)] shadow-md transition-all">
+      <!-- Lens Selection Header with Collapse/Expand Toggle -->
+      <div class="flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-xl flex-shrink-0">📊</span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-sm sm:text-base font-extrabold text-[var(--foreground)] tracking-tight">Trip Command Center</h2>
+              <span v-if="isCommandCenterCollapsed" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30 whitespace-nowrap">
+                Collapsed
+              </span>
+            </div>
+            <p v-if="!isCommandCenterCollapsed" class="text-[11px] text-[var(--muted-foreground)] truncate sm:whitespace-normal">
+              Tap any dimension below to customize your top summary metrics & deep links
+            </p>
+            <p v-else class="text-[11px] text-[var(--muted-foreground)] truncate sm:whitespace-normal">
+              Tap Expand to view milestone anchors, base hubs & packing progress
+            </p>
           </div>
         </div>
 
+        <!-- Collapse / Expand Toggle Button -->
+        <button
+          @click="toggleCommandCenter"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm flex-shrink-0"
+          :title="isCommandCenterCollapsed ? 'Expand Trip Command Center' : 'Collapse Trip Command Center'"
+        >
+          <span>{{ isCommandCenterCollapsed ? '▼' : '▲' }}</span>
+          <span>{{ isCommandCenterCollapsed ? 'Expand Center' : 'Collapse' }}</span>
+        </button>
+      </div>
+
+      <!-- Collapsible Body (Lens Selectors + Lens Content) -->
+      <div v-show="!isCommandCenterCollapsed" class="space-y-4 pt-1">
         <!-- Dashboard Lens Pills -->
         <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
           <button
@@ -428,7 +451,6 @@
             <span>{{ lens.label }}</span>
           </button>
         </div>
-      </div>
 
       <!-- LENS 1: Critical Milestones & Key Anchors (Default) -->
       <div v-if="topDashboardLens === 'milestones'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
@@ -620,7 +642,98 @@
         </div>
       </div>
 
-      <!-- LENS 3: Bookings & Cancellation Deadlines -->
+      <!-- LENS 3: Budget & Splits Overview -->
+      <div v-else-if="topDashboardLens === 'budget'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
+        <div
+          @click="handleSwitchTab({ tab: 'budget' })"
+          class="p-3.5 rounded-xl border border-emerald-400 bg-emerald-500/[0.06] hover:bg-emerald-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
+                💶 FULL TAB VIEW
+              </span>
+              <span class="text-xs font-mono font-bold text-emerald-400">€ EUR · £ GBP · $ USD</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Trip Budget & Splits Ledger</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Live multi-currency totals, pre-booked vs road spending, family debt settlements & tipping rules.
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between text-[11px] font-bold text-emerald-400">
+            <span>Open Full Budget Tab</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="handleSwitchTab({ tab: 'budget' })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                🍻 QUICK PRESETS
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">1-Tap Logging</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Common On-the-Road Costs</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Log +€40 Pub Rounds, +€75 Fuel Tanks, +€18 Coffee/Scones, or +€3.50 M50 E-Flow tolls instantly.
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Log an Expense</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="handleSwitchTab({ tab: 'budget' })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                🤝 WHO PAYS WHOM
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Fair Shares</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Family Settlement Matrix</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              Customizable member names with automatic debt resolution showing the minimal transactions to settle up.
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>View Balances</span>
+            <span>→</span>
+          </div>
+        </div>
+
+        <div
+          @click="handleSwitchTab({ tab: 'budget' })"
+          class="p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                💡 IRISH TIPPING
+              </span>
+              <span class="text-xs font-bold text-[var(--muted-foreground)]">Etiquette</span>
+            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Cash & Tipping Rules</h4>
+            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+              10–12% for sit-down dining, no tip for bar counter service, and contactless payment tips.
+            </p>
+          </div>
+          <div class="mt-2 pt-2 border-t border-[var(--border)] flex items-center justify-between text-[11px] font-bold text-[var(--accent)]">
+            <span>Read Guide</span>
+            <span>→</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LENS 4: Bookings & Cancellation Deadlines -->
       <div v-else-if="topDashboardLens === 'deadlines'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
         <div
           @click="activeTab = 'reservations'"
@@ -986,6 +1099,7 @@
           </div>
         </div>
       </div>
+      <!-- End of Collapsible Body -->
     </section>
 
     <!-- Top Milestones & Key Highlights Quick-Jump Pill Bar -->
@@ -998,6 +1112,16 @@
       >
         <span>🆘</span>
         <span>SOS Guide</span>
+      </button>
+
+      <!-- Budget & Splits Quick Jump Pill -->
+      <button
+        @click="handleSwitchTab({ tab: 'budget' })"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-extrabold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all flex-shrink-0 shadow-sm"
+        title="View Trip Budget & Family Splits Ledger"
+      >
+        <span>💶</span>
+        <span>Budget & Splits</span>
       </button>
 
       <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] flex-shrink-0 flex items-center gap-1">
