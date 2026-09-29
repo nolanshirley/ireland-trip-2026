@@ -1,6 +1,6 @@
 // =============================================================
-//  Component: Daily Planner & Hourly Calendar Time-Block View
-//  (Mobile-First, Deep Interlinking, Maps & Rain Backups)
+//  Component: Daily Planner & Interactive Calendar Time-Block View
+//  (Mobile-First, Interactive Day Scrubber, 1-Tap Maps & Rain Backups)
 // =============================================================
 
 const DailyPlanner = {
@@ -14,6 +14,8 @@ const DailyPlanner = {
   emits: ['open-detail', 'switch-tab'],
   data() {
     return {
+      plannerLayoutMode: 'day-calendar', // 'day-calendar' (Interactive Day View) or 'accordion' (All Days Accordion)
+      activeCalendarDayIndex: 0,
       expandedDays: {},
       viewMode: 'calendar', // 'calendar' (Hourly) or 'agenda' (Step-by-step list)
       activeBaseCampFilter: 'all', // 'all', 'ni', 'galway', 'kerry', 'dublin', 'birthdays', 'transfers'
@@ -30,10 +32,12 @@ const DailyPlanner = {
     };
   },
   created() {
-    // Days start collapsed by default unless targetDayIndex is set
-    this.expandedDays = {};
     if (this.targetDayIndex !== null && this.targetDayIndex !== undefined) {
+      this.activeCalendarDayIndex = this.targetDayIndex;
       this.expandedDays[this.targetDayIndex] = true;
+    } else {
+      this.activeCalendarDayIndex = 0;
+      this.expandedDays[0] = true;
     }
     this.showRainBackups = {};
     this.loadDailyNotes();
@@ -43,6 +47,7 @@ const DailyPlanner = {
       immediate: true,
       handler(newVal) {
         if (newVal !== null && newVal !== undefined) {
+          this.activeCalendarDayIndex = newVal;
           this.expandedDays[newVal] = true;
           this.activeDayFilter = null;
         }
@@ -56,6 +61,9 @@ const DailyPlanner = {
         hours.push(h);
       }
       return hours;
+    },
+    activeDay() {
+      return this.timeline[this.activeCalendarDayIndex] || this.timeline[0];
     },
     filteredDays() {
       return this.timeline.filter((day, idx) => {
@@ -105,6 +113,40 @@ const DailyPlanner = {
     }
   },
   methods: {
+    selectCalendarDay(idx) {
+      this.activeCalendarDayIndex = idx;
+      this.expandedDays[idx] = true;
+      this.$nextTick(() => {
+        const el = document.getElementById('active-day-focus-card');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    },
+    prevCalendarDay() {
+      if (this.activeCalendarDayIndex > 0) {
+        this.selectCalendarDay(this.activeCalendarDayIndex - 1);
+      }
+    },
+    nextCalendarDay() {
+      if (this.activeCalendarDayIndex < this.timeline.length - 1) {
+        this.selectCalendarDay(this.activeCalendarDayIndex + 1);
+      }
+    },
+    jumpToMilestone(dayNumber) {
+      const idx = this.timeline.findIndex(d => d.dayNumber === dayNumber);
+      if (idx !== -1) {
+        this.selectCalendarDay(idx);
+      }
+    },
+    getMilestoneBadge(day) {
+      if (day.dayNumber === 6) return '🎂 Dad & Erin';
+      if (day.dayNumber === 11) return '🍺 Guinness VIP';
+      if (day.dayNumber === 12) return '🎂 Mom\'s Bday';
+      if (day.dayNumber === 13) return '✈️ Departure';
+      if (day.isTransfer) return '🔄 Base Move';
+      return null;
+    },
     setBaseCampFilter(campId) {
       this.activeBaseCampFilter = campId;
       this.activeDayFilter = null;
@@ -226,24 +268,14 @@ const DailyPlanner = {
       if (!item) return;
       const eventData = {
         title: item.activity || item.title || 'Ireland Trip Activity',
-        date: (day && day.date) || item.date || 'Oct 2',
+        day: (day && day.date) || item.date || 'Oct 2',
         time: item.time || '',
-        desc: item.desc || item.note || '',
+        notes: (item.desc || item.note || '') + (item.rainBackup ? ' | Rain Backup: ' + item.rainBackup : ''),
         location: item.mapsQuery || (day && day.base) || 'Ireland'
       };
       if (window.TravelApp) {
         window.TravelApp.triggerCalendar(eventData);
       }
-    },
-    getGoogleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
-    },
-    getAppleMapsUrl(query) {
-      if (!query) return '#';
-      const clean = query.replace(/\+/g, ' ');
-      return `https://maps.apple.com/?q=${encodeURIComponent(clean)}`;
     },
     onItemClick(item, day) {
       this.$emit('open-detail', { item, day });
@@ -322,13 +354,13 @@ const DailyPlanner = {
       <div class="card p-4 sm:p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
-            <h2 class="text-xl font-bold tracking-tight">📅 Daily Itinerary & Time-Blocks</h2>
+            <h2 class="text-xl font-bold tracking-tight">📅 Daily Itinerary & Interactive Calendar</h2>
             <p class="text-sm text-[var(--muted-foreground)]">
-              Interactive 18-hour ribbon, suggested timeline & one-tap mobile navigation
+              Interactive 13-day calendar selector, 18-hour time-blocks & 1-tap Apple / Google navigation
             </p>
           </div>
 
-          <!-- View Mode & Expansion & Rain Mode Controls -->
+          <!-- Layout & View Mode Switcher -->
           <div class="flex items-center gap-2 flex-wrap">
             <!-- Global Rainy Day Mode Switcher -->
             <button
@@ -342,17 +374,47 @@ const DailyPlanner = {
               title="Toggle Rain Contingency Plans for all 13 days"
             >
               <span>🌧️</span>
-              <span>{{ globalRainMode ? '🌧️ Rain Mode: ON (All Days)' : '🌧️ Rainy Day Mode' }}</span>
+              <span>{{ globalRainMode ? '🌧️ Rain Mode: ON' : '🌧️ Rain Mode' }}</span>
             </button>
 
-            <!-- View Mode Switcher -->
+            <!-- Planner Layout Switcher: Day Calendar vs All Days Accordion -->
+            <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
+              <button
+                @click="plannerLayoutMode = 'day-calendar'"
+                :class="[
+                  'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
+                  plannerLayoutMode === 'day-calendar'
+                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                ]"
+                title="Interactive Day Calendar (No accordion expansion needed!)"
+              >
+                <span>🗓️</span>
+                <span>Day Calendar</span>
+              </button>
+              <button
+                @click="plannerLayoutMode = 'accordion'"
+                :class="[
+                  'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
+                  plannerLayoutMode === 'accordion'
+                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                ]"
+                title="View all 13 days in expandable accordion list"
+              >
+                <span>📜</span>
+                <span>All Days (Accordion)</span>
+              </button>
+            </div>
+
+            <!-- Schedule Hour Grid vs Agenda Switcher -->
             <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
               <button
                 @click="viewMode = 'calendar'"
                 :class="[
-                  'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
+                  'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1',
                   viewMode === 'calendar'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
                     : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
                 ]"
               >
@@ -362,19 +424,19 @@ const DailyPlanner = {
               <button
                 @click="viewMode = 'agenda'"
                 :class="[
-                  'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
+                  'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1',
                   viewMode === 'agenda'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
+                    ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
                     : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
                 ]"
               >
                 <span>📋</span>
-                <span>Agenda List</span>
+                <span>Agenda</span>
               </button>
             </div>
 
-            <!-- Expand / Collapse All -->
-            <div class="flex items-center gap-1">
+            <!-- Expand / Collapse All (For Accordion Mode) -->
+            <div v-if="plannerLayoutMode === 'accordion'" class="flex items-center gap-1">
               <button
                 @click="expandAll"
                 class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors"
@@ -393,52 +455,132 @@ const DailyPlanner = {
           </div>
         </div>
 
+        <!-- Interactive 13-Day Calendar Scrubber Bar -->
+        <div class="space-y-2 mb-4 pt-3 border-t border-[var(--border)]">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">🗓️ Select Trip Day:</span>
+              <span class="text-xs font-extrabold text-[var(--foreground)]">Oct 2 – Oct 14, 2026</span>
+            </div>
+            <!-- Milestone Quick Jumps -->
+            <div class="hidden sm:flex items-center gap-1.5 text-xs">
+              <span class="text-[10px] text-[var(--muted-foreground)] font-bold uppercase">Milestones:</span>
+              <button
+                @click="jumpToMilestone(6)"
+                class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 hover:opacity-90"
+              >
+                🎂 Oct 7: Dad & Erin
+              </button>
+              <button
+                @click="jumpToMilestone(11)"
+                class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 hover:opacity-90"
+              >
+                🍺 Oct 12: Guinness
+              </button>
+              <button
+                @click="jumpToMilestone(12)"
+                class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400 hover:opacity-90"
+              >
+                🎂 Oct 13: Mom's Bday
+              </button>
+            </div>
+          </div>
+
+          <!-- Horizontal Scrollable Day Cards Strip -->
+          <div class="day-strip-scroll pt-1 pb-2">
+            <div
+              v-for="(d, idx) in timeline"
+              :key="d.dayNumber"
+              @click="selectCalendarDay(idx)"
+              :class="[
+                'day-strip-card p-2.5 rounded-xl border flex flex-col justify-between gap-1.5 transition-all text-left shadow-sm',
+                activeCalendarDayIndex === idx
+                  ? 'active-day bg-[var(--accent)]/15 border-[var(--accent)] ring-2 ring-[var(--accent)] text-[var(--foreground)]'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] border-[var(--border)] text-[var(--foreground)]',
+                d.special && activeCalendarDayIndex !== idx ? 'border-pink-500/50 bg-pink-500/[0.04]' : '',
+                d.isTransfer && !d.special && activeCalendarDayIndex !== idx ? 'border-blue-500/40' : ''
+              ]"
+            >
+              <!-- Top Row: Day # + Date -->
+              <div class="flex items-center justify-between gap-1">
+                <span :class="[
+                  'px-1.5 py-0.5 rounded text-[10px] font-mono font-extrabold',
+                  activeCalendarDayIndex === idx ? 'bg-[var(--accent)] text-white' : 'bg-[var(--card-hover)] text-[var(--muted-foreground)]'
+                ]">
+                  D{{ d.dayNumber }}
+                </span>
+                <span class="text-[11px] font-bold text-[var(--foreground)] whitespace-nowrap">{{ d.date }}</span>
+              </div>
+
+              <!-- Location / Base Tag -->
+              <div class="text-[11px] font-semibold text-[var(--foreground)] truncate leading-tight">
+                {{ d.base }}
+              </div>
+
+              <!-- Milestone Pill if applicable -->
+              <div v-if="getMilestoneBadge(d)" class="truncate">
+                <span :class="[
+                  'px-1.5 py-0.5 rounded text-[9px] font-extrabold tracking-tight block truncate text-center',
+                  d.special ? 'bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400' : 'bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400'
+                ]">
+                  {{ getMilestoneBadge(d) }}
+                </span>
+              </div>
+
+              <!-- Drive Time & Activity count -->
+              <div class="flex items-center justify-between text-[10px] text-[var(--muted-foreground)] pt-1 border-t border-[var(--border)]/50">
+                <span>🚗 {{ d.driveHours }}h</span>
+                <span>{{ d.items.length }} stops</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Color Legend Ribbon -->
-        <div class="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs mb-4">
-          <span class="font-bold text-[var(--foreground)] text-[11px] uppercase tracking-wider">Time Block Key:</span>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded block-reserved"></span>
-            <span class="font-semibold text-rose-400">💡 Suggested Schedule & Bookings</span>
+        <div class="flex flex-wrap items-center gap-3 p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs mb-3">
+          <span class="font-bold text-[var(--foreground)] text-[11px] uppercase tracking-wider">Key:</span>
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded block-reserved"></span>
+            <span class="font-semibold text-rose-400 text-[11px]">Bookings & Schedule</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded block-anchor"></span>
-            <span class="font-semibold text-indigo-400">🌟 Key Anchor Events</span>
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded block-anchor"></span>
+            <span class="font-semibold text-indigo-400 text-[11px]">Anchor Events</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded block-drive"></span>
-            <span class="text-blue-400">🚗 Car & Base Moves</span>
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded block-drive"></span>
+            <span class="text-blue-400 text-[11px]">🚗 Drive</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded block-dining"></span>
-            <span class="text-amber-400">🍽️ Dining & Food</span>
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded block-dining"></span>
+            <span class="text-amber-400 text-[11px]">🍽️ Dining</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded block-housing"></span>
-            <span class="text-purple-400">🏡 Housing Windows</span>
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded block-housing"></span>
+            <span class="text-purple-400 text-[11px]">🏡 Lodging</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded block-sight"></span>
-            <span class="text-emerald-400">🌲 Sights & Nature</span>
+          <div class="flex items-center gap-1">
+            <span class="w-2.5 h-2.5 rounded block-sight"></span>
+            <span class="text-emerald-400 text-[11px]">🌲 Sights</span>
           </div>
         </div>
 
         <!-- Filter Category Tabs (Type & Energy) -->
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-[var(--border)]">
           <!-- Type Filter -->
-          <div class="flex flex-wrap items-center gap-1.5">
+          <div class="flex flex-wrap items-center gap-1">
             <button
               v-for="flt in [
-                { id: 'all', label: 'All Activities' },
-                { id: 'reserved', label: '💡 Suggested & Bookings' },
-                { id: 'drive', label: '🚗 Driving & Transfers' },
-                { id: 'dining', label: '🍽️ Dinners & Food' },
-                { id: 'housing', label: '🏡 Housing Windows' },
-                { id: 'sight', label: '🌲 Sights & Nature' }
+                { id: 'all', label: 'All Stops' },
+                { id: 'reserved', label: '💡 Bookings' },
+                { id: 'drive', label: '🚗 Drives' },
+                { id: 'dining', label: '🍽️ Dinners' },
+                { id: 'sight', label: '🌲 Sights' }
               ]"
               :key="flt.id"
               @click="activeTypeFilter = flt.id"
               :class="[
-                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
                 activeTypeFilter === flt.id
                   ? 'bg-[var(--accent)] text-white shadow-sm'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
@@ -449,19 +591,19 @@ const DailyPlanner = {
           </div>
 
           <!-- Energy Level Filter -->
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1">
             <span class="text-[10px] font-bold uppercase text-[var(--muted-foreground)]">Pacing:</span>
             <button
               v-for="e in [
                 { id: 'all', label: 'All' },
                 { id: 'chill', label: '🟢 Chill' },
-                { id: 'moderate', label: '🟡 Moderate' },
-                { id: 'strenuous', label: '🔴 Strenuous' }
+                { id: 'moderate', label: '🟡 Mod' },
+                { id: 'strenuous', label: '🔴 Hard' }
               ]"
               :key="e.id"
               @click="activeEnergyFilter = e.id"
               :class="[
-                'px-2 py-1 rounded-md text-[11px] font-semibold transition-all',
+                'px-2 py-0.5 rounded text-[11px] font-semibold transition-all',
                 activeEnergyFilter === e.id
                   ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
                   : 'bg-[var(--card-hover)] text-[var(--muted-foreground)]'
@@ -471,82 +613,480 @@ const DailyPlanner = {
             </button>
           </div>
         </div>
+      </div>
 
-        <!-- Base Camp & Milestone Hub Filters -->
-        <div class="space-y-2 mb-4 pt-3 border-t border-[var(--border)]">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Base Camp:</span>
+      <!-- ============================================================= -->
+      <!-- VIEW 1: INTERACTIVE SINGLE-DAY FOCUS VIEW (No Accordion Needed) -->
+      <!-- ============================================================= -->
+      <div v-if="plannerLayoutMode === 'day-calendar'" id="active-day-focus-card" class="space-y-4">
+        
+        <!-- Day Navigation Bar -->
+        <div class="card p-4 sm:p-5 border-2 border-[var(--accent)]/40 bg-[var(--card)] shadow-lg space-y-4">
+          <!-- Navigation Controls: Prev / Day Title / Next -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[var(--border)]">
+            <!-- Prev Day Button -->
             <button
-              v-for="camp in [
-                { id: 'all', label: 'All Bases (13 Days)' },
-                { id: 'ni', label: '🏠 Belfast Base (D1–4)' },
-                { id: 'galway', label: '🏠 Galway Base (D5–7)' },
-                { id: 'kerry', label: '🏠 Killarney Base (D8–10)' },
-                { id: 'dublin', label: '🏠 Navan / Dublin (D11–13)' },
-                { id: 'birthdays', label: '🎂 Birthday Days' },
-                { id: 'transfers', label: '🔄 Base Move Days' }
-              ]"
-              :key="camp.id"
-              @click="setBaseCampFilter(camp.id)"
+              @click="prevCalendarDay"
+              :disabled="activeCalendarDayIndex === 0"
               :class="[
-                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
-                activeBaseCampFilter === camp.id
-                  ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
-                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]',
-                camp.id === 'birthdays' && activeBaseCampFilter !== 'birthdays' ? 'text-pink-400 border-pink-500/30' : '',
-                camp.id === 'transfers' && activeBaseCampFilter !== 'transfers' ? 'text-blue-400 border-blue-500/30' : ''
+                'px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border shadow-sm',
+                activeCalendarDayIndex === 0
+                  ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
+                  : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
               ]"
             >
-              {{ camp.label }}
+              <span>◀</span>
+              <span>Day {{ activeCalendarDayIndex > 0 ? activeCalendarDayIndex : 1 }}</span>
+            </button>
+
+            <!-- Center: Day Title & Date Badges -->
+            <div class="text-center space-y-1">
+              <div class="flex items-center justify-center gap-2 flex-wrap">
+                <span class="w-8 h-8 rounded-xl bg-[var(--accent)] text-white font-extrabold flex items-center justify-center text-sm shadow-sm">
+                  D{{ activeDay.dayNumber }}
+                </span>
+                <h3 class="text-lg sm:text-xl font-extrabold text-[var(--foreground)]">
+                  {{ activeDay.date }}: {{ activeDay.title }}
+                </h3>
+                <span v-if="activeDay.special" class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400 shadow-sm">
+                  🎂 {{ activeDay.specialText || 'BIRTHDAY CELEBRATION' }}
+                </span>
+                <span v-if="activeDay.isTransfer" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 shadow-sm">
+                  🔄 BASE TRANSFER
+                </span>
+                <!-- Currency Badge -->
+                <span v-if="isNorthernIreland(activeDay.dayNumber)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 shadow-sm">
+                  🇬🇧 NI (£ GBP · MPH)
+                </span>
+                <span v-else class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
+                  🇮🇪 Republic (€ EUR · KM/H)
+                </span>
+              </div>
+              <div class="text-xs text-[var(--muted-foreground)] flex items-center justify-center gap-2 flex-wrap">
+                <span>🏠 <strong>Base:</strong> {{ activeDay.base }}</span>
+                <span>·</span>
+                <span>🛣️ <strong>Route:</strong> {{ activeDay.route }}</span>
+                <span>·</span>
+                <span class="font-bold text-[var(--foreground)]">🚗 {{ activeDay.driveHours }}h car time</span>
+              </div>
+            </div>
+
+            <!-- Next Day Button -->
+            <button
+              @click="nextCalendarDay"
+              :disabled="activeCalendarDayIndex === timeline.length - 1"
+              :class="[
+                'px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-end gap-1.5 transition-all border shadow-sm',
+                activeCalendarDayIndex === timeline.length - 1
+                  ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
+                  : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
+              ]"
+            >
+              <span>Day {{ activeCalendarDayIndex < timeline.length - 1 ? activeCalendarDayIndex + 2 : 13 }}</span>
+              <span>▶</span>
             </button>
           </div>
 
-          <!-- Day Selector Quick Jump -->
-          <div class="flex flex-wrap items-center gap-1.5 pt-1">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)] mr-1">Day Jump:</span>
+          <!-- Day Quick Hub Snapshot (Trails & Dining Linkages) -->
+          <div v-if="getDayTrails(activeDay.dayNumber).length > 0 || getDayRestaurants(activeDay.dayNumber).length > 0" class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] flex items-center justify-between gap-3 flex-wrap text-xs">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-bold text-[var(--foreground)]">🌟 Day {{ activeDay.dayNumber }} Highlights:</span>
+              <!-- Trail links -->
+              <button
+                v-for="t in getDayTrails(activeDay.dayNumber)"
+                :key="t.id"
+                @click.stop="jumpToTrail(t.id)"
+                class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
+              >
+                <span>🥾</span>
+                <span>{{ t.name }} ({{ t.difficulty }})</span>
+              </button>
+              <!-- Restaurant links -->
+              <button
+                v-for="rest in getDayRestaurants(activeDay.dayNumber)"
+                :key="rest.id"
+                @click.stop="jumpToRestaurant(rest.id)"
+                class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all font-semibold flex items-center gap-1"
+              >
+                <span>🍴</span>
+                <span>{{ rest.name }}</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- What to Wear & Weather Header -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-blue-500/[0.08] border border-blue-500/25 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base">👔</span>
+              <div>
+                <strong class="font-bold text-[var(--foreground)]">Recommended Outfits & Gear:</strong>
+                <span class="text-[var(--foreground)] ml-1">{{ activeDay.outfit }}</span>
+              </div>
+            </div>
+
+            <!-- Rainy Day Contingency Toggle -->
+            <div v-if="hasRainBackups(activeDay)" class="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                :class="[
+                  'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border',
+                  isRainActive(activeCalendarDayIndex)
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/30'
+                ]"
+              >
+                <span>🌧️</span>
+                <span>{{ isRainActive(activeCalendarDayIndex) ? '☀️ Standard Plan' : '🌧️ View Rain Backup' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Rainy Day Contingency Callout Box (if toggled on) -->
+          <div
+            v-if="isRainActive(activeCalendarDayIndex)"
+            class="p-4 rounded-xl bg-amber-500/[0.12] border-2 border-amber-500/50 space-y-2 animate-fadeIn shadow-sm"
+          >
+            <div class="flex items-center justify-between gap-2 flex-wrap text-amber-400 font-bold text-sm">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🌧️</span>
+                <h4>Active Rainy Day Contingency for Day {{ activeDay.dayNumber }}:</h4>
+              </div>
+              <button
+                @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                class="text-xs underline text-amber-300 hover:text-amber-200 font-semibold"
+              >
+                Close Rain Plan ✕
+              </button>
+            </div>
+            <ul class="text-xs text-[var(--foreground)] space-y-1.5 pl-5 list-disc">
+              <li v-for="item in activeDay.items.filter(i => i.rainBackup)" :key="item.activity">
+                <strong>{{ item.activity }}:</strong> {{ item.rainBackup }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- 18-Hour Visual Ribbon Strip (06:00 to 24:00) -->
+          <div>
+            <div class="flex items-center justify-between text-[11px] text-[var(--muted-foreground)] font-mono mb-1 px-1">
+              <span>6 AM</span>
+              <span>9 AM</span>
+              <span>12 PM</span>
+              <span>3 PM</span>
+              <span>6 PM</span>
+              <span>9 PM</span>
+              <span>12 AM</span>
+            </div>
+
+            <!-- Strip Graphic -->
+            <div class="timeline-strip-container">
+              <div
+                v-for="(item, iIdx) in activeDay.items"
+                :key="iIdx"
+                @click="onItemClick(item, activeDay)"
+                :class="['timeline-strip-block', getBlockColorClass(item)]"
+                :style="getRibbonBlockStyle(item)"
+                :title="item.time + ' — ' + item.activity + (item.desc ? ': ' + item.desc : '')"
+              >
+                <span class="truncate">{{ item.activity }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODE 1: Hourly Calendar View Grid -->
+          <div v-if="viewMode === 'calendar'" class="border border-[var(--border)] rounded-xl overflow-hidden bg-[var(--background)]">
+            <div class="divide-y divide-[var(--border)]">
+              <div
+                v-for="hour in hoursScale"
+                :key="hour"
+                class="hour-calendar-row"
+              >
+                <!-- Hour Label -->
+                <div class="hour-marker">
+                  {{ formatHour(hour) }}
+                </div>
+
+                <!-- Events within this hour slot -->
+                <div class="hour-events-slot">
+                  <div
+                    v-for="(item, itIdx) in getItemsInHour(activeDay, hour)"
+                    :key="itIdx"
+                    v-show="isFirstHourOfItem(item, hour)"
+                    @click="onItemClick(item, activeDay)"
+                    :class="[
+                      'p-2.5 rounded-lg border text-xs transition-all cursor-pointer hover:shadow-sm hover:scale-[1.005]',
+                      item.reserved ? 'bg-amber-500/10 border-amber-500/30' : '',
+                      item.anchor && !item.reserved ? 'bg-indigo-500/10 border-indigo-500/30' : '',
+                      item.type === 'drive' ? 'bg-blue-500/10 border-blue-500/25' : '',
+                      item.type === 'dining' && !item.reserved ? 'bg-amber-500/10 border-amber-500/25' : '',
+                      item.type === 'housing' ? 'bg-purple-500/10 border-purple-500/25' : '',
+                      item.type === 'sight' && !item.reserved && !item.anchor ? 'bg-emerald-500/10 border-emerald-500/25' : '',
+                      item.type === 'free' ? 'bg-zinc-500/10 border-zinc-500/20 text-[var(--muted-foreground)]' : ''
+                    ]"
+                  >
+                    <div class="flex items-start justify-between gap-2 flex-wrap">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]">
+                          {{ item.time }}
+                        </span>
+                        <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+                        
+                        <!-- Energy Pacing Badge -->
+                        <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
+                          {{ getEnergyBadge(item.energyLevel).label }}
+                        </span>
+                      </div>
+
+                      <!-- Action Badges & Map Button -->
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                          💡 SUGGESTED ITINERARY
+                        </span>
+                        <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
+                          {{ item.tag }}
+                        </span>
+                        <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                          ⏱️ {{ item.note }}
+                        </span>
+                        <!-- 1-Tap Maps & Calendar Buttons -->
+                        <button
+                          v-if="item.mapsQuery"
+                          @click.stop="openMap(item.mapsQuery)"
+                          class="maps-btn text-[10px] py-0.5 px-2"
+                          title="Open in Apple Maps or Google Maps"
+                        >
+                          <span>📍 Map</span>
+                        </button>
+                        <button
+                          @click.stop="openCalendar(item, activeDay)"
+                          class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                          title="Add event to Apple / Google Calendar"
+                        >
+                          <span>📅 Cal</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Description -->
+                    <p v-if="item.desc" class="mt-1.5 text-[var(--muted-foreground)] leading-relaxed text-xs">
+                      {{ item.desc }}
+                    </p>
+
+                    <!-- Rainy Day or Split Option previews -->
+                    <div v-if="item.rainBackup && isRainActive(activeCalendarDayIndex)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
+                      <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                    </div>
+                    <div v-else-if="item.rainBackup" class="mt-1.5">
+                      <button
+                        @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                      >
+                        <span>🌧️ Rain Backup Available</span>
+                      </button>
+                    </div>
+                    <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
+                      👥 <strong>Split Option:</strong> {{ item.splitOption }}
+                    </div>
+
+                    <!-- Quick Links to Hike / Dining Profile -->
+                    <div class="mt-2 pt-2 border-t border-[var(--border)]/50 flex items-center gap-2 flex-wrap">
+                      <button
+                        v-if="item.trailId"
+                        @click.stop="jumpToTrail(item.trailId)"
+                        class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                      >
+                        <span>🥾</span>
+                        <span>View Full Hike Details →</span>
+                      </button>
+                      <button
+                        v-if="item.restaurantId"
+                        @click.stop="jumpToRestaurant(item.restaurantId)"
+                        class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                      >
+                        <span>🍴</span>
+                        <span>View Dining Card & Policy →</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Empty state marker if nothing in hour -->
+                  <div v-if="getItemsInHour(activeDay, hour).length === 0" class="h-4"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODE 2: Agenda / Itinerary List View -->
+          <div v-if="viewMode === 'agenda'" class="space-y-2.5">
+            <div
+              v-for="(item, sIdx) in activeDay.items"
+              :key="sIdx"
+              @click="onItemClick(item, activeDay)"
+              class="flex flex-col sm:flex-row sm:items-start gap-3 p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] transition-all cursor-pointer"
+              :class="{
+                'border-amber-500/30 bg-amber-500/[0.02]': item.reserved,
+                'border-blue-500/25': item.type === 'drive',
+                'border-purple-500/25': item.type === 'housing'
+              }"
+            >
+              <!-- Time Badge -->
+              <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
+                <span class="font-mono text-xs font-bold text-[var(--foreground)] px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] inline-block">
+                  {{ item.time }}
+                </span>
+                <div class="text-[10px] text-[var(--muted-foreground)]">
+                  ⏱️ {{ item.dur }}
+                </div>
+              </div>
+
+              <!-- Activity Details -->
+              <div class="flex-1">
+                <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+                    <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
+                      {{ getEnergyBadge(item.energyLevel).label }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-1.5">
+                    <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                      💡 SUGGESTED ITINERARY
+                    </span>
+                    <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
+                      {{ item.tag }}
+                    </span>
+                    <!-- 1-Tap Maps & Calendar Buttons -->
+                    <button
+                      v-if="item.mapsQuery"
+                      @click.stop="openMap(item.mapsQuery)"
+                      class="maps-btn text-[10px] py-0.5 px-2"
+                      title="Open in Apple Maps or Google Maps"
+                    >
+                      <span>📍 Map</span>
+                    </button>
+                    <button
+                      @click.stop="openCalendar(item, activeDay)"
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                      title="Add event to Apple / Google Calendar"
+                    >
+                      <span>📅 Cal</span>
+                    </button>
+                  </div>
+                </div>
+
+                <p v-if="item.desc" class="text-xs text-[var(--muted-foreground)] leading-relaxed">
+                  {{ item.desc }}
+                </p>
+
+                <div v-if="item.rainBackup && isRainActive(activeCalendarDayIndex)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
+                  <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                </div>
+                <div v-else-if="item.rainBackup" class="mt-1.5">
+                  <button
+                    @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                  >
+                    <span>🌧️ Rain Backup Available</span>
+                  </button>
+                </div>
+                <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
+                  👥 <strong>Split Option:</strong> {{ item.splitOption }}
+                </div>
+
+                <!-- Deep Links -->
+                <div class="mt-2 pt-2 border-t border-[var(--border)]/50 flex items-center gap-3">
+                  <button
+                    v-if="item.trailId"
+                    @click.stop="jumpToTrail(item.trailId)"
+                    class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>🥾</span>
+                    <span>View Trail Profile →</span>
+                  </button>
+                  <button
+                    v-if="item.restaurantId"
+                    @click.stop="jumpToRestaurant(item.restaurantId)"
+                    class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>🍴</span>
+                    <span>View Restaurant Card →</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Day Notes & Offline Journal Box -->
+          <div class="mt-4 pt-3 border-t border-[var(--border)] bg-[var(--background)] p-3.5 rounded-xl border border-[var(--border)]/60 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-[var(--foreground)]">
+                <span>📝</span>
+                <span>Day {{ activeDay.dayNumber }} Personal Notes & Journal</span>
+                <span v-if="hasNote(activeCalendarDayIndex)" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-400 font-semibold">Saved Offline</span>
+              </div>
+              <div class="flex items-center gap-2 text-[11px] text-[var(--muted-foreground)]">
+                <span v-if="savingNoteDay === activeCalendarDayIndex" class="text-emerald-400 font-bold animate-pulse">💾 Saved!</span>
+                <button
+                  v-if="hasNote(activeCalendarDayIndex)"
+                  @click.stop="clearDailyNote(activeCalendarDayIndex)"
+                  class="text-rose-400 hover:text-rose-300 transition-colors"
+                  title="Clear this day's note"
+                >
+                  Clear Note
+                </button>
+              </div>
+            </div>
+            <textarea
+              :value="dailyNotes[activeCalendarDayIndex] || ''"
+              @input="saveDailyNote(activeCalendarDayIndex, $event.target.value)"
+              placeholder="Jot down parking spot, gate codes, gas mileage, departure time adjustments, or daily memories..."
+              rows="2"
+              class="w-full text-xs p-2.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none leading-relaxed resize-y"
+            ></textarea>
+          </div>
+
+          <!-- Bottom Prev / Next Day Switcher Bar -->
+          <div class="flex items-center justify-between gap-3 pt-3 border-t border-[var(--border)] text-xs">
             <button
-              @click="activeDayFilter = null"
+              @click="prevCalendarDay"
+              :disabled="activeCalendarDayIndex === 0"
               :class="[
-                'px-2.5 py-1 rounded text-xs font-medium transition-colors',
-                activeDayFilter === null
-                  ? 'bg-[var(--accent)] text-white shadow'
-                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                'px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all border',
+                activeCalendarDayIndex === 0
+                  ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
+                  : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
               ]"
             >
-              All
+              <span>◀</span>
+              <span>Prev Day (Day {{ activeCalendarDayIndex > 0 ? activeCalendarDayIndex : 1 }})</span>
             </button>
+
+            <span class="text-[var(--muted-foreground)] font-mono font-bold">
+              Day {{ activeDay.dayNumber }} of 13
+            </span>
+
             <button
-              v-for="(day, idx) in timeline"
-              :key="idx"
-              @click="filterDay(idx)"
+              @click="nextCalendarDay"
+              :disabled="activeCalendarDayIndex === timeline.length - 1"
               :class="[
-                'px-2 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1',
-                activeDayFilter === idx
-                  ? 'bg-[var(--accent)] text-white shadow'
-                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-                day.special ? 'ring-1 ring-pink-500/60 font-bold text-pink-400' : ''
+                'px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all border',
+                activeCalendarDayIndex === timeline.length - 1
+                  ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
+                  : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
               ]"
             >
-              <span>D{{ day.dayNumber }}</span>
-              <span v-if="day.special">🎂</span>
-              <span v-if="day.isTransfer && !day.special">🔄</span>
+              <span>Next Day (Day {{ activeCalendarDayIndex < timeline.length - 1 ? activeCalendarDayIndex + 2 : 13 }})</span>
+              <span>▶</span>
             </button>
           </div>
-        </div>
 
-        <!-- Search Input -->
-        <div>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="🔍 Search schedule (e.g. 'Mister S', 'Guinness', 'Rain backup', 'Diamond Hill', 'Belfast')..."
-            class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
-          />
         </div>
       </div>
 
-      <!-- Day Cards Accordion List -->
-      <div class="space-y-5">
+      <!-- ============================================================= -->
+      <!-- VIEW 2: CLASSIC MULTI-DAY ACCORDION VIEW (Optional Mode)       -->
+      <!-- ============================================================= -->
+      <div v-else class="space-y-5">
         <div
           v-for="(day, idx) in filteredDays"
           :key="day.date"
@@ -807,14 +1347,14 @@ const DailyPlanner = {
                             v-if="item.mapsQuery"
                             @click.stop="openMap(item.mapsQuery)"
                             class="maps-btn text-[10px] py-0.5 px-2"
-                            title="Open Navigation"
+                            title="Open in Apple Maps or Google Maps"
                           >
                             <span>📍 Map</span>
                           </button>
                           <button
                             @click.stop="openCalendar(item, day)"
-                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] transition-all shadow-sm flex items-center gap-1"
-                            title="Add event to Calendar"
+                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                            title="Add event to Apple / Google Calendar"
                           >
                             <span>📅 Cal</span>
                           </button>
@@ -915,14 +1455,14 @@ const DailyPlanner = {
                         v-if="item.mapsQuery"
                         @click.stop="openMap(item.mapsQuery)"
                         class="maps-btn text-[10px] py-0.5 px-2"
-                        title="Open Navigation"
+                        title="Open in Apple Maps or Google Maps"
                       >
                         <span>📍 Map</span>
                       </button>
                       <button
                         @click.stop="openCalendar(item, day)"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] text-[var(--foreground)] transition-all shadow-sm flex items-center gap-1"
-                        title="Add event to Calendar"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                        title="Add event to Apple / Google Calendar"
                       >
                         <span>📅 Cal</span>
                       </button>
@@ -994,7 +1534,6 @@ const DailyPlanner = {
               <textarea
                 :value="dailyNotes[idx] || ''"
                 @input="saveDailyNote(idx, $event.target.value)"
-                @click.stop
                 placeholder="Jot down parking spot, gate codes, gas mileage, departure time adjustments, or daily memories..."
                 rows="2"
                 class="w-full text-xs p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none leading-relaxed resize-y"

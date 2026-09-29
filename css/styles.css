@@ -680,15 +680,44 @@ body {
   }
 }
 
-/* ── Tab Active Pulse ───────────────────────────────────────── */
-.tab-active-pulse {
-  animation: tabPulse 0.5s ease-out;
+/* ── Interactive Day Scrubber & Calendar Bar ─────────────────── */
+.day-strip-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.5rem;
+}
+.day-strip-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.day-strip-scroll::-webkit-scrollbar-track {
+  background: var(--card);
+  border-radius: 9999px;
+}
+.day-strip-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+.day-strip-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
-@keyframes tabPulse {
-  0% { transform: scale(0.96); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+.day-strip-card {
+  flex: 0 0 auto;
+  min-width: 120px;
+  max-width: 140px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+.day-strip-card:hover {
+  transform: translateY(-2px);
+}
+.day-strip-card.active-day {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-md) !important;
 }
 
 /* ── Print & Pocket PDF Booklet Stylesheet ───────────────────── */
