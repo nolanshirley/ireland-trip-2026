@@ -1,26 +1,33 @@
 // =============================================================
 //  Component: Daily Planner & Hourly Calendar Time-Block View
+//  (Mobile-First, Deep Interlinking, Maps & Rain Backups)
 // =============================================================
 
 const DailyPlanner = {
   name: 'DailyPlanner',
   props: {
-    timeline: { type: Array, required: true }
+    timeline: { type: Array, required: true },
+    trails: { type: Array, default: () => [] },
+    restaurants: { type: Array, default: () => [] }
   },
+  emits: ['open-detail', 'switch-tab'],
   data() {
     return {
       expandedDays: {},
       viewMode: 'calendar', // 'calendar' (Hourly) or 'agenda' (Step-by-step list)
       activeTypeFilter: 'all', // 'all', 'reserved', 'drive', 'dining', 'housing', 'sight'
+      activeEnergyFilter: 'all', // 'all', 'chill', 'moderate', 'strenuous'
       searchQuery: '',
       activeDayFilter: null,
       dayStartHour: 6, // 6:00 AM
-      dayEndHour: 24 // 12:00 AM (Midnight)
+      dayEndHour: 24, // 12:00 AM (Midnight)
+      showRainBackups: {} // Toggle state per day
     };
   },
   created() {
-    // All days start collapsed by default
+    // Days start collapsed by default
     this.expandedDays = {};
+    this.showRainBackups = {};
   },
   computed: {
     hoursScale() {
@@ -35,7 +42,7 @@ const DailyPlanner = {
         if (this.activeDayFilter !== null && idx !== this.activeDayFilter) {
           return false;
         }
-        if (!this.searchQuery.trim() && this.activeTypeFilter === 'all') return true;
+        if (!this.searchQuery.trim() && this.activeTypeFilter === 'all' && this.activeEnergyFilter === 'all') return true;
 
         const q = this.searchQuery.toLowerCase();
         return day.items.some(item => {
@@ -49,6 +56,9 @@ const DailyPlanner = {
 
           if (!matchesType) return false;
 
+          // Energy filter
+          if (this.activeEnergyFilter !== 'all' && item.energyLevel !== this.activeEnergyFilter) return false;
+
           // Search query
           if (!this.searchQuery.trim()) return true;
           return (
@@ -56,6 +66,8 @@ const DailyPlanner = {
             item.time.toLowerCase().includes(q) ||
             (item.desc && item.desc.toLowerCase().includes(q)) ||
             (item.tag && item.tag.toLowerCase().includes(q)) ||
+            (item.rainBackup && item.rainBackup.toLowerCase().includes(q)) ||
+            (item.splitOption && item.splitOption.toLowerCase().includes(q)) ||
             day.title.toLowerCase().includes(q) ||
             day.base.toLowerCase().includes(q)
           );
@@ -83,6 +95,9 @@ const DailyPlanner = {
         this.expandedDays[idx] = true;
       }
     },
+    toggleRainBackup(idx) {
+      this.showRainBackups[idx] = !this.showRainBackups[idx];
+    },
     formatHour(h) {
       if (h === 0 || h === 24) return '12 AM';
       if (h === 12) return '12 PM';
@@ -94,7 +109,7 @@ const DailyPlanner = {
       const start = Math.max(this.dayStartHour, item.startHour || this.dayStartHour);
       const end = Math.min(this.dayEndHour, item.endHour || (start + 1));
       const leftPercent = ((start - this.dayStartHour) / totalSpan) * 100;
-      const widthPercent = Math.max(2.5, ((end - start) / totalSpan) * 100);
+      const widthPercent = Math.max(3.0, ((end - start) / totalSpan) * 100);
 
       return {
         left: `${leftPercent}%`,
@@ -110,54 +125,73 @@ const DailyPlanner = {
       if (item.type === 'sight') return 'block-sight';
       return 'block-free';
     },
+    getEnergyBadge(energy) {
+      switch (energy) {
+        case 'strenuous':
+          return { label: '🔴 Strenuous Hike', class: 'energy-strenuous' };
+        case 'moderate':
+          return { label: '🟡 Moderate Walk', class: 'energy-moderate' };
+        case 'chill':
+        default:
+          return { label: '🟢 Chill / Accessible', class: 'energy-chill' };
+      }
+    },
     getItemsInHour(day, hour) {
       return day.items.filter(item => {
-        if (this.activeTypeFilter === 'reserved' && !item.reserved && !item.anchor) return false;
-        if (this.activeTypeFilter === 'drive' && item.type !== 'drive') return false;
-        if (this.activeTypeFilter === 'dining' && item.type !== 'dining') return false;
-        if (this.activeTypeFilter === 'housing' && item.type !== 'housing') return false;
-        if (this.activeTypeFilter === 'sight' && item.type !== 'sight') return false;
-
-        const start = item.startHour;
-        const end = item.endHour || (start + 0.75);
-        return start < (hour + 1) && end > hour;
+        const start = item.startHour || this.dayStartHour;
+        const end = item.endHour || (start + 1);
+        return hour >= Math.floor(start) && hour < Math.ceil(end);
       });
     },
     isFirstHourOfItem(item, hour) {
-      const startFloor = Math.floor(item.startHour);
-      return hour === startFloor || (item.startHour < this.dayStartHour && hour === this.dayStartHour);
-    },
-    getBudgetPercent(hours) {
-      const maxBudget = 11;
-      return Math.min(100, Math.round((hours / maxBudget) * 100));
+      const start = item.startHour || this.dayStartHour;
+      return hour === Math.floor(start);
     },
     getBudgetColor(hours) {
-      if (hours >= 4.5) return 'bg-red-500';
-      if (hours >= 3.0) return 'bg-amber-500';
-      return 'bg-emerald-500';
+      if (hours <= 2.5) return 'bg-emerald-500';
+      if (hours <= 4.0) return 'bg-amber-500';
+      return 'bg-rose-500';
+    },
+    getBudgetPercent(hours) {
+      return Math.min(100, (hours / 6.0) * 100);
     },
     getReservedCount(day) {
-      return day.items.filter(i => i.reserved).length;
+      return day.items.filter(i => i.reserved || i.anchor).length;
+    },
+    hasRainBackups(day) {
+      return day.items.some(i => i.rainBackup);
+    },
+    getGoogleMapsUrl(query) {
+      if (!query) return '#';
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    },
+    onItemClick(item, day) {
+      this.$emit('open-detail', { item, day });
+    },
+    jumpToTrail(trailId) {
+      this.$emit('switch-tab', { tab: 'hiking', targetId: trailId });
+    },
+    jumpToRestaurant(restaurantId) {
+      this.$emit('switch-tab', { tab: 'restaurants', targetId: restaurantId });
     }
   },
   template: `
     <div class="space-y-6">
-      <!-- Top Planner Control Bar -->
-      <div class="card p-5">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+
+      <!-- Top Controls & Mobile View Selector -->
+      <div class="card p-4 sm:p-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
-            <div class="flex items-center gap-2">
-              <span class="text-2xl">📅</span>
-              <h2 class="text-xl font-bold tracking-tight">Daily Schedule & Time-Blocking Matrix</h2>
-            </div>
-            <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
-              Interactive hourly view with driving legs, confirmed dining reservations, and flexible activity windows.
+            <h2 class="text-xl font-bold tracking-tight">📅 Daily Itinerary & Time-Blocks</h2>
+            <p class="text-sm text-[var(--muted-foreground)]">
+              Interactive 18-hour ribbon, suggested timeline & one-tap mobile navigation
             </p>
           </div>
 
-          <!-- View Switcher & Expand/Collapse -->
+          <!-- View Mode & Expansion Controls -->
           <div class="flex items-center gap-2 flex-wrap">
-            <div class="bg-[var(--background)] border border-[var(--border)] rounded-xl p-1 flex items-center">
+            <!-- View Mode Switcher -->
+            <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
               <button
                 @click="viewMode = 'calendar'"
                 :class="[
@@ -167,8 +201,8 @@ const DailyPlanner = {
                     : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
                 ]"
               >
-                <span>🕒</span>
-                <span>Hourly Calendar</span>
+                <span>📊</span>
+                <span>Hour Grid</span>
               </button>
               <button
                 @click="viewMode = 'agenda'"
@@ -180,11 +214,12 @@ const DailyPlanner = {
                 ]"
               >
                 <span>📋</span>
-                <span>Itinerary List</span>
+                <span>Agenda List</span>
               </button>
             </div>
 
-            <div class="flex items-center gap-1.5">
+            <!-- Expand / Collapse All -->
+            <div class="flex items-center gap-1">
               <button
                 @click="expandAll"
                 class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors"
@@ -208,7 +243,7 @@ const DailyPlanner = {
           <span class="font-bold text-[var(--foreground)] text-[11px] uppercase tracking-wider">Time Block Key:</span>
           <div class="flex items-center gap-1.5">
             <span class="w-3 h-3 rounded block-reserved"></span>
-            <span class="font-semibold text-rose-400">📅 Confirmed Bookings</span>
+            <span class="font-semibold text-rose-400">💡 Suggested Schedule & Bookings</span>
           </div>
           <div class="flex items-center gap-1.5">
             <span class="w-3 h-3 rounded block-anchor"></span>
@@ -232,28 +267,54 @@ const DailyPlanner = {
           </div>
         </div>
 
-        <!-- Filter Category Tabs -->
-        <div class="flex flex-wrap items-center gap-1.5 mb-4">
-          <button
-            v-for="flt in [
-              { id: 'all', label: 'All Activities' },
-              { id: 'reserved', label: '📅 Reserved & Anchors' },
-              { id: 'drive', label: '🚗 Driving & Transfers' },
-              { id: 'dining', label: '🍽️ Dinners & Food' },
-              { id: 'housing', label: '🏡 Housing Windows' },
-              { id: 'sight', label: '🌲 Sights & Nature' }
-            ]"
-            :key="flt.id"
-            @click="activeTypeFilter = flt.id"
-            :class="[
-              'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
-              activeTypeFilter === flt.id
-                ? 'bg-[var(--accent)] text-white shadow-sm'
-                : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-            ]"
-          >
-            {{ flt.label }}
-          </button>
+        <!-- Filter Category Tabs (Type & Energy) -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <!-- Type Filter -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button
+              v-for="flt in [
+                { id: 'all', label: 'All Activities' },
+                { id: 'reserved', label: '💡 Suggested & Bookings' },
+                { id: 'drive', label: '🚗 Driving & Transfers' },
+                { id: 'dining', label: '🍽️ Dinners & Food' },
+                { id: 'housing', label: '🏡 Housing Windows' },
+                { id: 'sight', label: '🌲 Sights & Nature' }
+              ]"
+              :key="flt.id"
+              @click="activeTypeFilter = flt.id"
+              :class="[
+                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                activeTypeFilter === flt.id
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                  : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+              ]"
+            >
+              {{ flt.label }}
+            </button>
+          </div>
+
+          <!-- Energy Level Filter -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-bold uppercase text-[var(--muted-foreground)]">Pacing:</span>
+            <button
+              v-for="e in [
+                { id: 'all', label: 'All' },
+                { id: 'chill', label: '🟢 Chill' },
+                { id: 'moderate', label: '🟡 Moderate' },
+                { id: 'strenuous', label: '🔴 Strenuous' }
+              ]"
+              :key="e.id"
+              @click="activeEnergyFilter = e.id"
+              :class="[
+                'px-2 py-1 rounded-md text-[11px] font-semibold transition-all',
+                activeEnergyFilter === e.id
+                  ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
+                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)]'
+              ]"
+            >
+              {{ e.label }}
+            </button>
+          </div>
         </div>
 
         <!-- Day Selector Quick Jump -->
@@ -263,7 +324,7 @@ const DailyPlanner = {
             :class="[
               'px-2.5 py-1 rounded text-xs font-medium transition-colors',
               activeDayFilter === null
-                ? 'bg-[var(--accent)] text-white'
+                ? 'bg-[var(--accent)] text-white shadow'
                 : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
             ]"
           >
@@ -292,7 +353,7 @@ const DailyPlanner = {
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="🔍 Search schedule (e.g. 'Mister S', 'Guinness', 'Check out', 'Belfast', 'Ferry', 'Dinner')..."
+            placeholder="🔍 Search schedule (e.g. 'Mister S', 'Guinness', 'Rain backup', 'Diamond Hill', 'Belfast')..."
             class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
           />
         </div>
@@ -327,8 +388,8 @@ const DailyPlanner = {
                   <span v-if="day.isTransfer" class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400">
                     🔄 BASE TRANSFER
                   </span>
-                  <span v-if="getReservedCount(day) > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
-                    📅 {{ getReservedCount(day) }} BOOKING{{ getReservedCount(day) > 1 ? 'S' : '' }}
+                  <span v-if="getReservedCount(day) > 0" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    💡 {{ getReservedCount(day) }} SUGGESTED / BOOKED
                   </span>
                 </div>
                 <div class="text-xs text-[var(--muted-foreground)] mt-1 flex items-center gap-2 flex-wrap">
@@ -367,8 +428,8 @@ const DailyPlanner = {
           <!-- Day Body -->
           <div v-show="expandedDays[idx]" class="p-4 pt-3 border-t border-[var(--border)] space-y-4">
             
-            <!-- What to Wear & Outfit Recommendation Box -->
-            <div v-if="day.outfit" class="p-3 rounded-xl bg-blue-500/[0.08] border border-blue-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <!-- What to Wear & Weather Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-blue-500/[0.08] border border-blue-500/25 text-xs">
               <div class="flex items-center gap-2">
                 <span class="text-base">👔</span>
                 <div>
@@ -376,31 +437,57 @@ const DailyPlanner = {
                   <span class="text-[var(--foreground)] ml-1">{{ day.outfit }}</span>
                 </div>
               </div>
-              <span class="text-[11px] font-mono text-emerald-400 font-bold whitespace-nowrap">{{ day.weather }}</span>
-            </div>
 
-            <!-- Note if any -->
-            <div v-if="day.note" class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs text-amber-300 flex items-center gap-2 font-medium">
-              <span class="text-base">💡</span>
-              <span>{{ day.note }}</span>
-            </div>
-
-            <!-- Proportional 18-Hour Time-Block Visual Ribbon Strip (06:00 to 24:00) -->
-            <div class="space-y-1.5">
-              <div class="flex items-center justify-between text-[11px] text-[var(--muted-foreground)] font-mono px-1">
-                <span>06:00</span>
-                <span>09:00</span>
-                <span>12:00</span>
-                <span>15:00</span>
-                <span>18:00</span>
-                <span>21:00</span>
-                <span>24:00</span>
+              <!-- Rainy Day Contingency Toggle -->
+              <div v-if="hasRainBackups(day)" class="flex items-center gap-2 self-start sm:self-auto">
+                <button
+                  @click.stop="toggleRainBackup(idx)"
+                  :class="[
+                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5',
+                    showRainBackups[idx]
+                      ? 'bg-amber-500 text-slate-950 shadow-sm'
+                      : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border border-amber-500/30'
+                  ]"
+                >
+                  <span>{{ showRainBackups[idx] ? '☀️ Show Standard Plan' : '🌦️ Show Rainy Day Backups' }}</span>
+                </button>
               </div>
-              
+            </div>
+
+            <!-- Rainy Day Contingency Callout Box (if toggled on) -->
+            <div
+              v-if="showRainBackups[idx]"
+              class="p-4 rounded-xl bg-amber-500/[0.1] border-2 border-amber-500/40 space-y-2 animate-fadeIn"
+            >
+              <div class="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                <span>🌦️</span>
+                <h4>Rainy Day & High-Wind Contingencies for Day {{ day.dayNumber }}:</h4>
+              </div>
+              <ul class="text-xs text-[var(--foreground)] space-y-1.5 pl-5 list-disc">
+                <li v-for="item in day.items.filter(i => i.rainBackup)" :key="item.activity">
+                  <strong>{{ item.activity }}:</strong> {{ item.rainBackup }}
+                </li>
+              </ul>
+            </div>
+
+            <!-- 18-Hour Visual Ribbon Strip (06:00 to 24:00) -->
+            <div>
+              <div class="flex items-center justify-between text-[11px] text-[var(--muted-foreground)] font-mono mb-1 px-1">
+                <span>6 AM</span>
+                <span>9 AM</span>
+                <span>12 PM</span>
+                <span>3 PM</span>
+                <span>6 PM</span>
+                <span>9 PM</span>
+                <span>12 AM</span>
+              </div>
+
+              <!-- Strip Graphic -->
               <div class="timeline-strip-container">
                 <div
                   v-for="(item, iIdx) in day.items"
                   :key="iIdx"
+                  @click="onItemClick(item, day)"
                   :class="['timeline-strip-block', getBlockColorClass(item)]"
                   :style="getRibbonBlockStyle(item)"
                   :title="item.time + ' — ' + item.activity + (item.desc ? ': ' + item.desc : '')"
@@ -429,9 +516,10 @@ const DailyPlanner = {
                       v-for="(item, itIdx) in getItemsInHour(day, hour)"
                       :key="itIdx"
                       v-show="isFirstHourOfItem(item, hour)"
+                      @click="onItemClick(item, day)"
                       :class="[
-                        'p-2.5 rounded-lg border text-xs transition-all',
-                        item.reserved ? 'bg-rose-500/10 border-rose-500/30' : '',
+                        'p-2.5 rounded-lg border text-xs transition-all cursor-pointer hover:shadow-sm hover:scale-[1.005]',
+                        item.reserved ? 'bg-amber-500/10 border-amber-500/30' : '',
                         item.anchor && !item.reserved ? 'bg-indigo-500/10 border-indigo-500/30' : '',
                         item.type === 'drive' ? 'bg-blue-500/10 border-blue-500/25' : '',
                         item.type === 'dining' && !item.reserved ? 'bg-amber-500/10 border-amber-500/25' : '',
@@ -441,17 +529,22 @@ const DailyPlanner = {
                       ]"
                     >
                       <div class="flex items-start justify-between gap-2 flex-wrap">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                           <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]">
                             {{ item.time }}
                           </span>
                           <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+                          
+                          <!-- Energy Pacing Badge -->
+                          <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
+                            {{ getEnergyBadge(item.energyLevel).label }}
+                          </span>
                         </div>
 
-                        <!-- Tag & Cancellation Badges -->
+                        <!-- Action Badges & Map Button -->
                         <div class="flex items-center gap-1.5 flex-wrap">
-                          <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                            📅 RESERVED
+                          <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                            💡 SUGGESTED ITINERARY
                           </span>
                           <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)]">
                             {{ item.tag }}
@@ -459,6 +552,17 @@ const DailyPlanner = {
                           <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
                             ⏱️ {{ item.note }}
                           </span>
+                          <!-- 1-Tap Google Maps Button -->
+                          <a
+                            v-if="item.mapsQuery"
+                            :href="getGoogleMapsUrl(item.mapsQuery)"
+                            target="_blank"
+                            @click.stop
+                            class="maps-btn text-[10px] py-0.5 px-2"
+                            title="Open in Google Maps Navigation"
+                          >
+                            <span>📍 Map</span>
+                          </a>
                         </div>
                       </div>
 
@@ -466,6 +570,34 @@ const DailyPlanner = {
                       <p v-if="item.desc" class="mt-1.5 text-[var(--muted-foreground)] leading-relaxed text-xs">
                         {{ item.desc }}
                       </p>
+
+                      <!-- Rainy Day or Split Option previews -->
+                      <div v-if="item.rainBackup && showRainBackups[idx]" class="mt-2 p-1.5 rounded bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-300">
+                        <strong>🌧️ Rain Backup:</strong> {{ item.rainBackup }}
+                      </div>
+                      <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
+                        👥 <strong>Split Option:</strong> {{ item.splitOption }}
+                      </div>
+
+                      <!-- Quick Links to Hike / Dining Profile -->
+                      <div class="mt-2 pt-2 border-t border-[var(--border)]/50 flex items-center gap-2 flex-wrap">
+                        <button
+                          v-if="item.trailId"
+                          @click.stop="jumpToTrail(item.trailId)"
+                          class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                        >
+                          <span>🥾</span>
+                          <span>View Full Hike Details →</span>
+                        </button>
+                        <button
+                          v-if="item.restaurantId"
+                          @click.stop="jumpToRestaurant(item.restaurantId)"
+                          class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                        >
+                          <span>🍴</span>
+                          <span>View Dining Card & Policy →</span>
+                        </button>
+                      </div>
                     </div>
 
                     <!-- Empty state marker if nothing in hour -->
@@ -480,51 +612,93 @@ const DailyPlanner = {
               <div
                 v-for="(item, sIdx) in day.items"
                 :key="sIdx"
-                class="flex flex-col sm:flex-row sm:items-start gap-3 p-3 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] transition-colors"
+                @click="onItemClick(item, day)"
+                class="flex flex-col sm:flex-row sm:items-start gap-3 p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] transition-all cursor-pointer"
                 :class="{
-                  'border-rose-500/30 bg-rose-500/[0.02]': item.reserved,
+                  'border-amber-500/30 bg-amber-500/[0.02]': item.reserved,
                   'border-blue-500/25': item.type === 'drive',
                   'border-purple-500/25': item.type === 'housing'
                 }"
               >
                 <!-- Time Badge -->
-                <div class="sm:w-36 flex-shrink-0">
+                <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
                   <span class="font-mono text-xs font-bold text-[var(--foreground)] px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] inline-block">
                     {{ item.time }}
                   </span>
-                  <div class="text-[10px] text-[var(--muted-foreground)] mt-1">
+                  <div class="text-[10px] text-[var(--muted-foreground)]">
                     ⏱️ {{ item.dur }}
                   </div>
                 </div>
 
                 <!-- Activity Details -->
                 <div class="flex-1">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
-                    <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                      📅 RESERVED
-                    </span>
-                    <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)]">
-                      {{ item.tag }}
-                    </span>
-                    <span v-if="item.note" class="text-xs text-amber-400 font-medium">
-                      ⏱️ {{ item.note }}
-                    </span>
+                  <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+                      <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
+                        {{ getEnergyBadge(item.energyLevel).label }}
+                      </span>
+                    </div>
+
+                    <div class="flex items-center gap-1.5">
+                      <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        💡 SUGGESTED ITINERARY
+                      </span>
+                      <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)]">
+                        {{ item.tag }}
+                      </span>
+                      <!-- 1-Tap Google Maps Button -->
+                      <a
+                        v-if="item.mapsQuery"
+                        :href="getGoogleMapsUrl(item.mapsQuery)"
+                        target="_blank"
+                        @click.stop
+                        class="maps-btn text-[10px] py-0.5 px-2"
+                        title="Open in Google Maps"
+                      >
+                        <span>📍 Map</span>
+                      </a>
+                    </div>
                   </div>
-                  <p v-if="item.desc" class="text-xs text-[var(--muted-foreground)] mt-1 leading-relaxed">
+
+                  <p v-if="item.desc" class="text-xs text-[var(--muted-foreground)] leading-relaxed">
                     {{ item.desc }}
                   </p>
+
+                  <div v-if="item.rainBackup && showRainBackups[idx]" class="mt-2 p-1.5 rounded bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-300">
+                    <strong>🌧️ Rain Backup:</strong> {{ item.rainBackup }}
+                  </div>
+                  <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
+                    👥 <strong>Split Option:</strong> {{ item.splitOption }}
+                  </div>
+
+                  <!-- Deep Links -->
+                  <div class="mt-2 pt-2 border-t border-[var(--border)]/50 flex items-center gap-3">
+                    <button
+                      v-if="item.trailId"
+                      @click.stop="jumpToTrail(item.trailId)"
+                      class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                    >
+                      <span>🥾</span>
+                      <span>View Trail Profile →</span>
+                    </button>
+                    <button
+                      v-if="item.restaurantId"
+                      @click.stop="jumpToRestaurant(item.restaurantId)"
+                      class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                    >
+                      <span>🍴</span>
+                      <span>View Restaurant Card →</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
           </div>
         </div>
-
-        <div v-if="filteredDays.length === 0" class="card p-8 text-center text-sm text-[var(--muted-foreground)]">
-          No activities match your search query "{{ searchQuery }}".
-        </div>
       </div>
+
     </div>
   `
 };

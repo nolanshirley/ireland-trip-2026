@@ -13,7 +13,7 @@
 </head>
 <body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen font-sans antialiased transition-colors duration-200">
 
-  <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+  <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 space-y-6">
 
     <!-- Top Navigation / Header Bar -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
@@ -96,7 +96,13 @@
     <main>
       <!-- Daily Planner & Time Blocking Tab -->
       <section v-show="activeTab === 'planner'">
-        <daily-planner :timeline="timelineList" />
+        <daily-planner
+          :timeline="timelineList"
+          :trails="trailList"
+          :restaurants="restaurantList"
+          @open-detail="openDetailModal"
+          @switch-tab="handleSwitchTab"
+        />
       </section>
 
       <!-- Weather & Packing Outfits Tab -->
@@ -106,7 +112,7 @@
 
       <!-- Hiking & Nature Trails Tab -->
       <section v-show="activeTab === 'hiking'">
-        <hiking-nature :trails="trailList" />
+        <hiking-nature :trails="trailList" @switch-tab="handleSwitchTab" />
       </section>
 
       <!-- Heat Map Tab -->
@@ -121,14 +127,142 @@
 
       <!-- Restaurants Tab -->
       <section v-show="activeTab === 'restaurants'">
-        <restaurants-view :restaurants="restaurantList" />
+        <restaurants-view :restaurants="restaurantList" @switch-tab="handleSwitchTab" />
       </section>
 
       <!-- Reservations Tab -->
       <section v-show="activeTab === 'reservations'">
-        <reservations-view :reservations="reservationList" />
+        <reservations-view :reservations="reservationList" @switch-tab="handleSwitchTab" />
       </section>
     </main>
+
+    <!-- Global Activity Detail Modal / Mobile Bottom Sheet -->
+    <div
+      v-if="isDetailModalOpen && selectedDetailItem"
+      class="modal-backdrop"
+      @click="closeDetailModal"
+    >
+      <div class="modal-sheet space-y-4" @click.stop>
+        <!-- Modal Top Drag Bar / Header -->
+        <div class="flex items-start justify-between gap-3 border-b border-[var(--border)] pb-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span v-if="selectedDetailDay" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Day {{ selectedDetailDay.dayNumber }} · {{ selectedDetailDay.date }}
+              </span>
+              <span v-if="selectedDetailItem.energyLevel" class="px-2 py-0.5 rounded text-[10px] font-bold"
+                :class="selectedDetailItem.energyLevel === 'strenuous' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : (selectedDetailItem.energyLevel === 'moderate' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30')"
+              >
+                {{ selectedDetailItem.energyLevel === 'strenuous' ? '🔴 Strenuous Hike' : (selectedDetailItem.energyLevel === 'moderate' ? '🟡 Moderate Walk' : '🟢 Chill / Easy') }}
+              </span>
+            </div>
+            <h3 class="text-lg sm:text-xl font-extrabold text-[var(--foreground)] leading-tight">
+              {{ selectedDetailItem.activity }}
+            </h3>
+            <div class="text-xs text-[var(--muted-foreground)] font-mono flex items-center gap-2">
+              <span>⏰ {{ selectedDetailItem.time }}</span>
+              <span v-if="selectedDetailItem.dur">({{ selectedDetailItem.dur }})</span>
+            </div>
+          </div>
+
+          <button
+            @click="closeDetailModal"
+            class="w-8 h-8 rounded-full bg-[var(--card-hover)] hover:bg-[var(--border)] flex items-center justify-center text-sm font-bold text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Activity Description & Details -->
+        <div class="space-y-3 text-sm">
+          <p v-if="selectedDetailItem.desc" class="text-xs sm:text-sm text-[var(--foreground)] leading-relaxed">
+            {{ selectedDetailItem.desc }}
+          </p>
+
+          <!-- Suggested Status Callout -->
+          <div v-if="selectedDetailItem.reserved" class="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 space-y-1">
+            <div class="font-bold flex items-center gap-1.5">
+              <span>💡</span>
+              <span>SUGGESTED RESERVATION / SCHEDULE EVENT</span>
+            </div>
+            <p v-if="selectedDetailItem.note" class="text-[11px] opacity-90">{{ selectedDetailItem.note }}</p>
+          </div>
+
+          <!-- Rain Contingency Plan -->
+          <div v-if="selectedDetailItem.rainBackup" class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs text-blue-300 space-y-1">
+            <div class="font-bold flex items-center gap-1.5">
+              <span>🌧️</span>
+              <span>Rainy Day Contingency Plan:</span>
+            </div>
+            <p class="text-[11px] leading-relaxed">{{ selectedDetailItem.rainBackup }}</p>
+          </div>
+
+          <!-- Group Split Options -->
+          <div v-if="selectedDetailItem.splitOption" class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs text-purple-300 space-y-1">
+            <div class="font-bold flex items-center gap-1.5">
+              <span>👥</span>
+              <span>Group Pacing & Split Option:</span>
+            </div>
+            <p class="text-[11px] leading-relaxed">{{ selectedDetailItem.splitOption }}</p>
+          </div>
+
+          <!-- Outfit / Weather for the day -->
+          <div v-if="selectedDetailDay && selectedDetailDay.outfit" class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs space-y-1">
+            <div class="font-bold text-[var(--foreground)] flex items-center gap-1.5">
+              <span>👗</span>
+              <span>Recommended Outfit / Layers:</span>
+            </div>
+            <p class="text-[11px] text-[var(--muted-foreground)]">{{ selectedDetailDay.outfit }}</p>
+            <div v-if="selectedDetailDay.weather" class="text-[11px] text-emerald-400 font-semibold pt-1">
+              {{ selectedDetailDay.weather }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 1-Tap Google Maps Button & Deep Profile Jump Buttons -->
+        <div class="pt-3 border-t border-[var(--border)] flex flex-wrap items-center gap-2 justify-between">
+          <a
+            v-if="selectedDetailItem.mapsQuery"
+            :href="getGoogleMapsUrl(selectedDetailItem.mapsQuery)"
+            target="_blank"
+            class="maps-btn py-2 px-4 text-xs font-bold"
+          >
+            <span>📍 Navigate with Google Maps</span>
+          </a>
+
+          <div class="flex items-center gap-2">
+            <button
+              v-if="selectedDetailItem.trailId"
+              @click="handleSwitchTab({ tab: 'hiking', targetId: selectedDetailItem.trailId })"
+              class="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all"
+            >
+              🥾 View Full Trail Profile →
+            </button>
+            <button
+              v-if="selectedDetailItem.restaurantId"
+              @click="handleSwitchTab({ tab: 'restaurants', targetId: selectedDetailItem.restaurantId })"
+              class="px-3 py-2 rounded-xl text-xs font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30 hover:bg-amber-500/25 transition-all"
+            >
+              🍴 View Restaurant Card →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Fixed for thumb access on phones) -->
+    <nav class="mobile-bottom-nav">
+      <button
+        v-for="t in tabs"
+        :key="t.id"
+        @click="activeTab = t.id"
+        :class="['mobile-nav-item', activeTab === t.id ? 'active' : '']"
+      >
+        <span>{{ t.icon }}</span>
+        <span>{{ t.shortLabel }}</span>
+      </button>
+    </nav>
 
     <!-- Footer -->
     <footer class="pt-8 pb-4 border-t border-[var(--border)] text-center text-xs text-[var(--muted-foreground)] flex flex-col sm:flex-row items-center justify-between gap-2">

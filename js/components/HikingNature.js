@@ -1,5 +1,6 @@
 // =============================================================
 //  Component: Hiking & Nature Locations
+//  (Mobile-First, 1-Tap Maps, Rain Backups & Deep Links)
 // =============================================================
 
 const HikingNature = {
@@ -7,11 +8,12 @@ const HikingNature = {
   props: {
     trails: { type: Array, required: true }
   },
+  emits: ['switch-tab'],
   data() {
     return {
       searchQuery: '',
       regionFilter: 'all',
-      statusFilter: 'all', // 'all', 'Confirmed', 'Planned', 'Optional'
+      statusFilter: 'all', // 'all', 'Suggested', 'Planned', 'Optional'
       difficultyFilter: 'all' // 'all', 'Easy', 'Moderate', 'Strenuous'
     };
   },
@@ -35,19 +37,20 @@ const HikingNature = {
           t.regionName.toLowerCase().includes(q) ||
           t.highlights.toLowerCase().includes(q) ||
           t.gear.toLowerCase().includes(q) ||
-          t.base.toLowerCase().includes(q)
+          t.base.toLowerCase().includes(q) ||
+          (t.rainBackup && t.rainBackup.toLowerCase().includes(q))
         );
       });
     },
-    confirmedCount() {
-      return this.trails.filter(t => t.status === 'Confirmed').length;
+    suggestedCount() {
+      return this.trails.filter(t => t.status === 'Suggested' || t.status === 'Confirmed').length;
     }
   },
   methods: {
     getStatusBadge(status) {
-      if (status === 'Confirmed') {
+      if (status === 'Suggested' || status === 'Confirmed') {
         return {
-          label: '✅ Confirmed on Itinerary',
+          label: '💡 Suggested on Itinerary',
           class: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold'
         };
       }
@@ -58,7 +61,7 @@ const HikingNature = {
         };
       }
       return {
-        label: '💡 Optional / Weather Permitting',
+        label: '🌱 Optional / Weather Permitting',
         class: 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-medium'
       };
     },
@@ -71,12 +74,19 @@ const HikingNature = {
         return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
       }
       return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+    },
+    getGoogleMapsUrl(query) {
+      if (!query) return '#';
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    },
+    jumpToSchedule() {
+      this.$emit('switch-tab', { tab: 'planner' });
     }
   },
   template: `
     <div class="space-y-6">
       <!-- Top Overview Header -->
-      <div class="card p-5">
+      <div class="card p-4 sm:p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
           <div>
             <div class="flex items-center gap-2">
@@ -84,14 +94,14 @@ const HikingNature = {
               <h2 class="text-xl font-bold tracking-tight">Hiking & Nature Trails Guide</h2>
             </div>
             <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
-              Curated trail network across 4 regions with elevation, distances, terrain, required footwear, and matching trip statuses.
+              Curated trail network across 4 regions with elevation gain, terrain, rain contingencies & 1-tap Google Maps directions.
             </p>
           </div>
 
           <!-- Status Summary Badges -->
-          <div class="flex items-center gap-2 text-xs">
+          <div class="flex items-center gap-2 text-xs flex-wrap">
             <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
-              ✅ {{ confirmedCount }} Confirmed Trails
+              💡 {{ suggestedCount }} Suggested Trails
             </span>
             <span class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold">
               🏔️ {{ trails.length }} Total Routes
@@ -129,9 +139,9 @@ const HikingNature = {
           <button
             v-for="st in [
               { id: 'all', label: 'All Statuses' },
-              { id: 'Confirmed', label: '✅ Confirmed' },
+              { id: 'Suggested', label: '💡 Suggested' },
               { id: 'Planned', label: '📍 Planned' },
-              { id: 'Optional', label: '💡 Optional' }
+              { id: 'Optional', label: '🌱 Optional' }
             ]"
             :key="st.id"
             @click="statusFilter = st.id"
@@ -184,11 +194,12 @@ const HikingNature = {
         <div
           v-for="trail in filteredTrails"
           :key="trail.name"
+          :id="'trail-' + trail.id"
           class="card p-5 space-y-4 hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
-          :class="trail.status === 'Confirmed' ? 'ring-1 ring-emerald-500/30' : ''"
+          :class="trail.status === 'Suggested' || trail.status === 'Confirmed' ? 'ring-1 ring-emerald-500/30' : ''"
         >
           <div class="space-y-3">
-            <!-- Header: Trail Name & Status -->
+            <!-- Header: Trail Name, 1-Tap Maps & Status -->
             <div class="flex items-start justify-between gap-3">
               <div>
                 <h3 class="font-extrabold text-base text-[var(--foreground)] leading-snug">{{ trail.name }}</h3>
@@ -198,9 +209,20 @@ const HikingNature = {
                   <span>🏠 {{ trail.base }}</span>
                 </div>
               </div>
-              <span :class="['px-2.5 py-1 rounded-full text-xs whitespace-nowrap border', getStatusBadge(trail.status).class]">
-                {{ getStatusBadge(trail.status).label }}
-              </span>
+              <div class="flex items-center gap-2 flex-wrap justify-end">
+                <a
+                  v-if="trail.mapsQuery"
+                  :href="getGoogleMapsUrl(trail.mapsQuery)"
+                  target="_blank"
+                  class="maps-btn text-xs py-1 px-2.5"
+                  title="Open Trailhead in Google Maps"
+                >
+                  <span>📍 Map</span>
+                </a>
+                <span :class="['px-2.5 py-1 rounded-full text-xs whitespace-nowrap border', getStatusBadge(trail.status).class]">
+                  {{ getStatusBadge(trail.status).label }}
+                </span>
+              </div>
             </div>
 
             <!-- Stats Bar (Distance, Elev, Duration, Difficulty) -->
@@ -235,12 +257,33 @@ const HikingNature = {
               <div><strong>🪨 Surface:</strong> {{ trail.surface }}</div>
               <div><strong>🥾 Required Footwear & Gear:</strong> <span class="text-emerald-400 font-medium">{{ trail.gear }}</span></div>
             </div>
+
+            <!-- Rain Backup Callout -->
+            <div v-if="trail.rainBackup" class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs text-amber-300 font-medium">
+              <strong>🌧️ Rainy Day Contingency:</strong> {{ trail.rainBackup }}
+            </div>
+
+            <!-- Split Option Callout -->
+            <div v-if="trail.splitOption" class="text-xs text-[var(--muted-foreground)] italic">
+              👥 <strong>Group Split Option:</strong> {{ trail.splitOption }}
+            </div>
           </div>
 
-          <!-- Weather / Safety Alert at Bottom -->
-          <div v-if="trail.weatherAlert" class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-xs text-amber-300 font-medium flex items-center gap-2">
-            <span>⚠️</span>
-            <span>{{ trail.weatherAlert }}</span>
+          <!-- Bottom Actions / Alerts -->
+          <div class="space-y-2 pt-2 border-t border-[var(--border)]/50">
+            <div v-if="trail.weatherAlert" class="p-2 rounded-lg bg-red-500/10 border border-red-500/25 text-xs text-red-300 font-medium flex items-center gap-2">
+              <span>⚠️</span>
+              <span>{{ trail.weatherAlert }}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-1">
+              <span class="text-[var(--muted-foreground)]">Part of October 2026 Itinerary</span>
+              <button
+                @click="jumpToSchedule"
+                class="text-emerald-400 hover:underline font-bold flex items-center gap-1"
+              >
+                <span>📅 View in Schedule →</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -251,3 +294,4 @@ const HikingNature = {
     </div>
   `
 };
+

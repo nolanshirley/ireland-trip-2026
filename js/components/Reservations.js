@@ -1,5 +1,6 @@
 // =============================================================
 //  Component: Reservations Tracker
+//  (Mobile-First, 1-Tap Maps, Cancellation Windows & Deep Links)
 // =============================================================
 
 const Reservations = {
@@ -7,6 +8,7 @@ const Reservations = {
   props: {
     reservations: { type: Array, required: true }
   },
+  emits: ['switch-tab'],
   data() {
     return {
       searchQuery: '',
@@ -38,7 +40,7 @@ const Reservations = {
       if (s.includes('confirmed') || s.includes('booked')) {
         return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
       }
-      if (s.includes('pending') || s.includes('review')) {
+      if (s.includes('pending') || s.includes('review') || s.includes('tentative')) {
         return 'bg-amber-500/20 text-amber-400 border border-amber-500/40';
       }
       return 'bg-blue-500/20 text-blue-400 border border-blue-500/40';
@@ -51,6 +53,13 @@ const Reservations = {
         case 'transport': return '🚗';
         default: return '📋';
       }
+    },
+    getGoogleMapsUrl(query) {
+      if (!query) return '#';
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    },
+    jumpToRestaurant(restaurantId) {
+      this.$emit('switch-tab', { tab: 'restaurants', targetId: restaurantId });
     }
   },
   template: `
@@ -103,11 +112,11 @@ const Reservations = {
       </div>
 
       <!-- Main Tracker Card -->
-      <div class="card p-5">
+      <div class="card p-4 sm:p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
           <div>
             <h2 class="text-xl font-bold tracking-tight">📋 Trip Bookings & Reservations</h2>
-            <p class="text-sm text-[var(--muted-foreground)]">Status, confirmation times, and cancellation deadlines</p>
+            <p class="text-sm text-[var(--muted-foreground)]">Status, confirmation times, 1-tap navigation & cancellation deadlines</p>
           </div>
 
           <!-- Type filter -->
@@ -150,7 +159,7 @@ const Reservations = {
               <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)] text-xs uppercase tracking-wider">
                 <th class="text-left py-2.5 px-3">Date & Time</th>
                 <th class="text-left py-2.5 px-3">Reservation / Place</th>
-                <th class="text-left py-2.5 px-3">Location</th>
+                <th class="text-left py-2.5 px-3">Location & Map</th>
                 <th class="text-center py-2.5 px-3">Status</th>
                 <th class="text-left py-2.5 px-3">Cancellation Policy</th>
                 <th class="text-left py-2.5 px-3">Notes</th>
@@ -171,18 +180,36 @@ const Reservations = {
 
                 <!-- Name & Type -->
                 <td class="py-3 px-3">
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 flex-wrap">
                     <span>{{ getTypeIcon(r.type) }}</span>
                     <span class="font-bold text-[var(--foreground)]">{{ r.name }}</span>
                     <span v-if="r.special" class="px-1.5 py-0.5 rounded text-[10px] bg-pink-500/20 text-pink-300 font-bold">
                       🎂 MOM'S BDAY
                     </span>
                   </div>
+                  <button
+                    v-if="r.restaurantId"
+                    @click="jumpToRestaurant(r.restaurantId)"
+                    class="text-[11px] text-amber-400 hover:underline font-semibold mt-1 inline-block"
+                  >
+                    View Restaurant Profile →
+                  </button>
                 </td>
 
-                <!-- Location -->
-                <td class="py-3 px-3 text-xs text-[var(--muted-foreground)]">
-                  📍 {{ r.location }}
+                <!-- Location & 1-Tap Maps -->
+                <td class="py-3 px-3 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[var(--muted-foreground)]">📍 {{ r.location }}</span>
+                    <a
+                      v-if="r.mapsQuery"
+                      :href="getGoogleMapsUrl(r.mapsQuery)"
+                      target="_blank"
+                      class="maps-btn text-[10px] py-0.5 px-2"
+                      title="Open in Google Maps"
+                    >
+                      <span>Map</span>
+                    </a>
+                  </div>
                 </td>
 
                 <!-- Status -->
@@ -217,3 +244,4 @@ const Reservations = {
     </div>
   `
 };
+
