@@ -21,7 +21,8 @@ const DailyPlanner = {
       activeDayFilter: null,
       dayStartHour: 6, // 6:00 AM
       dayEndHour: 24, // 12:00 AM (Midnight)
-      showRainBackups: {} // Toggle state per day
+      showRainBackups: {}, // Toggle state per day
+      globalRainMode: false // Global master switch
     };
   },
   created() {
@@ -95,8 +96,17 @@ const DailyPlanner = {
         this.expandedDays[idx] = true;
       }
     },
-    toggleRainBackup(idx) {
-      this.showRainBackups[idx] = !this.showRainBackups[idx];
+    isRainActive(idx) {
+      return this.globalRainMode || !!this.showRainBackups[idx];
+    },
+    toggleDayRainBackup(idx) {
+      this.showRainBackups[idx] = !this.isRainActive(idx);
+    },
+    toggleGlobalRainMode() {
+      this.globalRainMode = !this.globalRainMode;
+      this.timeline.forEach((_, idx) => {
+        this.showRainBackups[idx] = this.globalRainMode;
+      });
     },
     formatHour(h) {
       if (h === 0 || h === 24) return '12 AM';
@@ -188,8 +198,23 @@ const DailyPlanner = {
             </p>
           </div>
 
-          <!-- View Mode & Expansion Controls -->
+          <!-- View Mode & Expansion & Rain Mode Controls -->
           <div class="flex items-center gap-2 flex-wrap">
+            <!-- Global Rainy Day Mode Switcher -->
+            <button
+              @click="toggleGlobalRainMode"
+              :class="[
+                'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
+                globalRainMode
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/40 font-extrabold'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/40'
+              ]"
+              title="Toggle Rain Contingency Plans for all 13 days"
+            >
+              <span>🌧️</span>
+              <span>{{ globalRainMode ? '🌧️ Rain Mode: ON (All Days)' : '🌧️ Rainy Day Mode' }}</span>
+            </button>
+
             <!-- View Mode Switcher -->
             <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
               <button
@@ -403,8 +428,24 @@ const DailyPlanner = {
               </div>
             </div>
 
-            <!-- Driving Gauge & Arrow -->
-            <div class="flex items-center gap-4 self-end md:self-auto">
+            <!-- Driving Gauge, Rain Button & Arrow -->
+            <div class="flex items-center gap-3 self-end md:self-auto flex-wrap justify-end">
+              <!-- Direct Day Rain Button in Header -->
+              <button
+                v-if="hasRainBackups(day)"
+                @click.stop="toggleDayRainBackup(idx)"
+                :class="[
+                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
+                  isRainActive(idx)
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold ring-1 ring-amber-400'
+                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/30'
+                ]"
+                title="Toggle Rain Contingency for this day"
+              >
+                <span>🌧️</span>
+                <span>{{ isRainActive(idx) ? 'Rain Plan: ON' : 'Rain Backup' }}</span>
+              </button>
+
               <div class="text-right">
                 <div class="text-xs font-semibold text-[var(--foreground)] flex items-center justify-end gap-1.5">
                   <span>🚗 {{ day.driveHours }}h car time</span>
@@ -438,30 +479,39 @@ const DailyPlanner = {
                 </div>
               </div>
 
-              <!-- Rainy Day Contingency Toggle -->
+              <!-- Rainy Day Contingency Toggle Inside Day -->
               <div v-if="hasRainBackups(day)" class="flex items-center gap-2 self-start sm:self-auto">
                 <button
-                  @click.stop="toggleRainBackup(idx)"
+                  @click.stop="toggleDayRainBackup(idx)"
                   :class="[
-                    'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5',
-                    showRainBackups[idx]
-                      ? 'bg-amber-500 text-slate-950 shadow-sm'
-                      : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border border-amber-500/30'
+                    'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border',
+                    isRainActive(idx)
+                      ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                      : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/30'
                   ]"
                 >
-                  <span>{{ showRainBackups[idx] ? '☀️ Show Standard Plan' : '🌦️ Show Rainy Day Backups' }}</span>
+                  <span>🌧️</span>
+                  <span>{{ isRainActive(idx) ? '☀️ Switch to Standard Plan' : '🌧️ View Rainy Day Backups' }}</span>
                 </button>
               </div>
             </div>
 
             <!-- Rainy Day Contingency Callout Box (if toggled on) -->
             <div
-              v-if="showRainBackups[idx]"
-              class="p-4 rounded-xl bg-amber-500/[0.1] border-2 border-amber-500/40 space-y-2 animate-fadeIn"
+              v-if="isRainActive(idx)"
+              class="p-4 rounded-xl bg-amber-500/[0.12] border-2 border-amber-500/50 space-y-2 animate-fadeIn shadow-sm"
             >
-              <div class="flex items-center gap-2 text-amber-400 font-bold text-sm">
-                <span>🌦️</span>
-                <h4>Rainy Day & High-Wind Contingencies for Day {{ day.dayNumber }}:</h4>
+              <div class="flex items-center justify-between gap-2 flex-wrap text-amber-400 font-bold text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">🌧️</span>
+                  <h4>Active Rainy Day & High-Wind Contingency for Day {{ day.dayNumber }}:</h4>
+                </div>
+                <button
+                  @click.stop="toggleDayRainBackup(idx)"
+                  class="text-xs underline text-amber-300 hover:text-amber-200 font-semibold"
+                >
+                  Close Rain Plan ✕
+                </button>
               </div>
               <ul class="text-xs text-[var(--foreground)] space-y-1.5 pl-5 list-disc">
                 <li v-for="item in day.items.filter(i => i.rainBackup)" :key="item.activity">
@@ -572,8 +622,16 @@ const DailyPlanner = {
                       </p>
 
                       <!-- Rainy Day or Split Option previews -->
-                      <div v-if="item.rainBackup && showRainBackups[idx]" class="mt-2 p-1.5 rounded bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-300">
-                        <strong>🌧️ Rain Backup:</strong> {{ item.rainBackup }}
+                      <div v-if="item.rainBackup && isRainActive(idx)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
+                        <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                      </div>
+                      <div v-else-if="item.rainBackup" class="mt-1.5">
+                        <button
+                          @click.stop="toggleDayRainBackup(idx)"
+                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                        >
+                          <span>🌧️ Rain Backup Available</span>
+                        </button>
                       </div>
                       <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
                         👥 <strong>Split Option:</strong> {{ item.splitOption }}
@@ -665,8 +723,16 @@ const DailyPlanner = {
                     {{ item.desc }}
                   </p>
 
-                  <div v-if="item.rainBackup && showRainBackups[idx]" class="mt-2 p-1.5 rounded bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-300">
-                    <strong>🌧️ Rain Backup:</strong> {{ item.rainBackup }}
+                  <div v-if="item.rainBackup && isRainActive(idx)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
+                    <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                  </div>
+                  <div v-else-if="item.rainBackup" class="mt-1.5">
+                    <button
+                      @click.stop="toggleDayRainBackup(idx)"
+                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                    >
+                      <span>🌧️ Rain Backup Available</span>
+                    </button>
                   </div>
                   <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
                     👥 <strong>Split Option:</strong> {{ item.splitOption }}
