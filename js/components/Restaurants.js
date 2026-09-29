@@ -499,6 +499,22 @@ const Restaurants = {
           </button>
         </div>
       </div>
+
+      <!-- Active Search Filter Banner -->
+      <div
+        v-if="searchQuery.trim()"
+        class="p-3 rounded-xl bg-[var(--card)] border border-[var(--accent)] flex items-center justify-between text-xs animate-fadeIn"
+      >
+        <div class="flex items-center gap-2">
+          <span class="text-base">🔍</span>
+          <span>Showing results for <strong class="text-[var(--accent)]">"{{ searchQuery }}"</strong> ({{ filteredRestaurants.length }} {{ filteredRestaurants.length === 1 ? 'place' : 'places' }} found)</span>
+        </div>
+        <button
+          @click="searchQuery = ''"
+          class="px-2.5 py-1 rounded-lg bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] font-bold text-xs"
+        >
+          Clear ✕
+        </button>
       </div>
 
       <!-- Restaurant Cards Grid -->

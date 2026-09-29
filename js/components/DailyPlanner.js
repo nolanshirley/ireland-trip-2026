@@ -724,14 +724,14 @@ const DailyPlanner = {
               @click="prevCalendarDay"
               :disabled="activeCalendarDayIndex === 0"
               :class="[
-                'px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border shadow-sm',
+                'nav-day-btn nav-day-btn-prev px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all border shadow-sm',
                 activeCalendarDayIndex === 0
                   ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
               ]"
             >
-              <span>◀</span>
-              <span>Day {{ activeCalendarDayIndex > 0 ? activeCalendarDayIndex : 1 }}</span>
+              <span class="roll-arrow roll-arrow-left">◀</span>
+              <span class="roll-text">Day {{ activeCalendarDayIndex > 0 ? activeCalendarDayIndex : 1 }}</span>
             </button>
 
             <!-- Center: Day Title & Date Badges -->
@@ -779,14 +779,14 @@ const DailyPlanner = {
               @click="nextCalendarDay"
               :disabled="activeCalendarDayIndex === timeline.length - 1"
               :class="[
-                'px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-end gap-1.5 transition-all border shadow-sm',
+                'nav-day-btn nav-day-btn-next px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-end gap-1.5 transition-all border shadow-sm',
                 activeCalendarDayIndex === timeline.length - 1
                   ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
               ]"
             >
-              <span>Day {{ activeCalendarDayIndex < timeline.length - 1 ? activeCalendarDayIndex + 2 : 13 }}</span>
-              <span>▶</span>
+              <span class="roll-text">Day {{ activeCalendarDayIndex < timeline.length - 1 ? activeCalendarDayIndex + 2 : 13 }}</span>
+              <span class="roll-arrow roll-arrow-right">▶</span>
             </button>
           </div>
 
@@ -1221,14 +1221,14 @@ const DailyPlanner = {
               @click="prevCalendarDay"
               :disabled="activeCalendarDayIndex === 0"
               :class="[
-                'px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all border',
+                'nav-day-btn nav-day-btn-prev px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all border shadow-sm',
                 activeCalendarDayIndex === 0
                   ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
               ]"
             >
-              <span>◀</span>
-              <span>Prev Day (Day {{ activeCalendarDayIndex > 0 ? activeCalendarDayIndex : 1 }})</span>
+              <span class="roll-arrow roll-arrow-left">◀</span>
+              <span class="roll-text">Prev Day (Day {{ activeCalendarDayIndex > 0 ? activeCalendarDayIndex : 1 }})</span>
             </button>
 
             <span class="text-[var(--muted-foreground)] font-mono font-bold">
@@ -1239,14 +1239,14 @@ const DailyPlanner = {
               @click="nextCalendarDay"
               :disabled="activeCalendarDayIndex === timeline.length - 1"
               :class="[
-                'px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all border',
+                'nav-day-btn nav-day-btn-next px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all border shadow-sm',
                 activeCalendarDayIndex === timeline.length - 1
                   ? 'opacity-40 cursor-not-allowed bg-[var(--background)] text-[var(--muted-foreground)] border-[var(--border)]'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--accent)] hover:text-white text-[var(--foreground)] border-[var(--border)]'
               ]"
             >
-              <span>Next Day (Day {{ activeCalendarDayIndex < timeline.length - 1 ? activeCalendarDayIndex + 2 : 13 }})</span>
-              <span>▶</span>
+              <span class="roll-text">Next Day (Day {{ activeCalendarDayIndex < timeline.length - 1 ? activeCalendarDayIndex + 2 : 13 }})</span>
+              <span class="roll-arrow roll-arrow-right">▶</span>
             </button>
           </div>
 

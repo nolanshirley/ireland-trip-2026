@@ -245,6 +245,13 @@ const HikingNature = {
         window.TravelApp.deleteCustomItem('trail', id);
       }
     },
+    resetAllFilters() {
+      this.searchQuery = '';
+      this.regionFilter = 'all';
+      this.statusFilter = 'all';
+      this.difficultyFilter = 'all';
+      this.sortBy = 'itinerary';
+    },
     removeTrail(trail) {
       if (!trail) return;
       const label = trail.name || 'this trail';
@@ -302,7 +309,7 @@ const HikingNature = {
             <span class="flex items-center gap-1.5">
               <span>⚙️</span>
               <span>Filter & Sort Trails</span>
-              <span v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all'" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-white font-bold">Active</span>
+              <span v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all' || searchQuery.trim()" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-white font-bold">Active</span>
             </span>
             <span>{{ isMobileFiltersCollapsed ? '▼ Show Filters' : '▲ Hide Filters' }}</span>
           </button>
@@ -310,7 +317,7 @@ const HikingNature = {
 
         <!-- Filter Controls (Collapsible on Mobile) -->
         <div :class="{'hidden md:block': isMobileFiltersCollapsed}" class="space-y-3">
-          <!-- Filter Row 1: Region & Status -->
+          <!-- Filter Row 1: Region -->
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Region:</span>
             <button
@@ -333,103 +340,119 @@ const HikingNature = {
               {{ r.label }}
             </button>
           </div>
-              regionFilter === r.id
-                ? 'bg-[var(--accent)] text-white shadow-sm'
-                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-            ]"
-          >
-            {{ r.label }}
-          </button>
-        </div>
 
-        <!-- Filter Row 2: Status & Difficulty -->
-        <div class="flex flex-wrap items-center gap-2 mb-4">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Status:</span>
-          <button
-            v-for="st in [
-              { id: 'all', label: 'All Statuses' },
-              { id: 'favorites', label: '❤️ Favorites (' + favoritesCount + ')' },
-              { id: 'completed', label: '✅ Completed (' + completedCount + '/' + trails.length + ')' },
-              { id: 'Suggested', label: '💡 Suggested' },
-              { id: 'Planned', label: '📍 Planned' },
-              { id: 'Optional', label: '🌱 Optional' }
-            ]"
-            :key="st.id"
-            @click="statusFilter = st.id"
-            :class="[
-              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
-              statusFilter === st.id
-                ? 'bg-[var(--accent)] text-white shadow-sm'
-                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-              st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-400 border border-rose-500/30' : '',
-              st.id === 'completed' && statusFilter !== 'completed' ? 'text-emerald-400 border border-emerald-500/30' : ''
-            ]"
-          >
-            {{ st.label }}
-          </button>
+          <!-- Filter Row 2: Status & Difficulty -->
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Status:</span>
+            <button
+              v-for="st in [
+                { id: 'all', label: 'All Statuses' },
+                { id: 'favorites', label: '❤️ Favorites (' + favoritesCount + ')' },
+                { id: 'completed', label: '✅ Completed (' + completedCount + '/' + trails.length + ')' },
+                { id: 'Suggested', label: '💡 Suggested' },
+                { id: 'Planned', label: '📍 Planned' },
+                { id: 'Optional', label: '🌱 Optional' }
+              ]"
+              :key="st.id"
+              @click="statusFilter = st.id"
+              :class="[
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
+                statusFilter === st.id
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+                st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-400 border border-rose-500/30' : '',
+                st.id === 'completed' && statusFilter !== 'completed' ? 'text-emerald-400 border border-emerald-500/30' : ''
+              ]"
+            >
+              {{ st.label }}
+            </button>
 
-          <span class="mx-1 text-[var(--border)]">|</span>
+            <span class="mx-1 text-[var(--border)]">|</span>
 
-          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Difficulty:</span>
-          <button
-            v-for="diff in [
-              { id: 'all', label: 'All' },
-              { id: 'Easy', label: 'Easy' },
-              { id: 'Moderate', label: 'Moderate' },
-              { id: 'Strenuous', label: 'Strenuous' }
-            ]"
-            :key="diff.id"
-            @click="difficultyFilter = diff.id"
-            :class="[
-              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
-              difficultyFilter === diff.id
-                ? 'bg-[var(--accent)] text-white shadow-sm'
-                : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-            ]"
-          >
-            {{ diff.label }}
-          </button>
-        </div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Difficulty:</span>
+            <button
+              v-for="diff in [
+                { id: 'all', label: 'All' },
+                { id: 'Easy', label: 'Easy' },
+                { id: 'Moderate', label: 'Moderate' },
+                { id: 'Strenuous', label: 'Strenuous' }
+              ]"
+              :key="diff.id"
+              @click="difficultyFilter = diff.id"
+              :class="[
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all',
+                difficultyFilter === diff.id
+                  ? 'bg-[var(--accent)] text-white shadow-sm'
+                  : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+              ]"
+            >
+              {{ diff.label }}
+            </button>
+          </div>
 
-        <!-- Filter Row 3: Sort By Controls -->
-        <div class="flex items-center gap-2 flex-wrap mb-4 pt-3 border-t border-[var(--border)]">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Sort By:</span>
-          <button
-            v-for="s in [
-              { id: 'itinerary', label: '🗓️ Route Sequence (Day 1→13)' },
-              { id: 'difficulty', label: '🔴 Difficulty (Strenuous First)' },
-              { id: 'elevation', label: '⛰️ Elevation Gain' },
-              { id: 'duration', label: '⏱️ Longest Duration' },
-              { id: 'completion', label: '⏳ To Hike First' },
-              { id: 'name', label: '🔤 A–Z' }
-            ]"
-            :key="s.id"
-            @click="sortBy = s.id"
-            :class="[
-              'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
-              sortBy === s.id
-                ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
-                : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
-            ]"
-          >
-            {{ s.label }}
-          </button>
-        </div>
+          <!-- Filter Row 3: Sort By Controls -->
+          <div class="flex items-center gap-2 flex-wrap mb-4 pt-3 border-t border-[var(--border)]">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Sort By:</span>
+            <button
+              v-for="s in [
+                { id: 'itinerary', label: '🗓️ Route Sequence (Day 1→13)' },
+                { id: 'difficulty', label: '🔴 Difficulty (Strenuous First)' },
+                { id: 'elevation', label: '⛰️ Elevation Gain' },
+                { id: 'duration', label: '⏱️ Longest Duration' },
+                { id: 'completion', label: '⏳ To Hike First' },
+                { id: 'name', label: '🔤 A–Z' }
+              ]"
+              :key="s.id"
+              @click="sortBy = s.id"
+              :class="[
+                'px-2.5 py-1 rounded-lg text-xs font-semibold transition-all border',
+                sortBy === s.id
+                  ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+              ]"
+            >
+              {{ s.label }}
+            </button>
+          </div>
 
-        <!-- Search Bar -->
-        <div>
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="🔍 Search trails by name, terrain, highlights (e.g. 'Diamond Hill', 'Cliffs', 'Waterfall', 'Basalt', or notes)..."
-            class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
-          />
+          <!-- Search Bar & Active Reset -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[var(--border)]">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="🔍 Search trails by name, terrain, highlights (e.g. 'Diamond Hill', 'Cliffs', 'Waterfall', 'Basalt')..."
+              class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
+            />
+            <button
+              v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all' || sortBy !== 'itinerary' || searchQuery.trim()"
+              @click="resetAllFilters"
+              class="text-xs text-rose-400 hover:text-rose-300 font-semibold self-start sm:self-auto"
+            >
+              ✕ Reset All Filters
+            </button>
+          </div>
         </div>
       </div>
+
+      <!-- Active Search Filter Banner -->
+      <div
+        v-if="searchQuery.trim()"
+        class="p-3 rounded-xl bg-[var(--card)] border border-[var(--accent)] flex items-center justify-between text-xs animate-fadeIn"
+      >
+        <div class="flex items-center gap-2">
+          <span class="text-base">🔍</span>
+          <span>Showing results for <strong class="text-[var(--accent)]">"{{ searchQuery }}"</strong> ({{ filteredTrails.length }} {{ filteredTrails.length === 1 ? 'trail' : 'trails' }} found)</span>
+        </div>
+        <button
+          @click="searchQuery = ''"
+          class="px-2.5 py-1 rounded-lg bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] font-bold text-xs"
+        >
+          Clear ✕
+        </button>
       </div>
 
       <!-- Trails Grid -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div v-if="filteredTrails.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div
           v-for="trail in filteredTrails"
           :key="trail.name"
@@ -602,8 +625,19 @@ const HikingNature = {
         </div>
       </div>
 
-      <div v-if="filteredTrails.length === 0" class="card p-8 text-center text-sm text-[var(--muted-foreground)]">
-        No hiking trails match your search or filter criteria.
+      <!-- Empty State -->
+      <div v-else class="card p-8 text-center space-y-3">
+        <span class="text-3xl">🥾</span>
+        <h4 class="font-bold text-sm text-[var(--foreground)]">No hiking trails match your search or filter criteria</h4>
+        <p class="text-xs text-[var(--muted-foreground)]">Try clearing active search keywords, region filters, or status selections.</p>
+        <div class="pt-2">
+          <button
+            @click="resetAllFilters"
+            class="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] hover:opacity-90 text-white shadow-sm transition-all"
+          >
+            Show All {{ trails.length }} Trails
+          </button>
+        </div>
       </div>
     </div>
   `

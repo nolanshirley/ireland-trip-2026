@@ -841,6 +841,151 @@ body {
   }
 }
 
+/* ── Day Navigation Rolling Animation ───────────────────────── */
+.nav-day-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.nav-day-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 150%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Rolling glow track for Prev (Left) Button */
+.nav-day-btn-prev::before {
+  left: -50%;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+}
+
+.nav-day-btn-prev:not(:disabled):hover::before {
+  opacity: 1;
+  animation: rollTrackLeft 1.2s linear infinite;
+}
+
+@keyframes rollTrackLeft {
+  0% {
+    transform: translateX(30%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Rolling glow track for Next (Right) Button */
+.nav-day-btn-next::before {
+  left: 0;
+  background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+}
+
+.nav-day-btn-next:not(:disabled):hover::before {
+  opacity: 1;
+  animation: rollTrackRight 1.2s linear infinite;
+}
+
+@keyframes rollTrackRight {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(30%);
+  }
+}
+
+/* Arrow container with rolling animation */
+.roll-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Left Arrow Rolling */
+.roll-arrow-left {
+  animation: rollArrowLeftAmbient 2.4s ease-in-out infinite;
+}
+
+.nav-day-btn-prev:not(:disabled):hover .roll-arrow-left {
+  animation: rollArrowLeftActive 0.6s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+
+.nav-day-btn-prev:not(:disabled):active .roll-arrow-left {
+  transform: translateX(-4px) scale(1.15);
+}
+
+@keyframes rollArrowLeftAmbient {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-2.5px);
+  }
+}
+
+@keyframes rollArrowLeftActive {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    transform: translateX(-4px) scale(1.2);
+  }
+}
+
+/* Right Arrow Rolling */
+.roll-arrow-right {
+  animation: rollArrowRightAmbient 2.4s ease-in-out infinite;
+}
+
+.nav-day-btn-next:not(:disabled):hover .roll-arrow-right {
+  animation: rollArrowRightActive 0.6s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+
+.nav-day-btn-next:not(:disabled):active .roll-arrow-right {
+  transform: translateX(4px) scale(1.15);
+}
+
+@keyframes rollArrowRightAmbient {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(2.5px);
+  }
+}
+
+@keyframes rollArrowRightActive {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    transform: translateX(4px) scale(1.2);
+  }
+}
+
+/* Text subtle nudge in direction of navigation */
+.roll-text {
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-day-btn-prev:not(:disabled):hover .roll-text {
+  transform: translateX(-2px);
+}
+
+.nav-day-btn-next:not(:disabled):hover .roll-text {
+  transform: translateX(2px);
+}
+
 /* ── Print & Pocket PDF Booklet Stylesheet ───────────────────── */
 @media print {
   body {
