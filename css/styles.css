@@ -530,3 +530,15 @@ body {
     transform: scale(1);
   }
 }
+
+/* ── Tab Active Pulse ───────────────────────────────────────── */
+.tab-active-pulse {
+  animation: tabPulse 0.5s ease-out;
+}
+
+@keyframes tabPulse {
+  0% { transform: scale(0.96); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+

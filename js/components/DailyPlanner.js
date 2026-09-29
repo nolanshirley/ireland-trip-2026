@@ -8,7 +8,8 @@ const DailyPlanner = {
   props: {
     timeline: { type: Array, required: true },
     trails: { type: Array, default: () => [] },
-    restaurants: { type: Array, default: () => [] }
+    restaurants: { type: Array, default: () => [] },
+    targetDayIndex: { type: Number, default: null }
   },
   emits: ['open-detail', 'switch-tab'],
   data() {
@@ -26,9 +27,23 @@ const DailyPlanner = {
     };
   },
   created() {
-    // Days start collapsed by default
+    // Days start collapsed by default unless targetDayIndex is set
     this.expandedDays = {};
+    if (this.targetDayIndex !== null && this.targetDayIndex !== undefined) {
+      this.expandedDays[this.targetDayIndex] = true;
+    }
     this.showRainBackups = {};
+  },
+  watch: {
+    targetDayIndex: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal !== null && newVal !== undefined) {
+          this.expandedDays[newVal] = true;
+          this.activeDayFilter = null;
+        }
+      }
+    }
   },
   computed: {
     hoursScale() {
@@ -389,6 +404,7 @@ const DailyPlanner = {
         <div
           v-for="(day, idx) in filteredDays"
           :key="day.date"
+          :id="'day-card-' + day.dayNumber"
           class="card overflow-hidden transition-all duration-200"
           :class="{
             'ring-2 ring-pink-500/60 bg-pink-500/[0.02]': day.special,

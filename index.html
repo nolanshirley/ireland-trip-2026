@@ -102,14 +102,15 @@
       </div>
     </section>
 
-    <!-- Navigation Tabs -->
-    <nav class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[var(--border)] no-scrollbar">
+    <!-- Navigation Tabs (Middle Row) -->
+    <nav id="main-tab-nav" class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-[var(--border)] no-scrollbar scroll-smooth">
       <button
         v-for="tab in tabs"
         :key="tab.id"
+        :id="'tab-btn-' + tab.id"
         @click="activeTab = tab.id"
         :class="[
-          'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-2',
+          'px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-2 flex-shrink-0',
           activeTab === tab.id
             ? 'bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20'
             : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] border border-[var(--border)]'
@@ -127,6 +128,7 @@
           :timeline="timelineList"
           :trails="trailList"
           :restaurants="restaurantList"
+          :target-day-index="selectedTargetDayIndex"
           @open-detail="openDetailModal"
           @switch-tab="handleSwitchTab"
         />

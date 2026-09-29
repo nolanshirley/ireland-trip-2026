@@ -79,8 +79,14 @@ const HikingNature = {
       if (!query) return '#';
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     },
-    jumpToSchedule() {
-      this.$emit('switch-tab', { tab: 'planner' });
+    jumpToSchedule(trail) {
+      this.$emit('switch-tab', {
+        tab: 'planner',
+        dayIndex: trail.dayIndex !== undefined ? trail.dayIndex : (trail.dayNumber ? trail.dayNumber - 1 : 0),
+        dayNumber: trail.dayNumber,
+        targetId: 'day-card-' + (trail.dayNumber || 1),
+        trailId: trail.id
+      });
     }
   },
   template: `
@@ -275,13 +281,16 @@ const HikingNature = {
               <span>⚠️</span>
               <span>{{ trail.weatherAlert }}</span>
             </div>
-            <div class="flex items-center justify-between text-xs pt-1">
-              <span class="text-[var(--muted-foreground)]">Part of October 2026 Itinerary</span>
+            <div class="flex items-center justify-between text-xs pt-1 flex-wrap gap-2">
+              <span class="text-[var(--muted-foreground)]">
+                📅 Suggested for <strong>Day {{ trail.dayNumber }} ({{ trail.date }})</strong>
+              </span>
               <button
-                @click="jumpToSchedule"
-                class="text-emerald-400 hover:underline font-bold flex items-center gap-1"
+                @click="jumpToSchedule(trail)"
+                class="px-3 py-1.5 rounded-lg bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 border border-[var(--accent)]/30 font-bold flex items-center gap-1.5 transition-all text-xs"
+                :title="'Open Day ' + trail.dayNumber + ' in schedule'"
               >
-                <span>📅 View in Schedule →</span>
+                <span>📅 View on Day {{ trail.dayNumber }} Schedule →</span>
               </button>
             </div>
           </div>

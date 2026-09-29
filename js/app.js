@@ -43,6 +43,7 @@ const app = createApp({
     const selectedDetailItem = ref(null);
     const selectedDetailDay = ref(null);
     const isDetailModalOpen = ref(false);
+    const selectedTargetDayIndex = ref(null);
 
     const openDetailModal = (payload) => {
       if (!payload || !payload.item) return;
@@ -60,28 +61,58 @@ const app = createApp({
     };
 
     // Deep jump between tabs & scroll to target element
-    const handleSwitchTab = ({ tab, targetId }) => {
+    const handleSwitchTab = (payload) => {
+      if (!payload) return;
+      const { tab, targetId, dayIndex, dayNumber, trailId } = payload;
       if (tab) {
         activeTab.value = tab;
+      }
+      if (dayIndex !== undefined && dayIndex !== null) {
+        selectedTargetDayIndex.value = dayIndex;
+      } else if (dayNumber !== undefined && dayNumber !== null) {
+        selectedTargetDayIndex.value = dayNumber - 1;
       }
       if (isDetailModalOpen.value) {
         closeDetailModal();
       }
-      if (targetId) {
-        nextTick(() => {
-          setTimeout(() => {
-            const el = document.getElementById(targetId) ||
-                       document.getElementById('trail-' + targetId) ||
-                       document.getElementById('restaurant-' + targetId);
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              el.classList.add('card-highlight');
-              setTimeout(() => el.classList.remove('card-highlight'), 2200);
-            }
-          }, 150);
-        });
-      }
+      nextTick(() => {
+        setTimeout(() => {
+          const el = document.getElementById(targetId) ||
+                     (dayNumber ? document.getElementById('day-card-' + dayNumber) : null) ||
+                     (dayIndex !== undefined ? document.getElementById('day-' + dayIndex) : null) ||
+                     document.getElementById('trail-' + targetId) ||
+                     document.getElementById('restaurant-' + targetId);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('card-highlight');
+            setTimeout(() => el.classList.remove('card-highlight'), 2200);
+          }
+        }, 180);
+      });
     };
+
+    // Auto-scroll the middle navigation bar to center the active tab
+    const scrollToActiveTab = (tabId) => {
+      nextTick(() => {
+        setTimeout(() => {
+          const tabBtn = document.getElementById('tab-btn-' + tabId);
+          const navContainer = document.getElementById('main-tab-nav');
+          if (tabBtn && navContainer) {
+            const scrollLeftTarget = tabBtn.offsetLeft - (navContainer.clientWidth / 2) + (tabBtn.clientWidth / 2);
+            navContainer.scrollTo({
+              left: Math.max(0, scrollLeftTarget),
+              behavior: 'smooth'
+            });
+            tabBtn.classList.add('tab-active-pulse');
+            setTimeout(() => tabBtn.classList.remove('tab-active-pulse'), 600);
+          }
+        }, 60);
+      });
+    };
+
+    watch(activeTab, (newTab) => {
+      scrollToActiveTab(newTab);
+    });
 
     const getGoogleMapsUrl = (query) => {
       if (!query) return '#';
@@ -225,6 +256,7 @@ const app = createApp({
       toggleDark,
       selectedDetailItem,
       selectedDetailDay,
+      selectedTargetDayIndex,
       isDetailModalOpen,
       openDetailModal,
       closeDetailModal,
@@ -247,5 +279,6 @@ const app = createApp({
 });
 
 app.mount('#app');
+
 
 
