@@ -983,7 +983,7 @@ const DailyPlanner = {
                   'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
                   isDayRainSwapped
                     ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold'
-                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/30'
+                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-950 dark:text-amber-200 border-2 border-amber-500/50'
                 ]"
                 title="Swap outdoor hikes/walks directly with indoor alternatives for this day"
               >
@@ -1080,16 +1080,16 @@ const DailyPlanner = {
           <!-- Rainy Day Contingency Callout Box (if toggled on) -->
           <div
             v-if="isDayRainSwapped"
-            class="p-4 rounded-xl bg-amber-500/[0.12] border-2 border-amber-500/50 space-y-2 animate-fadeIn shadow-sm"
+            class="p-4 rounded-xl bg-amber-500/[0.15] border-2 border-amber-500/60 space-y-2 animate-fadeIn shadow-sm"
           >
-            <div class="flex items-center justify-between gap-2 flex-wrap text-amber-400 font-bold text-sm">
+            <div class="flex items-center justify-between gap-2 flex-wrap text-amber-950 dark:text-amber-300 font-black text-sm">
               <div class="flex items-center gap-2">
                 <span class="text-lg">🌧️</span>
                 <h4>Rain Contingency Active for Day {{ activeDay.dayNumber }}:</h4>
               </div>
               <button
                 @click.stop="toggleDayRainSwap(activeCalendarDayIndex)"
-                class="text-xs underline text-amber-300 hover:text-amber-200 font-semibold"
+                class="text-xs underline text-amber-950 dark:text-amber-300 hover:opacity-80 font-bold"
               >
                 Revert to Standard Plan ✕
               </button>
@@ -1256,15 +1256,32 @@ const DailyPlanner = {
                     </p>
 
                     <!-- Rainy Day or Split Option previews -->
-                    <div v-if="item.rainBackup && isRainActive(activeCalendarDayIndex)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
-                      <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                    <div v-if="item.rainBackup && isRainActive(activeCalendarDayIndex)" class="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500/60 shadow-sm space-y-1">
+                      <div class="flex items-center justify-between gap-2 text-xs font-black text-amber-950 dark:text-amber-300">
+                        <span class="flex items-center gap-1.5">
+                          <span>🌧️</span>
+                          <span>Rain Backup Plan:</span>
+                        </span>
+                        <button
+                          @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                          class="text-[11px] font-bold text-amber-950 dark:text-amber-300 underline hover:opacity-80"
+                        >
+                          Hide ✕
+                        </button>
+                      </div>
+                      <p class="text-xs font-bold text-amber-950 dark:text-amber-100 leading-relaxed pl-5">
+                        {{ item.rainBackup }}
+                      </p>
                     </div>
                     <div v-else-if="item.rainBackup" class="mt-1.5">
                       <button
                         @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
-                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-2 border-amber-500/60 transition-all shadow-sm"
+                        title="Click to view rainy day backup plan for this activity"
                       >
-                        <span>🌧️ Rain Backup Available</span>
+                        <span class="text-xs">🌧️</span>
+                        <span>Rain Backup Available</span>
+                        <span class="text-[9px] opacity-80">▼</span>
                       </button>
                     </div>
                     <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
@@ -1409,15 +1426,32 @@ const DailyPlanner = {
                   {{ item.desc }}
                 </p>
 
-                <div v-if="item.rainBackup && isRainActive(activeCalendarDayIndex)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
-                  <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                <div v-if="item.rainBackup && isRainActive(activeCalendarDayIndex)" class="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500/60 shadow-sm space-y-1">
+                  <div class="flex items-center justify-between gap-2 text-xs font-black text-amber-950 dark:text-amber-300">
+                    <span class="flex items-center gap-1.5">
+                      <span>🌧️</span>
+                      <span>Rain Backup Plan:</span>
+                    </span>
+                    <button
+                      @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
+                      class="text-[11px] font-bold text-amber-950 dark:text-amber-300 underline hover:opacity-80"
+                    >
+                      Hide ✕
+                    </button>
+                  </div>
+                  <p class="text-xs font-bold text-amber-950 dark:text-amber-100 leading-relaxed pl-5">
+                    {{ item.rainBackup }}
+                  </p>
                 </div>
                 <div v-else-if="item.rainBackup" class="mt-1.5">
                   <button
                     @click.stop="toggleDayRainBackup(activeCalendarDayIndex)"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-2 border-amber-500/60 transition-all shadow-sm"
+                    title="Click to view rainy day backup plan for this activity"
                   >
-                    <span>🌧️ Rain Backup Available</span>
+                    <span class="text-xs">🌧️</span>
+                    <span>Rain Backup Available</span>
+                    <span class="text-[9px] opacity-80">▼</span>
                   </button>
                 </div>
                 <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
@@ -1582,7 +1616,7 @@ const DailyPlanner = {
                   'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
                   isRainActive(idx)
                     ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold ring-1 ring-amber-400'
-                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/30'
+                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-950 dark:text-amber-200 border-2 border-amber-500/50'
                 ]"
                 title="Toggle Rain Contingency for this day"
               >
@@ -1670,16 +1704,16 @@ const DailyPlanner = {
             <!-- Rainy Day Contingency Callout Box (if toggled on) -->
             <div
               v-if="isRainActive(idx)"
-              class="p-4 rounded-xl bg-amber-500/[0.12] border-2 border-amber-500/50 space-y-2 animate-fadeIn shadow-sm"
+              class="p-4 rounded-xl bg-amber-500/[0.15] border-2 border-amber-500/60 space-y-2 animate-fadeIn shadow-sm"
             >
-              <div class="flex items-center justify-between gap-2 flex-wrap text-amber-400 font-bold text-sm">
+              <div class="flex items-center justify-between gap-2 flex-wrap text-amber-950 dark:text-amber-300 font-black text-sm">
                 <div class="flex items-center gap-2">
                   <span class="text-lg">🌧️</span>
                   <h4>Active Rainy Day & High-Wind Contingency for Day {{ day.dayNumber }}:</h4>
                 </div>
                 <button
                   @click.stop="toggleDayRainBackup(idx)"
-                  class="text-xs underline text-amber-300 hover:text-amber-200 font-semibold"
+                  class="text-xs underline text-amber-950 dark:text-amber-300 hover:opacity-80 font-bold"
                 >
                   Close Rain Plan ✕
                 </button>
@@ -1821,15 +1855,32 @@ const DailyPlanner = {
                       </p>
 
                       <!-- Rainy Day or Split Option previews -->
-                      <div v-if="item.rainBackup && isRainActive(idx)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
-                        <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                      <div v-if="item.rainBackup && isRainActive(idx)" class="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500/60 shadow-sm space-y-1">
+                        <div class="flex items-center justify-between gap-2 text-xs font-black text-amber-950 dark:text-amber-300">
+                          <span class="flex items-center gap-1.5">
+                            <span>🌧️</span>
+                            <span>Rain Backup Plan:</span>
+                          </span>
+                          <button
+                            @click.stop="toggleDayRainBackup(idx)"
+                            class="text-[11px] font-bold text-amber-950 dark:text-amber-300 underline hover:opacity-80"
+                          >
+                            Hide ✕
+                          </button>
+                        </div>
+                        <p class="text-xs font-bold text-amber-950 dark:text-amber-100 leading-relaxed pl-5">
+                          {{ item.rainBackup }}
+                        </p>
                       </div>
                       <div v-else-if="item.rainBackup" class="mt-1.5">
                         <button
                           @click.stop="toggleDayRainBackup(idx)"
-                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-2 border-amber-500/60 transition-all shadow-sm"
+                          title="Click to view rainy day backup plan for this activity"
                         >
-                          <span>🌧️ Rain Backup Available</span>
+                          <span class="text-xs">🌧️</span>
+                          <span>Rain Backup Available</span>
+                          <span class="text-[9px] opacity-80">▼</span>
                         </button>
                       </div>
                       <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
@@ -1936,15 +1987,32 @@ const DailyPlanner = {
                     {{ item.desc }}
                   </p>
 
-                  <div v-if="item.rainBackup && isRainActive(idx)" class="mt-2 p-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-[11px] text-amber-300">
-                    <strong>🌧️ Rain Backup Plan:</strong> {{ item.rainBackup }}
+                  <div v-if="item.rainBackup && isRainActive(idx)" class="mt-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500/60 shadow-sm space-y-1">
+                    <div class="flex items-center justify-between gap-2 text-xs font-black text-amber-950 dark:text-amber-300">
+                      <span class="flex items-center gap-1.5">
+                        <span>🌧️</span>
+                        <span>Rain Backup Plan:</span>
+                      </span>
+                      <button
+                        @click.stop="toggleDayRainBackup(idx)"
+                        class="text-[11px] font-bold text-amber-950 dark:text-amber-300 underline hover:opacity-80"
+                      >
+                        Hide ✕
+                      </button>
+                    </div>
+                    <p class="text-xs font-bold text-amber-950 dark:text-amber-100 leading-relaxed pl-5">
+                      {{ item.rainBackup }}
+                    </p>
                   </div>
                   <div v-else-if="item.rainBackup" class="mt-1.5">
                     <button
                       @click.stop="toggleDayRainBackup(idx)"
-                      class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500/20 transition-colors"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-2 border-amber-500/60 transition-all shadow-sm"
+                      title="Click to view rainy day backup plan for this activity"
                     >
-                      <span>🌧️ Rain Backup Available</span>
+                      <span class="text-xs">🌧️</span>
+                      <span>Rain Backup Available</span>
+                      <span class="text-[9px] opacity-80">▼</span>
                     </button>
                   </div>
                   <div v-if="item.splitOption" class="mt-1 text-[11px] text-[var(--muted-foreground)] italic">
