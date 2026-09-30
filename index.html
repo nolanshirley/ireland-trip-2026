@@ -142,7 +142,7 @@
     <div class="loading-progress-bar"></div>
   </div>
 
-  <!-- Fail-Safe Loading Screen Dismissal (Strictly timed to 2.2 seconds) -->
+  <!-- Fail-Safe Loading Screen Dismissal (Strictly timed to 1.2 seconds maximum) -->
   <script>
     (function() {
       var startTime = Date.now();
@@ -150,7 +150,7 @@
       function dismissAppLoader(immediate) {
         if (isDismissed) return;
         var elapsed = Date.now() - startTime;
-        var minWait = immediate ? 0 : Math.max(0, 2200 - elapsed);
+        var minWait = immediate ? 0 : Math.max(0, Math.min(250, 1200 - elapsed));
         setTimeout(function() {
           if (isDismissed) return;
           isDismissed = true;
@@ -172,10 +172,10 @@
       window.__dismissAppLoader = function() {
         dismissAppLoader(false);
       };
-      // Hard cap: unconditionally dismisses at exactly 2.2 seconds (2200ms)
+      // Hard cap: unconditionally dismisses at exactly 1.2 seconds (1200ms)
       setTimeout(function() {
         dismissAppLoader(true);
-      }, 2200);
+      }, 1200);
     })();
   </script>
 

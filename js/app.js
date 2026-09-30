@@ -370,24 +370,15 @@ const app = createApp({
 
     const initDetailEditForm = (item, day) => {
       if (!item) return;
-      const startH = parseTimeToHour(item.time || item.startHour);
-      let dur = typeof item.durHours === 'number' && !isNaN(item.durHours) ? item.durHours : 1.5;
-      if (item.dur && typeof item.dur === 'string') {
-        const dMatch = item.dur.match(/([\d.]+)\s*hr/i);
-        if (dMatch) dur = parseFloat(dMatch[1]);
-        else {
-          const mMatch = item.dur.match(/(\d+)\s*m/i);
-          if (mMatch) dur = parseFloat(mMatch[1]) / 60;
-        }
-      } else if (item.endHour !== undefined && item.startHour !== undefined) {
-        dur = item.endHour - item.startHour;
-      }
+      const range = (typeof getItemTimeRange === 'function')
+        ? getItemTimeRange(item)
+        : { start: parseTimeToHour(item.time || item.startHour), end: 11.5, dur: 1.5 };
       
       detailEditForm.value = {
         id: item.id || getItemId(item, 'day' + (day ? day.dayNumber : 1)),
         activity: item.activity || item.title || '',
-        startTime24: formatHourTo24Time(startH),
-        durHours: Math.max(0.25, parseFloat(dur.toFixed(2))),
+        startTime24: formatHourTo24Time(range.start),
+        durHours: Math.max(0.25, parseFloat(range.dur.toFixed(2))),
         type: item.type || 'sight',
         energyLevel: item.energyLevel || 'chill',
         tag: item.tag || '',
@@ -460,31 +451,31 @@ const app = createApp({
       const conflicts = [];
       day.items.forEach(other => {
         if (other.id === currentId) return;
-        const otherStart = parseTimeToHour(other.time || other.startHour);
-        let otherDur = typeof other.durHours === 'number' && !isNaN(other.durHours) ? other.durHours : 1.5;
-        if (other.dur && typeof other.dur === 'string') {
-          const dMatch = other.dur.match(/([\d.]+)\s*hr/i);
-          if (dMatch) otherDur = parseFloat(dMatch[1]);
-          else {
-            const mMatch = other.dur.match(/(\d+)\s*m/i);
-            if (mMatch) otherDur = parseFloat(mMatch[1]) / 60;
-          }
-        }
-        const otherEnd = otherStart + Math.max(0.25, otherDur);
+        const range = (typeof getItemTimeRange === 'function')
+          ? getItemTimeRange(other)
+          : { start: parseTimeToHour(other.time || other.startHour), end: parseTimeToHour(other.time || other.startHour) + 1.5, dur: 1.5 };
+        const otherStart = range.start;
+        const otherEnd = range.end;
 
-        // Check if there is an overlap
+        // Times meeting back-to-back (e.g. otherEnd === newStart or newEnd === otherStart):
+        // 2:00 PM and 2:00 PM is NOT a conflict.
+        // True conflict exists only if incoming extends into upcoming (e.g. 2:01 PM incoming and 2:00 PM upcoming):
         const overlapStart = Math.max(newStart, otherStart);
         const overlapEnd = Math.min(newEnd, otherEnd);
-        if (overlapEnd - overlapStart > 0.05) { // more than 3 mins overlap
-          const overlapMins = Math.round((overlapEnd - overlapStart) * 60);
+        const overlapHours = overlapEnd - overlapStart;
+
+        // Epsilon of 0.001 hr (~3.6 sec) prevents float imprecision false positives while catching any actual overlap (even 1 min = 0.0167 hr)
+        if (overlapHours > 0.001) {
+          const overlapMins = Math.max(1, Math.round(overlapHours * 60));
+          const isOtherAfter = otherStart >= newStart;
           conflicts.push({
             otherId: other.id,
             otherActivity: other.activity || other.title || 'Stop',
             otherStart,
             otherEnd,
             overlapMins,
-            isOtherAfter: otherStart >= newStart,
-            message: `"${other.activity || 'Activity'}" (${formatHourToTime(otherStart)} – ${formatHourToTime(otherEnd)}) overlaps by ${overlapMins} mins`
+            isOtherAfter,
+            message: `"${other.activity || 'Activity'}" (${formatHourToTime(otherStart)} – ${formatHourToTime(otherEnd)}) overlaps by ${overlapMins} min${overlapMins === 1 ? '' : 's'}`
           });
         }
       });
@@ -508,28 +499,24 @@ const app = createApp({
       if (!day || !day.items) return;
 
       const myEnd = detailEditEndHour.value;
-      const buffer = 10 / 60; // 10 minute buffer
-      let nextTargetStart = myEnd + buffer;
+      let nextTargetStart = myEnd;
 
       const sortedOthers = [...day.items]
         .filter(item => item.id !== currentId)
-        .sort((a, b) => parseTimeToHour(a.time || a.startHour) - parseTimeToHour(b.time || b.startHour));
+        .sort((a, b) => {
+          const rA = typeof getItemTimeRange === 'function' ? getItemTimeRange(a) : { start: 0 };
+          const rB = typeof getItemTimeRange === 'function' ? getItemTimeRange(b) : { start: 0 };
+          return rA.start - rB.start;
+        });
 
       let shiftCount = 0;
       sortedOthers.forEach(other => {
-        const oStart = parseTimeToHour(other.time || other.startHour);
-        let oDur = typeof other.durHours === 'number' && !isNaN(other.durHours) ? other.durHours : 1.5;
-        if (other.dur && typeof other.dur === 'string') {
-          const dMatch = other.dur.match(/([\d.]+)\s*hr/i);
-          if (dMatch) oDur = parseFloat(dMatch[1]);
-          else {
-            const mMatch = other.dur.match(/(\d+)\s*m/i);
-            if (mMatch) oDur = parseFloat(mMatch[1]) / 60;
-          }
-        }
+        const { start: oStart, dur: oDur } = typeof getItemTimeRange === 'function'
+          ? getItemTimeRange(other)
+          : { start: parseTimeToHour(other.time), dur: 1.5 };
         
-        // If other stop is scheduled to follow our activity but now overlaps or starts too early:
-        if (oStart < nextTargetStart && oStart >= detailEditStartHour.value - 0.25) {
+        // If other stop is scheduled after or overlapping our edited activity:
+        if (oStart < nextTargetStart && oStart >= detailEditStartHour.value - 0.001) {
           const updatedOStart = nextTargetStart;
           const updatedOEnd = updatedOStart + oDur;
           const updatedTimeStr = `${formatHourToTime(updatedOStart)} – ${formatHourToTime(updatedOEnd)}`;
@@ -554,10 +541,10 @@ const app = createApp({
             customActivities.value.push(updatedOther);
           }
           
-          nextTargetStart = updatedOEnd + buffer;
+          nextTargetStart = updatedOEnd;
           shiftCount++;
         } else if (oStart >= nextTargetStart) {
-          nextTargetStart = Math.max(nextTargetStart, oStart + oDur + buffer);
+          nextTargetStart = Math.max(nextTargetStart, oStart + oDur);
         }
       });
 
@@ -575,22 +562,23 @@ const app = createApp({
       const dur = parseFloat(detailEditForm.value.durHours) || 1.5;
       const sortedOthers = [...day.items]
         .filter(item => item.id !== currentId)
-        .sort((a, b) => parseTimeToHour(a.time || a.startHour) - parseTimeToHour(b.time || b.startHour));
+        .sort((a, b) => {
+          const rA = typeof getItemTimeRange === 'function' ? getItemTimeRange(a) : { start: 0 };
+          const rB = typeof getItemTimeRange === 'function' ? getItemTimeRange(b) : { start: 0 };
+          return rA.start - rB.start;
+        });
 
       let candidateStart = 8.5; // Default morning slot 8:30 AM
       for (const other of sortedOthers) {
-        const oStart = parseTimeToHour(other.time || other.startHour);
-        let oDur = typeof other.durHours === 'number' && !isNaN(other.durHours) ? other.durHours : 1.5;
-        if (other.dur && typeof other.dur === 'string') {
-          const dMatch = other.dur.match(/([\d.]+)\s*hr/i);
-          if (dMatch) oDur = parseFloat(dMatch[1]);
-        }
-        const oEnd = oStart + oDur;
+        const { start: oStart, end: oEnd } = typeof getItemTimeRange === 'function'
+          ? getItemTimeRange(other)
+          : { start: parseTimeToHour(other.time), end: parseTimeToHour(other.time) + 1.5 };
 
-        if (candidateStart + dur <= oStart - 0.1) {
-          break; // Gap found before this stop
+        // If candidate activity ends before or meets this stop (candidateStart + dur <= oStart + 0.001)
+        if (candidateStart + dur <= oStart + 0.001) {
+          break; // Gap found before this stop!
         } else {
-          candidateStart = Math.max(candidateStart, oEnd + (10 / 60)); // 10 min buffer
+          candidateStart = Math.max(candidateStart, oEnd); // Meet right after this stop
         }
       }
 

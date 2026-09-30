@@ -60,6 +60,58 @@ function formatHourTo24Time(decimalHour) {
   return `${hh}:${mm}`;
 }
 
+function getItemTimeRange(item) {
+  if (!item) return { start: 10, end: 11.5, dur: 1.5 };
+  let start = null;
+  let end = null;
+
+  // 1. Explicit numeric properties if present
+  if (typeof item.startHour === 'number' && !isNaN(item.startHour)) {
+    start = item.startHour;
+  }
+  if (typeof item.endHour === 'number' && !isNaN(item.endHour)) {
+    end = item.endHour;
+  }
+
+  // 2. Parse from time string if start or end are missing
+  if (item.time && typeof item.time === 'string') {
+    const parts = item.time.split(/–|-|—|\bto\b/i);
+    if (parts.length >= 2) {
+      const parsedStart = parseTimeToHour(parts[0].trim());
+      const parsedEnd = parseTimeToHour(parts[1].trim());
+      if (start === null) start = parsedStart;
+      if (end === null) end = parsedEnd;
+    } else if (start === null) {
+      start = parseTimeToHour(item.time);
+    }
+  }
+
+  if (start === null) start = 10;
+
+  // 3. Fallback end from duration if end is still undefined or <= start
+  if (end === null || end <= start) {
+    let dur = typeof item.durHours === 'number' && !isNaN(item.durHours) ? item.durHours : null;
+    if (dur === null && item.dur && typeof item.dur === 'string') {
+      const hMatch = item.dur.match(/([\d.]+)\s*h(?:r|ours?)?/i);
+      if (hMatch) {
+        dur = parseFloat(hMatch[1]);
+      } else {
+        const mMatch = item.dur.match(/(\d+)\s*m(?:in|inutes?)?/i);
+        if (mMatch) {
+          dur = parseFloat(mMatch[1]) / 60;
+        }
+      }
+    }
+    if (dur === null || isNaN(dur) || dur <= 0) {
+      dur = 1.5;
+    }
+    end = start + dur;
+  }
+
+  const dur = Math.max(0.25, parseFloat((end - start).toFixed(2)));
+  return { start, end, dur };
+}
+
 const TRIP = {
   title: '🍀 Ireland Trip',
   subtitle: 'October 2026 · 4 Regions · 12 Nights · Autumn Weather & Nature Trails',
