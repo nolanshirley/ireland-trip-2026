@@ -641,21 +641,21 @@
         <!-- Mom's Birthday Dinner -->
         <div
           @click="handleSwitchTab({ tab: 'planner', dayNumber: 12 })"
-          class="p-3.5 rounded-xl border border-pink-400 bg-pink-500/[0.06] hover:bg-pink-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+          class="box-pink p-3.5 rounded-xl border-2 border-pink-500 bg-pink-100/90 dark:bg-pink-950/40 hover:border-pink-600 cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between shadow-sm"
         >
           <div>
-            <div class="flex items-center justify-between gap-1 mb-1">
-              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400">
+            <div class="flex items-center justify-between gap-1 mb-1.5">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-pink-600 text-white shadow-sm">
                 🎂 MOM'S BDAY DINNER
               </span>
-              <span class="text-xs font-mono font-bold text-pink-400">Day 12 · Oct 13</span>
+              <span class="text-xs font-mono font-black text-pink-900 dark:text-pink-300">Day 12 · Oct 13</span>
             </div>
-            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Mister S @ 5:15 PM (Dublin)</h4>
-            <p class="text-xs text-[var(--muted-foreground)] mt-1">
-              Confirmed anchor table · High-end steakhouse · <strong class="text-pink-600 dark:text-pink-300">24h cancellation window</strong>
+            <h4 class="font-black text-sm text-pink-950 dark:text-pink-100 mt-1.5 leading-snug">Mister S @ 5:15 PM (Dublin)</h4>
+            <p class="text-xs text-pink-950/85 dark:text-pink-200/90 mt-1 font-semibold leading-relaxed">
+              Confirmed anchor table · High-end steakhouse · <strong class="text-pink-950 dark:text-pink-200 underline font-black">24h cancellation window</strong>
             </p>
           </div>
-          <div class="mt-2 pt-2 border-t border-pink-500/20 flex items-center justify-between text-[11px] font-bold text-pink-400">
+          <div class="mt-2.5 pt-2 border-t border-pink-500/30 flex items-center justify-between text-[11px] font-black text-pink-950 dark:text-pink-300">
             <span>View Day 12 Schedule</span>
             <span>→</span>
           </div>
@@ -920,21 +920,21 @@
 
         <div
           @click="handleSwitchTab({ tab: 'restaurants', targetId: 'mister-s' })"
-          class="p-3.5 rounded-xl border border-pink-400 bg-pink-500/[0.06] hover:bg-pink-500/[0.12] cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between"
+          class="box-pink p-3.5 rounded-xl border-2 border-pink-500 bg-pink-100/90 dark:bg-pink-950/40 hover:border-pink-600 cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md flex flex-col justify-between shadow-sm"
         >
           <div>
             <div class="flex items-center justify-between gap-1 mb-1">
-              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-pink-600 text-white shadow-sm">
                 ⚠️ 24HR STRICT
               </span>
-              <span class="text-xs font-bold text-pink-400">Oct 13 @ 5:15 PM</span>
+              <span class="text-xs font-mono font-black text-pink-900 dark:text-pink-300">Oct 13 @ 5:15 PM</span>
             </div>
-            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Mister S (Mom's Bday)</h4>
-            <p class="text-xs text-[var(--muted-foreground)] mt-1">
+            <h4 class="font-black text-sm text-pink-950 dark:text-pink-100 mt-1.5 leading-snug">Mister S (Mom's Bday)</h4>
+            <p class="text-xs text-pink-950/85 dark:text-pink-200/90 mt-1 font-semibold leading-relaxed">
               Cancel cutoff: Oct 12 @ 5:15 PM · Formal attire requested · Dublin steak dinner
             </p>
           </div>
-          <div class="mt-2 pt-2 border-t border-pink-500/20 flex items-center justify-between text-[11px] font-bold text-pink-400">
+          <div class="mt-2.5 pt-2 border-t border-pink-500/30 flex items-center justify-between text-[11px] font-black text-pink-950 dark:text-pink-300">
             <span>View Restaurant Profile</span>
             <span>→</span>
           </div>
@@ -3149,15 +3149,15 @@ Day 8: 11:00 AM - Dingle Sea Safari Boat Tour (Booking)"
       <div v-if="toast.show" class="toast-container" @click="hideToast">
         <div class="toast-pill">
           <span class="text-base flex-shrink-0 animate-bounce">{{ toast.icon }}</span>
-          <span class="truncate">{{ toast.message }}</span>
+          <span class="text-xs sm:text-sm font-bold text-[var(--foreground)] leading-snug break-words max-w-[calc(100vw-110px)] sm:max-w-md">{{ toast.message }}</span>
           <button
             v-if="toast.actionText"
             @click.stop="triggerToastAction"
-            class="ml-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[var(--accent)] text-white hover:opacity-90 shadow-sm transition-transform active:scale-95"
+            class="ml-1.5 px-3 py-1 rounded-full text-[11px] font-black bg-[var(--accent)] text-white hover:opacity-90 shadow-sm transition-transform active:scale-95 flex-shrink-0"
           >
             {{ toast.actionText }}
           </button>
-          <span class="text-[11px] text-[var(--muted-foreground)] ml-1 opacity-70">✕</span>
+          <span class="text-xs text-[var(--muted-foreground)] ml-1 opacity-75 flex-shrink-0">✕</span>
         </div>
       </div>
     </transition>

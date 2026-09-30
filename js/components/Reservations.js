@@ -225,7 +225,7 @@ const Reservations = {
             <h4 class="font-bold text-sm text-[var(--foreground)]">Mom's Birthday Dinner</h4>
           </div>
           <p class="text-xs text-[var(--muted-foreground)]">
-            <strong>Oct 13 @ 5:15 PM @ Mister S (Dublin)</strong>. Confirmed table. <span class="text-pink-400 font-semibold">24h cancellation window.</span>
+            <strong>Oct 13 @ 5:15 PM @ Mister S (Dublin)</strong>. Confirmed table. <span class="text-pink-900 dark:text-pink-300 font-bold">24h cancellation window.</span>
           </p>
         </div>
 
@@ -302,7 +302,7 @@ const Reservations = {
               statusFilter === flt.id
                 ? 'bg-[var(--accent)] text-white shadow-sm'
                 : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-              flt.id === 'birthdays' && statusFilter !== 'birthdays' ? 'text-pink-400 border border-pink-500/30' : '',
+              flt.id === 'birthdays' && statusFilter !== 'birthdays' ? 'text-pink-900 dark:text-pink-300 border border-pink-500/50 font-bold' : '',
               flt.id === 'strict-cancellation' && statusFilter !== 'strict-cancellation' ? 'text-amber-400 border border-amber-500/30' : ''
             ]"
           >

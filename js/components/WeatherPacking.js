@@ -295,7 +295,7 @@ const WeatherPacking = {
                     {{ day.condition }}
                   </td>
                   <td class="py-2.5 px-3 text-xs font-medium text-[var(--foreground)]">
-                    <span :class="day.date.includes('Oct 13') ? 'text-pink-400 font-bold' : ''">
+                    <span :class="day.date.includes('Oct 13') ? 'text-pink-900 dark:text-pink-300 font-extrabold' : ''">
                       {{ day.outfit }}
                     </span>
                   </td>
@@ -334,7 +334,7 @@ const WeatherPacking = {
               class="flex items-start gap-2 text-[var(--foreground)] leading-relaxed"
             >
               <span class="text-emerald-400 font-bold mt-0.5">✓</span>
-              <span :class="item.includes('⚠️') ? 'text-amber-300 font-semibold' : ''">{{ item }}</span>
+              <span :class="item.includes('⚠️') ? 'text-amber-900 dark:text-amber-300 font-bold' : ''">{{ item }}</span>
             </li>
           </ul>
         </div>

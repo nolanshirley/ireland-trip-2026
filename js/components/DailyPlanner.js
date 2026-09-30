@@ -1010,10 +1010,10 @@ const DailyPlanner = {
               <button
                 @click="useBoreenBuffer = !useBoreenBuffer"
                 :class="[
-                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 border',
+                  'px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 border-2 shadow-sm',
                   useBoreenBuffer
-                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
-                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'
+                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-950 dark:text-emerald-200 border-emerald-500'
+                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]'
                 ]"
                 title="Toggle +20% buffer on drive times for narrow Irish rural boreens, tour buses, and sheep"
               >
@@ -1026,10 +1026,10 @@ const DailyPlanner = {
                 v-if="hasRainBackups(activeDay)"
                 @click.stop="toggleDayRainSwap(activeCalendarDayIndex)"
                 :class="[
-                  'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
+                  'px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 border-2 shadow-sm',
                   isDayRainSwapped
-                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold'
-                    : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-950 dark:text-amber-200 border-2 border-amber-500/50'
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-black'
+                    : 'bg-amber-100/80 hover:bg-amber-200/80 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-950 dark:text-amber-200 border-amber-500/60'
                 ]"
                 title="Swap outdoor hikes/walks directly with indoor alternatives for this day"
               >
@@ -1039,24 +1039,24 @@ const DailyPlanner = {
             </div>
           </div>
 
-          <!-- October Daylight & Civil Sunset Tracker -->
-          <div class="p-3.5 rounded-xl bg-[var(--background)] border border-[var(--border)] space-y-2">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-              <div class="flex items-center gap-2">
-                <span class="text-base">🌅</span>
-                <span class="font-extrabold text-[var(--foreground)]">
+          <!-- October Daylight & Civil Sunset Tracker (High Contrast Div Under Road Buffer) -->
+          <div class="p-4 rounded-xl bg-[var(--card)] border-2 border-[var(--border)] shadow-sm space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-lg">🌅</span>
+                <span class="font-black text-sm text-[var(--foreground)] tracking-tight">
                   October Daylight: {{ activeDaylight.sunrise }} AM – {{ activeDaylight.sunset }} PM
                 </span>
-                <span class="px-2 py-0.2 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-black bg-amber-100 dark:bg-amber-950/60 text-amber-950 dark:text-amber-200 border border-amber-400 shadow-xs">
                   {{ activeDaylight.daylightHours }}
                 </span>
               </div>
-              <div class="flex items-center gap-2 text-[11px] text-[var(--muted-foreground)] flex-wrap">
-                <span>Golden Hour: <strong class="text-amber-400 font-bold">{{ activeDaylight.goldenHour }} PM</strong></span>
-                <span>·</span>
-                <span>Civil Dusk: <strong>{{ activeDaylight.dusk }} PM</strong></span>
-                <span>·</span>
-                <span v-if="useBoreenBuffer" class="text-emerald-400 font-bold">
+              <div class="flex items-center gap-2.5 text-xs text-[var(--foreground)] font-bold flex-wrap">
+                <span>Golden Hour: <strong class="text-amber-900 dark:text-amber-300 font-black">{{ activeDaylight.goldenHour }} PM</strong></span>
+                <span class="opacity-40">·</span>
+                <span>Civil Dusk: <strong class="text-[var(--foreground)] font-black">{{ activeDaylight.dusk }} PM</strong></span>
+                <span v-if="useBoreenBuffer" class="opacity-40">·</span>
+                <span v-if="useBoreenBuffer" class="text-emerald-900 dark:text-emerald-300 font-black">
                   🚗 Real Drive: {{ activeDayDriveHours }}h
                 </span>
               </div>
@@ -1067,12 +1067,12 @@ const DailyPlanner = {
               <div class="daylight-fill" style="width: 100%;"></div>
             </div>
             
-            <div class="flex items-center justify-between text-[10px] text-[var(--muted-foreground)] font-mono">
-              <span>Dawn {{ activeDaylight.dawn || '07:00' }}</span>
-              <span>Sunrise {{ activeDaylight.sunrise }}</span>
-              <span class="text-amber-400 font-bold">Golden Hour {{ activeDaylight.goldenHour }}</span>
-              <span class="text-rose-400 font-bold">Sunset {{ activeDaylight.sunset }}</span>
-              <span>Dusk {{ activeDaylight.dusk }}</span>
+            <div class="flex items-center justify-between text-xs text-[var(--foreground)] font-mono font-bold pt-0.5 flex-wrap gap-1">
+              <span class="text-[var(--foreground)]">Dawn {{ activeDaylight.dawn || '07:00' }}</span>
+              <span class="text-[var(--foreground)]">Sunrise {{ activeDaylight.sunrise }}</span>
+              <span class="text-amber-900 dark:text-amber-300 font-black">Golden Hour {{ activeDaylight.goldenHour }}</span>
+              <span class="text-rose-900 dark:text-rose-300 font-black">Sunset {{ activeDaylight.sunset }}</span>
+              <span class="text-[var(--foreground)]">Dusk {{ activeDaylight.dusk }}</span>
             </div>
           </div>
 
@@ -1233,14 +1233,14 @@ const DailyPlanner = {
                       </div>
 
                       <!-- Action Badges & Map Button -->
-                      <div class="flex items-center gap-1.5 flex-wrap">
-                        <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                      <div class="action-badges-row">
+                        <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                           💡 SUGGESTED ITINERARY
                         </span>
-                        <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
+                        <span v-if="item.tag" class="px-2.5 py-1 rounded-md text-[10.5px] font-black tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm leading-none">
                           {{ item.tag }}
                         </span>
-                        <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                        <span v-if="item.note" class="px-2.5 py-1 rounded-md text-[10.5px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                           ⏱️ {{ item.note }}
                         </span>
                         <!-- Consensus Status Badge -->
@@ -1272,7 +1272,7 @@ const DailyPlanner = {
                         <button
                           v-if="!isItemLocked(item)"
                           @click.stop="toggleHoldItem(item, activeDay)"
-                          class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                          class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
                           title="Put on hold (Move to Day Ideas & Suggestions Box)"
                         >
                           <span>⏸️</span>
@@ -1282,7 +1282,7 @@ const DailyPlanner = {
                         <button
                           v-if="!isItemLocked(item)"
                           @click.stop="removeItem(item, activeDay)"
-                          class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                          class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                           :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                         >
                           🗑️
@@ -1291,14 +1291,14 @@ const DailyPlanner = {
                         <button
                           v-if="item.mapsQuery"
                           @click.stop="openMap(item.mapsQuery)"
-                          class="maps-btn text-[10px] py-0.5 px-2"
+                          class="maps-btn maps-btn-compact"
                           title="Open in Apple Maps or Google Maps"
                         >
                           <span>📍 Map</span>
                         </button>
                         <button
                           @click.stop="openCalendar(item, activeDay)"
-                          class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                          class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-1 leading-none"
                           title="Add event to Apple / Google Calendar"
                         >
                           <span>📅 Cal</span>
@@ -1418,12 +1418,15 @@ const DailyPlanner = {
                     </span>
                   </div>
 
-                  <div class="flex items-center gap-1.5">
-                    <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                  <div class="action-badges-row">
+                    <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                       💡 SUGGESTED ITINERARY
                     </span>
-                    <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
+                    <span v-if="item.tag" class="px-2.5 py-1 rounded-md text-[10.5px] font-black tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm leading-none">
                       {{ item.tag }}
+                    </span>
+                    <span v-if="item.note" class="px-2.5 py-1 rounded-md text-[10.5px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
+                      ⏱️ {{ item.note }}
                     </span>
                     <!-- Consensus Status Badge -->
                     <span v-if="item.status === 'confirmed'" class="consensus-badge-confirmed">
@@ -1454,7 +1457,7 @@ const DailyPlanner = {
                     <button
                       v-if="!isItemLocked(item)"
                       @click.stop="toggleHoldItem(item, activeDay)"
-                      class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                      class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
                       title="Put on hold (Move to Day Ideas & Suggestions Box)"
                     >
                       <span>⏸️</span>
@@ -1464,7 +1467,7 @@ const DailyPlanner = {
                     <button
                       v-if="!isItemLocked(item)"
                       @click.stop="removeItem(item, activeDay)"
-                      class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1.5 py-0.5 rounded hover:bg-rose-500/10 transition-transform hover:scale-110"
+                      class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                       :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                     >
                       🗑️
@@ -1473,14 +1476,14 @@ const DailyPlanner = {
                     <button
                       v-if="item.mapsQuery"
                       @click.stop="openMap(item.mapsQuery)"
-                      class="maps-btn text-[10px] py-0.5 px-2"
+                      class="maps-btn maps-btn-compact"
                       title="Open in Apple Maps or Google Maps"
                     >
                       <span>📍 Map</span>
                     </button>
                     <button
                       @click.stop="openCalendar(item, activeDay)"
-                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                      class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-1 leading-none"
                       title="Add event to Apple / Google Calendar"
                     >
                       <span>📅 Cal</span>
@@ -1975,15 +1978,25 @@ const DailyPlanner = {
                         </div>
 
                         <!-- Action Badges & Map Button -->
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                          <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                        <div class="action-badges-row">
+                          <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                             💡 SUGGESTED ITINERARY
                           </span>
-                          <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
+                          <span v-if="item.tag" class="px-2.5 py-1 rounded-md text-[10.5px] font-black tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm leading-none">
                             {{ item.tag }}
                           </span>
-                          <span v-if="item.note" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                          <span v-if="item.note" class="px-2.5 py-1 rounded-md text-[10.5px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                             ⏱️ {{ item.note }}
+                          </span>
+                          <!-- Consensus Status Badge -->
+                          <span v-if="item.status === 'confirmed'" class="consensus-badge-confirmed">
+                            🟢 Confirmed
+                          </span>
+                          <span v-else-if="item.status === 'proposed'" class="consensus-badge-proposed">
+                            🟡 Proposed
+                          </span>
+                          <span v-else-if="item.status === 'pruned'" class="consensus-badge-pruned">
+                            🔴 Backup
                           </span>
                           <!-- Consensus Voting Buttons -->
                           <button
@@ -2004,7 +2017,7 @@ const DailyPlanner = {
                           <button
                             v-if="!isItemLocked(item)"
                             @click.stop="toggleHoldItem(item, day)"
-                            class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                            class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
                             title="Put on hold (Move to Day Ideas & Suggestions Box)"
                           >
                             <span>⏸️</span>
@@ -2014,7 +2027,7 @@ const DailyPlanner = {
                           <button
                             v-if="!isItemLocked(item)"
                             @click.stop="removeItem(item, day)"
-                            class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                            class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                             :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                           >
                             🗑️
@@ -2023,14 +2036,14 @@ const DailyPlanner = {
                           <button
                             v-if="item.mapsQuery"
                             @click.stop="openMap(item.mapsQuery)"
-                            class="maps-btn text-[10px] py-0.5 px-2"
+                            class="maps-btn maps-btn-compact"
                             title="Open in Apple Maps or Google Maps"
                           >
                             <span>📍 Map</span>
                           </button>
                           <button
                             @click.stop="openCalendar(item, day)"
-                            class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                            class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-1 leading-none"
                             title="Add event to Apple / Google Calendar"
                           >
                             <span>📅 Cal</span>
@@ -2137,18 +2150,46 @@ const DailyPlanner = {
                       </span>
                     </div>
 
-                    <div class="flex items-center gap-1.5">
-                      <span v-if="item.reserved" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm">
+                    <div class="action-badges-row">
+                      <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                         💡 SUGGESTED ITINERARY
                       </span>
-                      <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
+                      <span v-if="item.tag" class="px-2.5 py-1 rounded-md text-[10.5px] font-black tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm leading-none">
                         {{ item.tag }}
                       </span>
+                      <span v-if="item.note" class="px-2.5 py-1 rounded-md text-[10.5px] font-bold bg-amber-100 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
+                        ⏱️ {{ item.note }}
+                      </span>
+                      <!-- Consensus Status Badge -->
+                      <span v-if="item.status === 'confirmed'" class="consensus-badge-confirmed">
+                        🟢 Confirmed
+                      </span>
+                      <span v-else-if="item.status === 'proposed'" class="consensus-badge-proposed">
+                        🟡 Proposed
+                      </span>
+                      <span v-else-if="item.status === 'pruned'" class="consensus-badge-pruned">
+                        🔴 Backup
+                      </span>
+                      <!-- Consensus Voting Buttons -->
+                      <button
+                        @click.stop="vote(item.id || item.activity, 'up')"
+                        :class="['vote-btn', isVoted(item.id || item.activity, 'up') ? 'active-up' : '']"
+                        title="Upvote / Support this stop"
+                      >
+                        👍 {{ getVotes(item.id || item.activity).up }}
+                      </button>
+                      <button
+                        @click.stop="vote(item.id || item.activity, 'down')"
+                        :class="['vote-btn', isVoted(item.id || item.activity, 'down') ? 'active-down' : '']"
+                        title="Downvote / Flag this stop"
+                      >
+                        👎 {{ getVotes(item.id || item.activity).down }}
+                      </button>
                       <!-- Put on hold (move to suggestions) -->
                       <button
                         v-if="!isItemLocked(item)"
                         @click.stop="toggleHoldItem(item, day)"
-                        class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                        class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
                         title="Put on hold (Move to Day Ideas & Suggestions Box)"
                       >
                         <span>⏸️</span>
@@ -2158,7 +2199,7 @@ const DailyPlanner = {
                       <button
                         v-if="!isItemLocked(item)"
                         @click.stop="removeItem(item, day)"
-                        class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                        class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                         :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                       >
                         🗑️
@@ -2167,14 +2208,14 @@ const DailyPlanner = {
                       <button
                         v-if="item.mapsQuery"
                         @click.stop="openMap(item.mapsQuery)"
-                        class="maps-btn text-[10px] py-0.5 px-2"
+                        class="maps-btn maps-btn-compact"
                         title="Open in Apple Maps or Google Maps"
                       >
                         <span>📍 Map</span>
                       </button>
                       <button
                         @click.stop="openCalendar(item, day)"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center gap-0.5"
+                        class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-purple-200 dark:bg-purple-300 text-purple-950 border border-purple-400 shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-1 leading-none"
                         title="Add event to Apple / Google Calendar"
                       >
                         <span>📅 Cal</span>

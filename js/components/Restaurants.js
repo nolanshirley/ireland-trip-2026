@@ -464,7 +464,7 @@ const Restaurants = {
               <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-pink-200 dark:bg-pink-300 text-pink-950 border border-pink-400">Dublin</span>
             </div>
             <p class="text-xs text-[var(--muted-foreground)] mt-1">
-              Confirmed anchor reservation at <strong>Mister S</strong> (Camden St). High-end wood-fired steaks. <span class="text-pink-600 dark:text-pink-300 font-bold">Strict 24hr cancellation window. Formal attire.</span>
+              Confirmed anchor reservation at <strong>Mister S</strong> (Camden St). High-end wood-fired steaks. <span class="text-pink-950 dark:text-pink-200 font-black">Strict 24hr cancellation window. Formal attire.</span>
             </p>
           </div>
         </div>
@@ -558,7 +558,7 @@ const Restaurants = {
                   ? 'bg-[var(--accent)] text-white shadow'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)]',
                 st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-400 border border-rose-500/30 font-semibold' : '',
-                st.id === 'birthday' && statusFilter !== 'birthday' ? 'text-pink-400 border border-pink-500/30' : ''
+                st.id === 'birthday' && statusFilter !== 'birthday' ? 'text-pink-900 dark:text-pink-300 border border-pink-500/50 font-bold' : ''
               ]"
             >
               {{ st.label }}
