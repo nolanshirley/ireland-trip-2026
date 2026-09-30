@@ -137,30 +137,40 @@
     <div class="loading-progress-bar"></div>
   </div>
 
-  <!-- Fail-Safe Loading Screen Dismissal (Strictly caps loading screen loop to max 1.8s) -->
+  <!-- Fail-Safe Loading Screen Dismissal (Strictly timed to 2.2 seconds) -->
   <script>
     (function() {
+      var startTime = Date.now();
       var isDismissed = false;
-      function dismissAppLoader() {
+      function dismissAppLoader(immediate) {
         if (isDismissed) return;
-        isDismissed = true;
-        var loader = document.getElementById('app-loading-screen');
-        if (loader) {
-          loader.classList.add('app-loaded');
-          setTimeout(function() {
-            if (loader && loader.parentNode) {
-              loader.parentNode.removeChild(loader);
-            }
-          }, 350);
-        }
-        var appEl = document.getElementById('app');
-        if (appEl && appEl.hasAttribute('v-cloak')) {
-          appEl.removeAttribute('v-cloak');
-        }
+        var elapsed = Date.now() - startTime;
+        var minWait = immediate ? 0 : Math.max(0, 2200 - elapsed);
+        setTimeout(function() {
+          if (isDismissed) return;
+          isDismissed = true;
+          var loader = document.getElementById('app-loading-screen');
+          if (loader) {
+            loader.classList.add('app-loaded');
+            setTimeout(function() {
+              if (loader && loader.parentNode) {
+                loader.parentNode.removeChild(loader);
+              }
+            }, 350);
+          }
+          var appEl = document.getElementById('app');
+          if (appEl && appEl.hasAttribute('v-cloak')) {
+            appEl.removeAttribute('v-cloak');
+          }
+        }, minWait);
       }
-      window.__dismissAppLoader = dismissAppLoader;
-      // Hard cap: loading animation is strictly restricted to max ~1.8 seconds under all circumstances
-      setTimeout(dismissAppLoader, 1800);
+      window.__dismissAppLoader = function() {
+        dismissAppLoader(false);
+      };
+      // Hard cap: unconditionally dismisses at exactly 2.2 seconds (2200ms)
+      setTimeout(function() {
+        dismissAppLoader(true);
+      }, 2200);
     })();
   </script>
 
