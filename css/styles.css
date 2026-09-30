@@ -1296,6 +1296,37 @@ body {
   border-radius: 1.25rem;
 }
 
+/* ── Smooth Day Transitions & Floating Navigation FAB ─────────── */
+.day-fade-enter {
+  animation: fadeInSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.floating-quick-fab {
+  position: fixed;
+  bottom: 5.5rem;
+  right: 1.25rem;
+  z-index: 40;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+  .floating-quick-fab {
+    bottom: 2.25rem;
+    right: 2.25rem;
+  }
+}
+
 /* ── Print & Pocket PDF Booklet Stylesheet ───────────────────── */
 @media print {
   body {

@@ -33,7 +33,11 @@ const DailyPlanner = {
       useBoreenBuffer: false, // +20% Irish rural road buffer
       rainSwappedDays: {}, // { [dayIndex]: boolean }
       whoIsInFilter: 'all', // 'all', 'dad', 'mom', 'erin', 'hikers', 'casual'
-      ambientTimeMode: 'auto' // 'auto', 'day', 'sunset', 'night'
+      ambientTimeMode: 'auto', // 'auto', 'day', 'sunset', 'night'
+      isRecapCollapsed: false,
+      isRecapDismissed: false,
+      isDayTransitioning: false,
+      showMobileFabMenu: false
     };
   },
   created() {
@@ -72,6 +76,26 @@ const DailyPlanner = {
     }
   },
   computed: {
+    tripProgressPercent() {
+      if (!this.timeline || !this.timeline.length) return 0;
+      return Math.round(((this.activeCalendarDayIndex + 1) / this.timeline.length) * 100);
+    },
+    totalTripDriveHours() {
+      if (!this.timeline) return 0;
+      return this.timeline.reduce((acc, d) => acc + parseFloat(d.driveHours || 0), 0).toFixed(1);
+    },
+    nextDayPreview() {
+      if (this.activeCalendarDayIndex < this.timeline.length - 1) {
+        return this.timeline[this.activeCalendarDayIndex + 1];
+      }
+      return null;
+    },
+    prevDayPreview() {
+      if (this.activeCalendarDayIndex > 0) {
+        return this.timeline[this.activeCalendarDayIndex - 1];
+      }
+      return null;
+    },
     hoursScale() {
       const hours = [];
       for (let h = this.dayStartHour; h < this.dayEndHour; h++) {
@@ -197,15 +221,29 @@ const DailyPlanner = {
   },
   methods: {
     selectCalendarDay(idx) {
+      if (this.activeCalendarDayIndex === idx) return;
+      this.isDayTransitioning = true;
       this.activeCalendarDayIndex = idx;
       this.expandedDays[idx] = true;
       this.scrollDayStripTo(idx);
+      setTimeout(() => {
+        this.isDayTransitioning = false;
+      }, 350);
       this.$nextTick(() => {
         const el = document.getElementById('active-day-focus-card');
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       });
+    },
+    scrollToTop() {
+      const el = document.getElementById('active-day-focus-card') || document.getElementById('main-tab-nav');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      this.showMobileFabMenu = false;
     },
     scrollDayStripTo(idx) {
       this.$nextTick(() => {
@@ -711,6 +749,30 @@ const DailyPlanner = {
           </div>
         </div>
 
+        <!-- Interactive Trip Progress Bar -->
+        <div class="mb-3 p-3 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-xs space-y-2">
+          <div class="flex items-center justify-between gap-3 flex-wrap text-xs">
+            <div class="flex items-center gap-2 font-bold text-[var(--foreground)]">
+              <span class="text-base">🏆</span>
+              <span>Trip Progress:</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30">
+                Day {{ activeCalendarDayIndex + 1 }} of 13 ({{ tripProgressPercent }}%)
+              </span>
+            </div>
+            <div class="flex items-center gap-3 text-[11px] text-[var(--muted-foreground)] font-semibold">
+              <span>🚗 Total Drive: {{ totalTripDriveHours }}h</span>
+              <span class="opacity-40">·</span>
+              <span>📍 Current Base: <strong class="text-[var(--foreground)]">{{ activeDay.base }}</strong></span>
+            </div>
+          </div>
+          <div class="w-full h-2 rounded-full bg-[var(--background)] border border-[var(--border)] overflow-hidden">
+            <div
+              class="h-full bg-gradient-to-r from-[var(--accent)] via-indigo-500 to-emerald-500 transition-all duration-500 shadow-sm"
+              :style="{ width: tripProgressPercent + '%' }"
+            ></div>
+          </div>
+        </div>
+
         <!-- Interactive 13-Day Calendar Scrubber Bar -->
         <div class="space-y-2 mb-4 pt-3 border-t border-[var(--border)]">
           <div class="flex items-center justify-between gap-2">
@@ -893,7 +955,7 @@ const DailyPlanner = {
       <!-- ============================================================= -->
       <!-- VIEW 1: INTERACTIVE SINGLE-DAY FOCUS VIEW (No Accordion Needed) -->
       <!-- ============================================================= -->
-      <div v-if="plannerLayoutMode === 'day-calendar'" id="active-day-focus-card" class="space-y-4">
+      <div v-if="plannerLayoutMode === 'day-calendar'" id="active-day-focus-card" :class="['space-y-4', { 'day-fade-enter': isDayTransitioning }]">
         
         <!-- Day Navigation Bar -->
         <div class="card p-4 sm:p-5 border-2 border-[var(--accent)]/40 bg-[var(--card)] shadow-lg space-y-4">
@@ -1713,6 +1775,89 @@ const DailyPlanner = {
             ></textarea>
           </div>
 
+          <!-- Interactive Collapsible Daily Recap & Next Day Teaser Banner -->
+          <div v-if="!isRecapDismissed" class="mt-4 p-4 rounded-2xl bg-gradient-to-br from-[var(--card)] to-[var(--background)] border-2 border-[var(--border)] shadow-md space-y-3 transition-all">
+            <!-- Card Header with Title, Progress, and Collapse/Dismiss Controls -->
+            <div class="flex items-center justify-between gap-2 border-b border-[var(--border)] pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">✨</span>
+                <div>
+                  <h3 class="font-extrabold text-sm text-[var(--foreground)] tracking-tight">
+                    Day {{ activeDay.dayNumber }} Recap & Tomorrow's Teaser
+                  </h3>
+                  <p class="text-[11px] text-[var(--muted-foreground)] font-medium">
+                    Base: {{ activeDay.base }} · {{ activeDayItems.length }} Planned Stops · Drive: {{ activeDayDriveHours }}h
+                  </p>
+                </div>
+              </div>
+
+              <!-- Toggle Controls: Collapse / Expand / Dismiss -->
+              <div class="flex items-center gap-1.5 text-xs">
+                <button
+                  @click="isRecapCollapsed = !isRecapCollapsed"
+                  class="px-2.5 py-1 rounded-lg bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] font-bold transition-all flex items-center gap-1 shadow-xs"
+                  :title="isRecapCollapsed ? 'Expand recap & preview' : 'Collapse recap'"
+                >
+                  <span>{{ isRecapCollapsed ? '▼ Show Teaser' : '▲ Hide Teaser' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Body Content (Collapsible) -->
+            <div v-show="!isRecapCollapsed" class="space-y-3 pt-1 animate-fadeIn">
+              <!-- Grid: Current Day Summary vs Tomorrow's Teaser -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <!-- Left Box: Current Day Summary -->
+                <div class="p-3 rounded-xl bg-[var(--card)] border border-[var(--border)] space-y-2">
+                  <div class="flex items-center justify-between font-bold text-[var(--foreground)]">
+                    <span>📊 Day {{ activeDay.dayNumber }} Summary</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 font-extrabold">
+                      Active
+                    </span>
+                  </div>
+                  <ul class="space-y-1 text-[var(--muted-foreground)] font-medium">
+                    <li>🚗 <strong>Route:</strong> {{ activeDayDriveHours }} hrs ({{ activeDay.driveFromTo || 'Base Camp' }})</li>
+                    <li>👔 <strong>Attire:</strong> {{ activeDay.outfit }}</li>
+                    <li v-if="getDayTrails(activeDay.dayNumber).length > 0">
+                      🥾 <strong>Hikes:</strong> {{ getDayTrails(activeDay.dayNumber).map(t => t.name).join(', ') }}
+                    </li>
+                    <li v-if="getDayRestaurants(activeDay.dayNumber).length > 0">
+                      🍴 <strong>Dining:</strong> {{ getDayRestaurants(activeDay.dayNumber).map(r => r.name).join(', ') }}
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Right Box: Upcoming Day (Next Day) Teaser -->
+                <div v-if="nextDayPreview" class="p-3 rounded-xl bg-[var(--accent)]/[0.06] border border-[var(--accent)]/30 space-y-2">
+                  <div class="flex items-center justify-between font-bold text-[var(--foreground)]">
+                    <span class="flex items-center gap-1 text-[var(--accent)]">
+                      <span>⏩ Tomorrow: Day {{ nextDayPreview.dayNumber }}</span>
+                    </span>
+                    <span class="text-[11px] font-mono text-[var(--muted-foreground)]">{{ nextDayPreview.date }}</span>
+                  </div>
+                  <div class="font-extrabold text-sm text-[var(--foreground)]">
+                    📍 Base: {{ nextDayPreview.base }}
+                  </div>
+                  <p class="text-[11px] text-[var(--muted-foreground)] leading-relaxed line-clamp-2">
+                    👔 {{ nextDayPreview.outfit || 'Standard layers & rain shell' }}
+                  </p>
+                  <div class="flex items-center justify-between pt-1 text-[11px]">
+                    <span class="font-semibold text-[var(--foreground)]">🚗 Drive: ~{{ nextDayPreview.driveHours }}h</span>
+                    <button
+                      @click="nextCalendarDay"
+                      class="px-2.5 py-1 rounded-lg bg-[var(--accent)] hover:opacity-90 text-white font-bold transition-all flex items-center gap-1 shadow-sm"
+                    >
+                      <span>Preview Day {{ nextDayPreview.dayNumber }} →</span>
+                    </button>
+                  </div>
+                </div>
+                <div v-else class="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-center text-purple-900 dark:text-purple-300 font-bold">
+                  🎉 Grand Finalé! You've reached the final day of your Ireland adventure!
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Bottom Prev / Next Day Switcher Bar -->
           <div class="flex items-center justify-between gap-3 pt-3 border-t border-[var(--border)] text-xs">
             <button
@@ -2393,6 +2538,52 @@ const DailyPlanner = {
 
           </div>
         </div>
+      </div>
+
+      <!-- Floating Quick Jump FAB (Mobile & Desktop) -->
+      <div class="floating-quick-fab flex flex-col items-end gap-2">
+        <!-- Expanded Menu Pills when FAB clicked -->
+        <div v-if="showMobileFabMenu" class="flex flex-col items-end gap-2 mb-1 animate-fadeIn">
+          <button
+            @click="selectCalendarDay(0); showMobileFabMenu = false;"
+            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
+          >
+            <span>⏮️</span>
+            <span>Jump to Day 1</span>
+          </button>
+          <button
+            v-if="prevDayPreview"
+            @click="prevCalendarDay(); showMobileFabMenu = false;"
+            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
+          >
+            <span>◀</span>
+            <span>Prev (Day {{ activeCalendarDayIndex }})</span>
+          </button>
+          <button
+            v-if="nextDayPreview"
+            @click="nextCalendarDay(); showMobileFabMenu = false;"
+            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--accent)] text-white shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
+          >
+            <span>Next (Day {{ activeCalendarDayIndex + 2 }})</span>
+            <span>▶</span>
+          </button>
+          <button
+            @click="scrollToTop"
+            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
+          >
+            <span>⬆️</span>
+            <span>Back to Top</span>
+          </button>
+        </div>
+
+        <!-- Main Toggle FAB Button -->
+        <button
+          @click="showMobileFabMenu = !showMobileFabMenu"
+          class="w-11 h-11 rounded-full bg-[var(--accent)] hover:opacity-95 text-white font-extrabold shadow-xl border-2 border-white/20 flex items-center justify-center text-base transition-transform active:scale-95"
+          :title="showMobileFabMenu ? 'Close quick jump menu' : 'Quick day jump menu'"
+        >
+          <span>{{ showMobileFabMenu ? '✕' : '🚀' }}</span>
+        </button>
       </div>
 
     </div>
