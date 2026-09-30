@@ -36,6 +36,30 @@ function parseTimeToHour(timeStr) {
   return 10;
 }
 
+function formatHourToTime(decimalHour) {
+  if (decimalHour === undefined || decimalHour === null || isNaN(decimalHour)) return '10:00 AM';
+  let h = Math.floor(decimalHour);
+  let m = Math.round((decimalHour - h) * 60);
+  if (m >= 60) { h += 1; m = 0; }
+  h = Math.min(24, Math.max(0, h));
+  const meridian = (h >= 12 && h < 24) ? 'PM' : 'AM';
+  let displayH = h % 12;
+  if (displayH === 0) displayH = 12;
+  const displayM = m < 10 ? '0' + m : m;
+  return `${displayH}:${displayM} ${meridian}`;
+}
+
+function formatHourTo24Time(decimalHour) {
+  if (decimalHour === undefined || decimalHour === null || isNaN(decimalHour)) return '10:00';
+  let h = Math.floor(decimalHour);
+  let m = Math.round((decimalHour - h) * 60);
+  if (m >= 60) { h += 1; m = 0; }
+  h = Math.min(23, Math.max(0, h));
+  const hh = h < 10 ? '0' + h : h;
+  const mm = m < 10 ? '0' + m : m;
+  return `${hh}:${mm}`;
+}
+
 const TRIP = {
   title: '🍀 Ireland Trip',
   subtitle: 'October 2026 · 4 Regions · 12 Nights · Autumn Weather & Nature Trails',

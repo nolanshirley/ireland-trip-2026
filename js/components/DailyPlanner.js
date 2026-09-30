@@ -441,6 +441,9 @@ const DailyPlanner = {
     onItemClick(item, day) {
       this.$emit('open-detail', { item, day });
     },
+    openEditItem(item, day) {
+      this.$emit('open-detail', { item, day, editMode: true });
+    },
     jumpToTrail(trailId) {
       this.$emit('switch-tab', { tab: 'hiking', targetId: trailId });
     },
@@ -1268,6 +1271,15 @@ const DailyPlanner = {
                         >
                           👎 {{ getVotes(item.id || item.activity).down }}
                         </button>
+                        <!-- 1-Tap Quick Edit Times & Details -->
+                        <button
+                          @click.stop="openEditItem(item, activeDay)"
+                          class="px-2 py-1 rounded-md text-[10.5px] font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-950 dark:text-blue-200 border border-blue-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
+                          title="Edit activity times and details"
+                        >
+                          <span>✏️</span>
+                          <span class="hidden sm:inline">Edit</span>
+                        </button>
                         <!-- Put on hold (move to suggestions) -->
                         <button
                           v-if="!isItemLocked(item)"
@@ -1452,6 +1464,15 @@ const DailyPlanner = {
                       title="Downvote / Flag this stop"
                     >
                       👎 {{ getVotes(item.id || item.activity).down }}
+                    </button>
+                    <!-- 1-Tap Quick Edit Times & Details -->
+                    <button
+                      @click.stop="openEditItem(item, activeDay)"
+                      class="px-2 py-1 rounded-md text-[10.5px] font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-950 dark:text-blue-200 border border-blue-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
+                      title="Edit activity times and details"
+                    >
+                      <span>✏️</span>
+                      <span class="hidden sm:inline">Edit</span>
                     </button>
                     <!-- Put on hold (move to suggestions) -->
                     <button
@@ -2013,6 +2034,15 @@ const DailyPlanner = {
                           >
                             👎 {{ getVotes(item.id || item.activity).down }}
                           </button>
+                          <!-- 1-Tap Quick Edit Times & Details -->
+                          <button
+                            @click.stop="openEditItem(item, day)"
+                            class="px-2 py-1 rounded-md text-[10.5px] font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-950 dark:text-blue-200 border border-blue-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
+                            title="Edit activity times and details"
+                          >
+                            <span>✏️</span>
+                            <span class="hidden sm:inline">Edit</span>
+                          </button>
                           <!-- Put on hold (move to suggestions) -->
                           <button
                             v-if="!isItemLocked(item)"
@@ -2184,6 +2214,15 @@ const DailyPlanner = {
                         title="Downvote / Flag this stop"
                       >
                         👎 {{ getVotes(item.id || item.activity).down }}
+                      </button>
+                      <!-- 1-Tap Quick Edit Times & Details -->
+                      <button
+                        @click.stop="openEditItem(item, day)"
+                        class="px-2 py-1 rounded-md text-[10.5px] font-black bg-blue-500/15 hover:bg-blue-500/25 text-blue-950 dark:text-blue-200 border border-blue-500/40 shadow-sm transition-all flex items-center justify-center gap-1 leading-none"
+                        title="Edit activity times and details"
+                      >
+                        <span>✏️</span>
+                        <span class="hidden sm:inline">Edit</span>
                       </button>
                       <!-- Put on hold (move to suggestions) -->
                       <button

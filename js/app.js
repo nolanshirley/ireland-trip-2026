@@ -349,21 +349,302 @@ const app = createApp({
     const selectedDetailItem = ref(null);
     const selectedDetailDay = ref(null);
     const isDetailModalOpen = ref(false);
+    const isEditingDetailActivity = ref(false);
     const selectedTargetDayIndex = ref(null);
+
+    const detailEditForm = ref({
+      id: '',
+      activity: '',
+      startTime24: '10:00',
+      durHours: 1.5,
+      type: 'sight',
+      energyLevel: 'chill',
+      tag: '',
+      desc: '',
+      note: '',
+      rainBackup: '',
+      mapsQuery: '',
+      splitOption: '',
+      isCustom: false
+    });
+
+    const initDetailEditForm = (item, day) => {
+      if (!item) return;
+      const startH = parseTimeToHour(item.time || item.startHour);
+      let dur = typeof item.durHours === 'number' && !isNaN(item.durHours) ? item.durHours : 1.5;
+      if (item.dur && typeof item.dur === 'string') {
+        const dMatch = item.dur.match(/([\d.]+)\s*hr/i);
+        if (dMatch) dur = parseFloat(dMatch[1]);
+        else {
+          const mMatch = item.dur.match(/(\d+)\s*m/i);
+          if (mMatch) dur = parseFloat(mMatch[1]) / 60;
+        }
+      } else if (item.endHour !== undefined && item.startHour !== undefined) {
+        dur = item.endHour - item.startHour;
+      }
+      
+      detailEditForm.value = {
+        id: item.id || getItemId(item, 'day' + (day ? day.dayNumber : 1)),
+        activity: item.activity || item.title || '',
+        startTime24: formatHourTo24Time(startH),
+        durHours: Math.max(0.25, parseFloat(dur.toFixed(2))),
+        type: item.type || 'sight',
+        energyLevel: item.energyLevel || 'chill',
+        tag: item.tag || '',
+        desc: item.desc || '',
+        note: item.note || '',
+        rainBackup: item.rainBackup || '',
+        mapsQuery: item.mapsQuery || '',
+        splitOption: item.splitOption || '',
+        isCustom: Boolean(item.isCustom)
+      };
+    };
 
     const openDetailModal = (payload) => {
       if (!payload || !payload.item) return;
       selectedDetailItem.value = payload.item;
       selectedDetailDay.value = payload.day || null;
+      initDetailEditForm(payload.item, payload.day);
+      isEditingDetailActivity.value = Boolean(payload.editMode);
       isDetailModalOpen.value = true;
       document.body.style.overflow = 'hidden';
     };
 
     const closeDetailModal = () => {
       isDetailModalOpen.value = false;
+      isEditingDetailActivity.value = false;
       selectedDetailItem.value = null;
       selectedDetailDay.value = null;
       document.body.style.overflow = '';
+    };
+
+    const startEditingDetailActivity = () => {
+      if (selectedDetailItem.value) {
+        initDetailEditForm(selectedDetailItem.value, selectedDetailDay.value);
+        isEditingDetailActivity.value = true;
+      }
+    };
+
+    const cancelEditingDetailActivity = () => {
+      if (selectedDetailItem.value) {
+        initDetailEditForm(selectedDetailItem.value, selectedDetailDay.value);
+      }
+      isEditingDetailActivity.value = false;
+    };
+
+    const detailEditStartHour = computed(() => {
+      if (!detailEditForm.value || !detailEditForm.value.startTime24) return 10;
+      return parseTimeToHour(detailEditForm.value.startTime24);
+    });
+
+    const detailEditEndHour = computed(() => {
+      const start = detailEditStartHour.value;
+      const dur = parseFloat(detailEditForm.value.durHours) || 1.5;
+      return start + Math.max(0.25, dur);
+    });
+
+    const detailEditFormattedTime = computed(() => {
+      return `${formatHourToTime(detailEditStartHour.value)} – ${formatHourToTime(detailEditEndHour.value)}`;
+    });
+
+    const detailScheduleConflicts = computed(() => {
+      if (!selectedDetailDay.value || !detailEditForm.value || !isEditingDetailActivity.value) return [];
+      const currentId = detailEditForm.value.id;
+      const dayIdx = selectedDetailDay.value.dayNumber ? selectedDetailDay.value.dayNumber - 1 : 0;
+      const day = timelineList.value[dayIdx];
+      if (!day || !day.items) return [];
+
+      const newStart = detailEditStartHour.value;
+      const newEnd = detailEditEndHour.value;
+
+      const conflicts = [];
+      day.items.forEach(other => {
+        if (other.id === currentId) return;
+        const otherStart = parseTimeToHour(other.time || other.startHour);
+        let otherDur = typeof other.durHours === 'number' && !isNaN(other.durHours) ? other.durHours : 1.5;
+        if (other.dur && typeof other.dur === 'string') {
+          const dMatch = other.dur.match(/([\d.]+)\s*hr/i);
+          if (dMatch) otherDur = parseFloat(dMatch[1]);
+          else {
+            const mMatch = other.dur.match(/(\d+)\s*m/i);
+            if (mMatch) otherDur = parseFloat(mMatch[1]) / 60;
+          }
+        }
+        const otherEnd = otherStart + Math.max(0.25, otherDur);
+
+        // Check if there is an overlap
+        const overlapStart = Math.max(newStart, otherStart);
+        const overlapEnd = Math.min(newEnd, otherEnd);
+        if (overlapEnd - overlapStart > 0.05) { // more than 3 mins overlap
+          const overlapMins = Math.round((overlapEnd - overlapStart) * 60);
+          conflicts.push({
+            otherId: other.id,
+            otherActivity: other.activity || other.title || 'Stop',
+            otherStart,
+            otherEnd,
+            overlapMins,
+            isOtherAfter: otherStart >= newStart,
+            message: `"${other.activity || 'Activity'}" (${formatHourToTime(otherStart)} – ${formatHourToTime(otherEnd)}) overlaps by ${overlapMins} mins`
+          });
+        }
+      });
+
+      return conflicts;
+    });
+
+    const isDetailSunsetHazard = computed(() => {
+      if (!selectedDetailDay.value || !detailEditForm.value) return false;
+      const dNum = selectedDetailDay.value.dayNumber || 1;
+      const dl = (typeof daylightData !== 'undefined' && daylightData[dNum]) || { sunsetHour: 18.58, sunset: '18:35' };
+      const endH = detailEditEndHour.value;
+      return endH > dl.sunsetHour;
+    });
+
+    const autoShiftFollowingStops = () => {
+      if (!selectedDetailDay.value || !detailEditForm.value) return;
+      const currentId = detailEditForm.value.id;
+      const dayIdx = selectedDetailDay.value.dayNumber ? selectedDetailDay.value.dayNumber - 1 : 0;
+      const day = timelineList.value[dayIdx];
+      if (!day || !day.items) return;
+
+      const myEnd = detailEditEndHour.value;
+      const buffer = 10 / 60; // 10 minute buffer
+      let nextTargetStart = myEnd + buffer;
+
+      const sortedOthers = [...day.items]
+        .filter(item => item.id !== currentId)
+        .sort((a, b) => parseTimeToHour(a.time || a.startHour) - parseTimeToHour(b.time || b.startHour));
+
+      let shiftCount = 0;
+      sortedOthers.forEach(other => {
+        const oStart = parseTimeToHour(other.time || other.startHour);
+        let oDur = typeof other.durHours === 'number' && !isNaN(other.durHours) ? other.durHours : 1.5;
+        if (other.dur && typeof other.dur === 'string') {
+          const dMatch = other.dur.match(/([\d.]+)\s*hr/i);
+          if (dMatch) oDur = parseFloat(dMatch[1]);
+          else {
+            const mMatch = other.dur.match(/(\d+)\s*m/i);
+            if (mMatch) oDur = parseFloat(mMatch[1]) / 60;
+          }
+        }
+        
+        // If other stop is scheduled to follow our activity but now overlaps or starts too early:
+        if (oStart < nextTargetStart && oStart >= detailEditStartHour.value - 0.25) {
+          const updatedOStart = nextTargetStart;
+          const updatedOEnd = updatedOStart + oDur;
+          const updatedTimeStr = `${formatHourToTime(updatedOStart)} – ${formatHourToTime(updatedOEnd)}`;
+          const durStr = oDur >= 1 ? (oDur % 1 === 0 ? `${oDur}h` : `${oDur} hrs`) : `${Math.round(oDur * 60)}m`;
+          
+          const updatedOther = {
+            ...other,
+            time: updatedTimeStr,
+            startHour: updatedOStart,
+            endHour: updatedOEnd,
+            dur: durStr,
+            durHours: oDur,
+            dayIndex: dayIdx,
+            dayNumber: dayIdx + 1,
+            isCustom: true
+          };
+          
+          const existingIdx = customActivities.value.findIndex(a => a.id === other.id);
+          if (existingIdx >= 0) {
+            customActivities.value[existingIdx] = updatedOther;
+          } else {
+            customActivities.value.push(updatedOther);
+          }
+          
+          nextTargetStart = updatedOEnd + buffer;
+          shiftCount++;
+        } else if (oStart >= nextTargetStart) {
+          nextTargetStart = Math.max(nextTargetStart, oStart + oDur + buffer);
+        }
+      });
+
+      saveCustomActivities();
+      showToast(`Auto-shifted ${shiftCount} subsequent stop${shiftCount === 1 ? '' : 's'} on Day ${dayIdx + 1}`, '⚡');
+    };
+
+    const snapToNextFreeSlot = () => {
+      if (!selectedDetailDay.value || !detailEditForm.value) return;
+      const currentId = detailEditForm.value.id;
+      const dayIdx = selectedDetailDay.value.dayNumber ? selectedDetailDay.value.dayNumber - 1 : 0;
+      const day = timelineList.value[dayIdx];
+      if (!day || !day.items) return;
+
+      const dur = parseFloat(detailEditForm.value.durHours) || 1.5;
+      const sortedOthers = [...day.items]
+        .filter(item => item.id !== currentId)
+        .sort((a, b) => parseTimeToHour(a.time || a.startHour) - parseTimeToHour(b.time || b.startHour));
+
+      let candidateStart = 8.5; // Default morning slot 8:30 AM
+      for (const other of sortedOthers) {
+        const oStart = parseTimeToHour(other.time || other.startHour);
+        let oDur = typeof other.durHours === 'number' && !isNaN(other.durHours) ? other.durHours : 1.5;
+        if (other.dur && typeof other.dur === 'string') {
+          const dMatch = other.dur.match(/([\d.]+)\s*hr/i);
+          if (dMatch) oDur = parseFloat(dMatch[1]);
+        }
+        const oEnd = oStart + oDur;
+
+        if (candidateStart + dur <= oStart - 0.1) {
+          break; // Gap found before this stop
+        } else {
+          candidateStart = Math.max(candidateStart, oEnd + (10 / 60)); // 10 min buffer
+        }
+      }
+
+      detailEditForm.value.startTime24 = formatHourTo24Time(candidateStart);
+      showToast(`Aligned start time to open slot: ${formatHourToTime(candidateStart)}`, '⏱️');
+    };
+
+    const saveDetailActivity = () => {
+      if (!selectedDetailDay.value || !detailEditForm.value) return;
+      if (!detailEditForm.value.activity.trim()) {
+        alert('Please enter an activity name');
+        return;
+      }
+
+      const dayIdx = selectedDetailDay.value.dayNumber ? selectedDetailDay.value.dayNumber - 1 : 0;
+      const startH = detailEditStartHour.value;
+      const durH = parseFloat(detailEditForm.value.durHours) || 1.5;
+      const endH = startH + durH;
+      const timeStr = `${formatHourToTime(startH)} – ${formatHourToTime(endH)}`;
+      const durStr = durH >= 1 ? (durH % 1 === 0 ? `${durH}h` : `${durH} hrs`) : `${Math.round(durH * 60)}m`;
+
+      const updatedItem = {
+        ...selectedDetailItem.value,
+        id: detailEditForm.value.id,
+        dayIndex: dayIdx,
+        dayNumber: dayIdx + 1,
+        activity: detailEditForm.value.activity.trim(),
+        time: timeStr,
+        startHour: startH,
+        endHour: endH,
+        dur: durStr,
+        durHours: durH,
+        type: detailEditForm.value.type,
+        energyLevel: detailEditForm.value.energyLevel,
+        tag: detailEditForm.value.tag.trim(),
+        desc: detailEditForm.value.desc.trim(),
+        note: detailEditForm.value.note.trim(),
+        rainBackup: detailEditForm.value.rainBackup.trim(),
+        mapsQuery: detailEditForm.value.mapsQuery.trim(),
+        splitOption: detailEditForm.value.splitOption.trim(),
+        isCustom: true
+      };
+
+      const existingIdx = customActivities.value.findIndex(a => a.id === updatedItem.id);
+      if (existingIdx >= 0) {
+        customActivities.value[existingIdx] = updatedItem;
+      } else {
+        customActivities.value.push(updatedItem);
+      }
+      saveCustomActivities();
+
+      selectedDetailItem.value = updatedItem;
+      isEditingDetailActivity.value = false;
+      showToast(`Updated "${updatedItem.activity}" (${updatedItem.time})`, '💾');
     };
 
     const isDetailItemOnHold = computed(() => {
@@ -2475,6 +2756,19 @@ const app = createApp({
       selectedDetailDay,
       selectedTargetDayIndex,
       isDetailModalOpen,
+      isEditingDetailActivity,
+      detailEditForm,
+      detailEditStartHour,
+      detailEditEndHour,
+      detailEditFormattedTime,
+      detailScheduleConflicts,
+      isDetailSunsetHazard,
+      autoShiftFollowingStops,
+      snapToNextFreeSlot,
+      saveDetailActivity,
+      startEditingDetailActivity,
+      cancelEditingDetailActivity,
+      formatHourToTime,
       openDetailModal,
       closeDetailModal,
       isDetailItemOnHold,
