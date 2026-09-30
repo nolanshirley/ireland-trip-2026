@@ -273,10 +273,10 @@ const Reservations = {
             >
               <span>➕ Add Booking / Pass</span>
             </button>
-            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-500/20 font-bold">
               ✅ {{ confirmedCount }} Confirmed / Booked
             </span>
-            <span class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
+            <span class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-500/20 font-semibold">
               ⚠️ {{ strictCancelCount }} Strict Deadlines
             </span>
           </div>
@@ -303,7 +303,7 @@ const Reservations = {
                 ? 'bg-[var(--accent)] text-white shadow-sm'
                 : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
               flt.id === 'birthdays' && statusFilter !== 'birthdays' ? 'text-pink-900 dark:text-pink-300 border border-pink-500/50 font-bold' : '',
-              flt.id === 'strict-cancellation' && statusFilter !== 'strict-cancellation' ? 'text-amber-400 border border-amber-500/30' : ''
+              flt.id === 'strict-cancellation' && statusFilter !== 'strict-cancellation' ? 'text-amber-800 dark:text-amber-400 border border-amber-500/30' : ''
             ]"
           >
             {{ flt.label }}
@@ -381,7 +381,7 @@ const Reservations = {
                   <button
                     v-if="r.restaurantId"
                     @click="jumpToRestaurant(r.restaurantId)"
-                    class="text-[11px] text-amber-400 hover:underline font-semibold mt-1 inline-block"
+                    class="text-[11px] text-amber-800 dark:text-amber-400 hover:underline font-semibold mt-1 inline-block"
                   >
                     View Restaurant Profile →
                   </button>
@@ -435,7 +435,7 @@ const Reservations = {
                     <button
                       v-if="r.isCustom"
                       @click.stop="deleteCustomReservation(r.id)"
-                      class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
+                      class="text-[11px] text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-bold px-1"
                       title="Delete this custom booking"
                     >
                       🗑️
@@ -463,7 +463,7 @@ const Reservations = {
                         {{ copiedCodeName === r.name ? '✓' : '📋' }}
                       </button>
                     </div>
-                    <div v-if="copiedCodeName === r.name" class="text-[10px] text-emerald-400 font-bold">
+                    <div v-if="copiedCodeName === r.name" class="text-[10px] text-emerald-800 dark:text-emerald-400 font-bold">
                       Copied!
                     </div>
                   </div>
@@ -471,7 +471,7 @@ const Reservations = {
 
                 <!-- Cancellation Policy & User Notes -->
                 <td class="py-3 px-3 text-xs space-y-1.5 align-top">
-                  <div v-if="r.cancelPolicy" class="text-amber-400 font-medium">
+                  <div v-if="r.cancelPolicy" class="text-amber-800 dark:text-amber-400 font-medium">
                     ⚠️ {{ r.cancelPolicy }}
                   </div>
                   <div v-if="r.notes" class="text-[var(--muted-foreground)]">

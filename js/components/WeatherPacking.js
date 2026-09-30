@@ -122,13 +122,13 @@ const WeatherPacking = {
           <!-- Quick Stat Badges -->
           <div class="flex items-center gap-2.5 flex-wrap text-xs">
             <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold shadow-sm">
-              🌡️ Temps: <span class="text-emerald-500 dark:text-emerald-400 font-bold">8°C – 15°C (46°F – 59°F)</span>
+              🌡️ Temps: <span class="text-emerald-700 dark:text-emerald-400 font-bold">8°C – 15°C (46°F – 59°F)</span>
             </div>
             <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold shadow-sm">
-              🌅 Daylight: <span class="text-amber-600 dark:text-amber-400 font-bold">~10.5 hrs (Sunrise 7:45 AM)</span>
+              🌅 Daylight: <span class="text-amber-700 dark:text-amber-400 font-bold">~10.5 hrs (Sunrise 7:45 AM)</span>
             </div>
             <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold shadow-sm">
-              💨 Winds: <span class="text-blue-500 dark:text-blue-400 font-bold">15–40 km/h (Gale gusts on cliffs)</span>
+              💨 Winds: <span class="text-blue-700 dark:text-blue-400 font-bold">15–40 km/h (Gale gusts on cliffs)</span>
             </div>
           </div>
         </div>
@@ -200,7 +200,7 @@ const WeatherPacking = {
             }"
           >
             <h4 class="font-bold text-sm text-[var(--foreground)] leading-snug">{{ reg.region }}</h4>
-            <div class="text-xs font-mono font-bold text-emerald-400">🌡️ {{ reg.highLow }}</div>
+            <div class="text-xs font-mono font-bold text-emerald-800 dark:text-emerald-400">🌡️ {{ reg.highLow }}</div>
             <p class="text-xs text-[var(--muted-foreground)] leading-relaxed">
               {{ reg.conditions }}
             </p>
@@ -272,7 +272,7 @@ const WeatherPacking = {
                   <td class="py-2.5 px-3 text-xs text-[var(--muted-foreground)] whitespace-nowrap">
                     {{ day.region }}
                   </td>
-                  <td class="py-2.5 px-2 text-center font-mono text-xs font-semibold text-emerald-400 whitespace-nowrap">
+                  <td class="py-2.5 px-2 text-center font-mono text-xs font-semibold text-emerald-800 dark:text-emerald-400 whitespace-nowrap">
                     {{ day.tempHigh }}
                     <span class="text-[10px] text-[var(--muted-foreground)] block">{{ day.tempLow }}</span>
                   </td>
@@ -281,8 +281,8 @@ const WeatherPacking = {
                       :class="[
                         'px-2 py-0.5 rounded-full text-[11px] font-bold',
                         parseInt(day.rainProb) >= 50
-                          ? 'bg-blue-500/20 text-blue-400'
-                          : 'bg-zinc-500/15 text-zinc-400'
+                          ? 'bg-blue-500/20 text-blue-900 dark:text-blue-300'
+                          : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-200'
                       ]"
                     >
                       💧 {{ day.rainProb }}
@@ -333,7 +333,7 @@ const WeatherPacking = {
               :key="itIdx"
               class="flex items-start gap-2 text-[var(--foreground)] leading-relaxed"
             >
-              <span class="text-emerald-400 font-bold mt-0.5">✓</span>
+              <span class="text-emerald-800 dark:text-emerald-400 font-bold mt-0.5">✓</span>
               <span :class="item.includes('⚠️') ? 'text-amber-900 dark:text-amber-300 font-bold' : ''">{{ item }}</span>
             </li>
           </ul>
@@ -358,7 +358,7 @@ const WeatherPacking = {
           <div class="flex flex-col sm:items-end gap-1.5">
             <div class="flex items-center gap-2 text-xs">
               <span class="font-bold text-[var(--foreground)]">{{ packedCount }} of {{ checklist.length }} Packed</span>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 border border-emerald-500/30">
                 {{ packedPercentage }}%
               </span>
             </div>
@@ -409,7 +409,7 @@ const WeatherPacking = {
             </button>
             <button
               @click="resetChecklist"
-              class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-medium transition-colors"
+              class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-800 dark:text-rose-400 font-medium transition-colors"
               title="Reset entire checklist"
             >
               🔄 Reset
@@ -418,7 +418,7 @@ const WeatherPacking = {
         </div>
 
         <!-- 100% Packed Congratulations Banner -->
-        <div v-if="packedPercentage === 100" class="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 flex items-center gap-3">
+        <div v-if="packedPercentage === 100" class="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-950 dark:text-emerald-200 flex items-center gap-3">
           <span class="text-3xl">🎉</span>
           <div>
             <div class="font-bold text-sm">All Packed & Ready for Ireland!</div>
@@ -452,7 +452,7 @@ const WeatherPacking = {
                 <div class="text-[10px] text-[var(--muted-foreground)] mt-0.5 font-medium">{{ item.cat }}</div>
               </div>
             </div>
-            <span v-if="item.packed" class="text-[10px] font-bold text-emerald-400 uppercase flex-shrink-0 px-2 py-0.5 rounded bg-emerald-500/15">
+            <span v-if="item.packed" class="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase flex-shrink-0 px-2 py-0.5 rounded bg-emerald-500/15">
               Packed
             </span>
           </div>

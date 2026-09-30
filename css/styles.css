@@ -12,13 +12,13 @@
 
 /* ── CSS Custom Properties (Chill Crisp Light Base) ─────────── */
 :root {
-  --background:        #f8fafc;
+  --background:        #ffffff;
   --foreground:        #090d16;
   --card:              #ffffff;
   --card-foreground:   #090d16;
-  --card-hover:        #f1f5f9;
+  --card-hover:        #f8fafc;
   --border:            #e2e8f0;
-  --muted-foreground:  #475569;
+  --muted-foreground:  #1e293b;
   --accent:            #0284c7;
   --accent-glow:       rgba(2, 132, 199, 0.25);
   --accent-secondary:  #4f46e5;
@@ -52,12 +52,12 @@
 
 /* ── Palette 1: Monochrome & Ice Blue (Default Chill Master) ─── */
 .theme-monochrome {
-  --background:        #f8fafc;
+  --background:        #ffffff;
   --foreground:        #090d16;
   --card:              #ffffff;
-  --card-hover:        #f1f5f9;
+  --card-hover:        #f8fafc;
   --border:            #e2e8f0;
-  --muted-foreground:  #475569;
+  --muted-foreground:  #1e293b;
   --accent:            #0284c7;
   --accent-glow:       rgba(2, 132, 199, 0.25);
   --accent-secondary:  #4f46e5;
@@ -76,12 +76,12 @@
 
 /* ── Palette 2: Glacier Cyan & Arctic Slate ──────────────────── */
 .theme-glacier {
-  --background:        #f0f9ff;
+  --background:        #ffffff;
   --foreground:        #082f49;
   --card:              #ffffff;
-  --card-hover:        #e0f2fe;
+  --card-hover:        #f0f9ff;
   --border:            #bae6fd;
-  --muted-foreground:  #0369a1;
+  --muted-foreground:  #0c4a6e;
   --accent:            #0284c7;
   --accent-glow:       rgba(2, 132, 199, 0.28);
   --accent-secondary:  #06b6d4;
@@ -100,12 +100,12 @@
 
 /* ── Palette 3: Nordic Twilight & Lavender ───────────────────── */
 .theme-twilight {
-  --background:        #faf5ff;
+  --background:        #ffffff;
   --foreground:        #2e1065;
   --card:              #ffffff;
-  --card-hover:        #f3e8ff;
+  --card-hover:        #faf5ff;
   --border:            #e9d5ff;
-  --muted-foreground:  #6b21a8;
+  --muted-foreground:  #581c87;
   --accent:            #7c3aed;
   --accent-glow:       rgba(124, 58, 237, 0.25);
   --accent-secondary:  #a855f7;
@@ -124,12 +124,12 @@
 
 /* ── Palette 4: Muted Sage & Celtic Slate (Gentle Earthy Pine) ─ */
 .theme-sage {
-  --background:        #f4f8f6;
+  --background:        #ffffff;
   --foreground:        #0f2e22;
   --card:              #ffffff;
-  --card-hover:        #e6f0eb;
+  --card-hover:        #f4f8f6;
   --border:            #c8ded4;
-  --muted-foreground:  #2d6a4f;
+  --muted-foreground:  #14532d;
   --accent:            #0d9488;
   --accent-glow:       rgba(13, 148, 136, 0.25);
   --accent-secondary:  #059669;
@@ -148,10 +148,10 @@
 
 /* ── Palette 5: Roasted Malt & Golden Amber ──────────────────── */
 .theme-amber {
-  --background:        #fdfbf7;
+  --background:        #ffffff;
   --foreground:        #292524;
   --card:              #ffffff;
-  --card-hover:        #fef3c7;
+  --card-hover:        #fdfbf7;
   --border:            #fde68a;
   --muted-foreground:  #78350f;
   --accent:            #d97706;
@@ -180,7 +180,7 @@
   --accent:            #18181b;
   --accent-glow:       rgba(24, 24, 27, 0.25);
   --accent-secondary:  #3f3f46;
-  --muted-foreground:  #52525b;
+  --muted-foreground:  #18181b;
 }
 .dark.theme-pure-black {
   --background:        #000000;
@@ -376,6 +376,12 @@ body {
 }
 
 .block-free {
+  background: rgba(100, 116, 139, 0.14);
+  color: #0f172a;
+  border: 1px dashed #64748b;
+  font-weight: 800;
+}
+.dark .block-free {
   background: rgba(100, 116, 139, 0.25);
   color: #cbd5e1;
   border: 1px dashed #64748b;
@@ -562,6 +568,41 @@ body {
 }
 :root:not(.dark) .text-pink-300 {
   color: #9d174d !important;
+}
+
+/* ── Global High-Contrast Text Enforcement for Light Mode (Crisp & Readable) ── */
+:root:not(.dark) .text-emerald-400 {
+  color: #065f46 !important; /* emerald-800: sharp readable forest green */
+}
+:root:not(.dark) .text-amber-400 {
+  color: #78350f !important; /* amber-900: rich readable warm amber */
+}
+:root:not(.dark) .text-blue-400 {
+  color: #1e40af !important; /* blue-800: rich readable navy/royal blue */
+}
+:root:not(.dark) .text-red-400,
+:root:not(.dark) .text-rose-400 {
+  color: #9f1239 !important; /* rose-800: deep readable crimson */
+}
+:root:not(.dark) .text-purple-400,
+:root:not(.dark) .text-purple-300 {
+  color: #581c87 !important; /* purple-900: deep readable violet */
+}
+:root:not(.dark) .text-indigo-400 {
+  color: #3730a3 !important; /* indigo-800: deep readable indigo */
+}
+:root:not(.dark) .text-zinc-400,
+:root:not(.dark) .text-zinc-500 {
+  color: #18181b !important; /* zinc-900: sharp dark zinc */
+}
+
+/* Ensure light mode subcontainers and nested cards stay crisp white, never muddy */
+:root:not(.dark) .bg-\[var\(--background\)\] {
+  background-color: #ffffff !important;
+}
+
+:root:not(.dark) .daylight-track {
+  background: #cbd5e1 !important;
 }
 
 .tag-highlight-purple, .badge-purple {

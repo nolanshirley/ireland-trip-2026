@@ -497,7 +497,7 @@ const BudgetTracker = {
           <div class="flex items-center gap-2 flex-wrap">
             <button
               @click="resetBudgetInputs"
-              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--background)] hover:bg-[var(--card-hover)] text-rose-400 border border-[var(--border)] transition-all flex items-center gap-1"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--background)] hover:bg-[var(--card-hover)] text-rose-700 dark:text-rose-400 border border-[var(--border)] transition-all flex items-center gap-1"
               title="Reset all inputs to zero"
             >
               <span>🔄</span>
@@ -906,7 +906,7 @@ const BudgetTracker = {
             <button
               v-if="allExpenses.length > 0"
               @click="clearAllCustomExpenses"
-              class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all"
+              class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-all"
               title="Clear all logged items"
             >
               <span>🗑️ Clear</span>
@@ -1093,7 +1093,7 @@ const BudgetTracker = {
                 <td class="py-2.5 px-2 text-center">
                   <button
                     @click="deleteExpense(e.id)"
-                    class="text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                    class="text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
                     title="Delete expense"
                   >
                     🗑️

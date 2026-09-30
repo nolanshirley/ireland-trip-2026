@@ -219,7 +219,7 @@ const Distances = {
                 <td class="py-3 px-3 text-right whitespace-nowrap">
                   <button
                     @click="openRoute(d)"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all shadow-sm"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-500/15 text-blue-800 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-all shadow-sm"
                     title="Open Driving Directions"
                   >
                     <span>🚗 Route</span>

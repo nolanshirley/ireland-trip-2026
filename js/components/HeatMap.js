@@ -257,7 +257,7 @@ const HeatMap = {
                   <button
                     v-if="getScheduleLink(att.name)"
                     @click="jumpToSchedule(getScheduleLink(att.name))"
-                    class="px-2 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-all"
+                    class="px-2 py-1 rounded-lg text-xs font-bold bg-purple-500/15 text-purple-800 dark:text-purple-300 border border-purple-500/30 hover:bg-purple-500/25 transition-all"
                     title="View this attraction in the itinerary schedule"
                   >
                     📅 Day {{ getScheduleLink(att.name).dayNumber }}

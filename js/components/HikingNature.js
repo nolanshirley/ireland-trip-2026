@@ -291,7 +291,7 @@ const HikingNature = {
             >
               <span>➕ Add Trail</span>
             </button>
-            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-500/20 font-bold">
               💡 {{ suggestedCount }} Suggested Trails
             </span>
             <span class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold">
@@ -360,8 +360,8 @@ const HikingNature = {
                 statusFilter === st.id
                   ? 'bg-[var(--accent)] text-white shadow-sm'
                   : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
-                st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-400 border border-rose-500/30' : '',
-                st.id === 'completed' && statusFilter !== 'completed' ? 'text-emerald-400 border border-emerald-500/30' : ''
+                st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-700 dark:text-rose-400 border border-rose-500/30' : '',
+                st.id === 'completed' && statusFilter !== 'completed' ? 'text-emerald-800 dark:text-emerald-400 border border-emerald-500/30' : ''
               ]"
             >
               {{ st.label }}
@@ -426,7 +426,7 @@ const HikingNature = {
             <button
               v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all' || sortBy !== 'itinerary' || searchQuery.trim()"
               @click="resetAllFilters"
-              class="text-xs text-rose-400 hover:text-rose-300 font-semibold self-start sm:self-auto"
+              class="text-xs text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-semibold self-start sm:self-auto"
             >
               ✕ Reset All Filters
             </button>
@@ -510,7 +510,7 @@ const HikingNature = {
                 <!-- Delete/Remove trail button -->
                 <button
                   @click.stop="removeTrail(trail)"
-                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                  class="text-[11px] text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
                   :title="trail.isCustom ? 'Delete this custom trail' : 'Remove trail from guide (can be restored anytime)'"
                 >
                   🗑️
@@ -556,11 +556,11 @@ const HikingNature = {
               </div>
               <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]">
                 <div class="text-[10px] text-[var(--muted-foreground)]">Elevation</div>
-                <div class="font-mono font-bold text-emerald-400">{{ trail.elevGain }}</div>
+                <div class="font-mono font-bold text-emerald-800 dark:text-emerald-400">{{ trail.elevGain }}</div>
               </div>
               <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]">
                 <div class="text-[10px] text-[var(--muted-foreground)]">Duration</div>
-                <div class="font-mono font-bold text-blue-400">{{ trail.duration }}</div>
+                <div class="font-mono font-bold text-blue-800 dark:text-blue-400">{{ trail.duration }}</div>
               </div>
               <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)] flex flex-col justify-center">
                 <div class="text-[10px] text-[var(--muted-foreground)]">Difficulty</div>
@@ -578,7 +578,7 @@ const HikingNature = {
             <!-- Terrain Surface & Gear Info -->
             <div class="space-y-1.5 text-xs text-[var(--muted-foreground)] pt-2 border-t border-[var(--border)]">
               <div><strong>🪨 Surface:</strong> {{ trail.surface }}</div>
-              <div><strong>🥾 Required Footwear & Gear:</strong> <span class="text-emerald-400 font-medium">{{ trail.gear }}</span></div>
+              <div><strong>🥾 Required Footwear & Gear:</strong> <span class="text-emerald-800 dark:text-emerald-400 font-medium">{{ trail.gear }}</span></div>
             </div>
 
             <!-- Rain Backup Callout -->

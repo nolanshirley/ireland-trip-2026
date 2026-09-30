@@ -557,7 +557,7 @@ const Restaurants = {
                 statusFilter === st.id
                   ? 'bg-[var(--accent)] text-white shadow'
                   : 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)]',
-                st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-400 border border-rose-500/30 font-semibold' : '',
+                st.id === 'favorites' && statusFilter !== 'favorites' ? 'text-rose-700 dark:text-rose-400 border border-rose-500/30 font-semibold' : '',
                 st.id === 'birthday' && statusFilter !== 'birthday' ? 'text-pink-900 dark:text-pink-300 border border-pink-500/50 font-bold' : ''
               ]"
             >
@@ -622,7 +622,7 @@ const Restaurants = {
           <button
             v-if="selectedCity !== 'all' || selectedCuisine !== 'all' || statusFilter !== 'all' || sortBy !== 'route' || searchQuery.trim()"
             @click="resetFilters"
-            class="text-xs text-rose-400 hover:text-rose-300 font-semibold self-start sm:self-auto"
+            class="text-xs text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-semibold self-start sm:self-auto"
           >
             ✕ Reset All Filters
           </button>
@@ -716,7 +716,7 @@ const Restaurants = {
                 <button
                   v-if="!isRestaurantMandatory(r)"
                   @click.stop="removeRestaurant(r)"
-                  class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                  class="text-[11px] text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
                   :title="r.isCustom ? 'Delete this custom spot' : 'Remove restaurant from guide (can be restored anytime)'"
                 >
                   🗑️
@@ -765,7 +765,7 @@ const Restaurants = {
               <div class="flex items-center justify-between">
                 <div class="text-[11px] font-semibold text-[var(--foreground)] flex items-center gap-1">
                   <span>⭐ Rating:</span>
-                  <span class="text-amber-400 font-bold text-xs">
+                  <span class="text-amber-800 dark:text-amber-400 font-bold text-xs">
                     {{ getRating(r) > 0 ? getRating(r) + '/5' : 'Unrated' }}
                   </span>
                 </div>
@@ -776,7 +776,7 @@ const Restaurants = {
                     :key="s"
                     @click.stop="setRating(r, s)"
                     class="transition-transform hover:scale-125"
-                    :class="s <= getRating(r) ? 'text-amber-400' : 'text-zinc-600 hover:text-amber-300'"
+                    :class="s <= getRating(r) ? 'text-amber-500 dark:text-amber-400' : 'text-zinc-400 hover:text-amber-500'"
                     :title="'Rate ' + s + ' stars'"
                   >
                     ★
@@ -804,7 +804,7 @@ const Restaurants = {
                   <div class="font-bold text-[var(--foreground)] truncate text-[11px]">
                     {{ getMenu(r).fileName || 'Menu Document' }}
                   </div>
-                  <div class="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <div class="text-[10px] text-emerald-800 dark:text-emerald-400 font-semibold flex items-center gap-1">
                     <span>✓ Offline Menu Document</span>
                   </div>
                 </div>
@@ -834,14 +834,14 @@ const Restaurants = {
                   </button>
                   <button
                     @click.stop="downloadMenu(r)"
-                    class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 font-bold text-[11px] flex items-center gap-1 transition-colors shadow-sm"
+                    class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30 font-bold text-[11px] flex items-center gap-1 transition-colors shadow-sm"
                     title="Download menu file to your device"
                   >
                     <span>📥 Save</span>
                   </button>
                   <button
                     @click.stop="removeMenu(r)"
-                    class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
+                    class="text-[11px] text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
                     title="Remove attached menu"
                   >
                     🗑️
@@ -862,9 +862,9 @@ const Restaurants = {
           </div>
 
           <!-- Bottom: Booking Time/Details if present -->
-          <div v-if="r.bookingTime || r.booked" class="pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-emerald-400 font-medium">
+          <div v-if="r.bookingTime || r.booked" class="pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-400 font-semibold">
             <span>📅 {{ r.bookingTime || 'Reservation Active' }}</span>
-            <span v-if="r.cancelPolicy" class="text-[10px] text-amber-400 font-semibold">⚠️ {{ r.cancelPolicy }}</span>
+            <span v-if="r.cancelPolicy" class="text-[10px] text-amber-800 dark:text-amber-400 font-semibold">⚠️ {{ r.cancelPolicy }}</span>
           </div>
         </div>
       </div>

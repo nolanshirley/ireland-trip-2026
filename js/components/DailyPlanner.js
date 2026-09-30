@@ -625,7 +625,7 @@ const DailyPlanner = {
                 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
                 globalRainMode
                   ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/40 font-extrabold'
-                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/40'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-800 dark:text-amber-400 border-amber-500/40'
               ]"
               title="Toggle Rain Contingency Plans for all 13 days"
             >
@@ -815,27 +815,27 @@ const DailyPlanner = {
             <span class="font-bold text-[var(--foreground)] text-[11px] uppercase tracking-wider">Key:</span>
             <div class="flex items-center gap-1">
               <span class="w-2.5 h-2.5 rounded block-reserved"></span>
-              <span class="font-semibold text-rose-400 text-[11px]">Bookings & Schedule</span>
+              <span class="font-semibold text-rose-800 dark:text-rose-400 text-[11px]">Bookings & Schedule</span>
             </div>
             <div class="flex items-center gap-1">
               <span class="w-2.5 h-2.5 rounded block-anchor"></span>
-              <span class="font-semibold text-indigo-400 text-[11px]">Anchor Events</span>
+              <span class="font-semibold text-indigo-800 dark:text-indigo-400 text-[11px]">Anchor Events</span>
             </div>
             <div class="flex items-center gap-1">
               <span class="w-2.5 h-2.5 rounded block-drive"></span>
-              <span class="text-blue-400 text-[11px]">🚗 Drive</span>
+              <span class="font-semibold text-blue-800 dark:text-blue-400 text-[11px]">🚗 Drive</span>
             </div>
             <div class="flex items-center gap-1">
               <span class="w-2.5 h-2.5 rounded block-dining"></span>
-              <span class="text-amber-400 text-[11px]">🍽️ Dining</span>
+              <span class="font-semibold text-amber-800 dark:text-amber-400 text-[11px]">🍽️ Dining</span>
             </div>
             <div class="flex items-center gap-1">
               <span class="w-2.5 h-2.5 rounded block-housing"></span>
-              <span class="text-purple-400 text-[11px]">🏡 Lodging</span>
+              <span class="font-semibold text-purple-800 dark:text-purple-400 text-[11px]">🏡 Lodging</span>
             </div>
             <div class="flex items-center gap-1">
               <span class="w-2.5 h-2.5 rounded block-sight"></span>
-              <span class="text-emerald-400 text-[11px]">🌲 Sights</span>
+              <span class="font-semibold text-emerald-800 dark:text-emerald-400 text-[11px]">🌲 Sights</span>
             </div>
           </div>
 
@@ -979,7 +979,7 @@ const DailyPlanner = {
                 v-for="t in getDayTrails(activeDay.dayNumber)"
                 :key="t.id"
                 @click.stop="jumpToTrail(t.id)"
-                class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
+                class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
               >
                 <span>🥾</span>
                 <span>{{ t.name }} ({{ t.difficulty }})</span>
@@ -989,7 +989,7 @@ const DailyPlanner = {
                 v-for="rest in getDayRestaurants(activeDay.dayNumber)"
                 :key="rest.id"
                 @click.stop="jumpToRestaurant(rest.id)"
-                class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all font-semibold flex items-center gap-1"
+                class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all font-semibold flex items-center gap-1"
               >
                 <span>🍴</span>
                 <span>{{ rest.name }}</span>
@@ -1113,9 +1113,9 @@ const DailyPlanner = {
           <!-- Potential Schedule Conflict / Overlap Alert Banner -->
           <div
             v-if="dayScheduleConflicts.length > 0"
-            class="p-3.5 rounded-xl bg-rose-500/15 border-2 border-rose-500/40 text-xs text-rose-300 space-y-1.5 animate-fadeIn"
+            class="p-3.5 rounded-xl bg-rose-500/15 border-2 border-rose-500/40 text-xs text-rose-950 dark:text-rose-300 space-y-1.5 animate-fadeIn"
           >
-            <div class="flex items-center gap-2 font-bold text-sm text-rose-200">
+            <div class="flex items-center gap-2 font-bold text-sm text-rose-950 dark:text-rose-200">
               <span class="text-base">⚠️</span>
               <span>Potential Itinerary Overlap Detected ({{ dayScheduleConflicts.length }} {{ dayScheduleConflicts.length === 1 ? 'conflict' : 'conflicts' }}):</span>
             </div>
@@ -1294,7 +1294,7 @@ const DailyPlanner = {
                         <button
                           v-if="!isItemLocked(item)"
                           @click.stop="removeItem(item, activeDay)"
-                          class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
+                          class="text-xs text-rose-600 dark:text-rose-500 hover:text-rose-800 dark:hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                           :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                         >
                           🗑️
@@ -1361,7 +1361,7 @@ const DailyPlanner = {
                       <button
                         v-if="item.trailId"
                         @click.stop="jumpToTrail(item.trailId)"
-                        class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                        class="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:underline flex items-center gap-1"
                       >
                         <span>🥾</span>
                         <span>View Full Hike Details →</span>
@@ -1369,7 +1369,7 @@ const DailyPlanner = {
                       <button
                         v-if="item.restaurantId"
                         @click.stop="jumpToRestaurant(item.restaurantId)"
-                        class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                        class="text-[11px] font-bold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1"
                       >
                         <span>🍴</span>
                         <span>View Dining Card & Policy →</span>
@@ -1488,7 +1488,7 @@ const DailyPlanner = {
                     <button
                       v-if="!isItemLocked(item)"
                       @click.stop="removeItem(item, activeDay)"
-                      class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
+                      class="text-xs text-rose-600 dark:text-rose-500 hover:text-rose-800 dark:hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                       :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                     >
                       🗑️
@@ -1553,7 +1553,7 @@ const DailyPlanner = {
                   <button
                     v-if="item.trailId"
                     @click.stop="jumpToTrail(item.trailId)"
-                    class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                    class="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:underline flex items-center gap-1"
                   >
                     <span>🥾</span>
                     <span>View Trail Profile →</span>
@@ -1561,7 +1561,7 @@ const DailyPlanner = {
                   <button
                     v-if="item.restaurantId"
                     @click.stop="jumpToRestaurant(item.restaurantId)"
-                    class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                    class="text-[11px] font-bold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1"
                   >
                     <span>🍴</span>
                     <span>View Restaurant Card →</span>
@@ -1674,7 +1674,7 @@ const DailyPlanner = {
 
                   <button
                     @click.stop="removeSuggestion(sug, activeDay)"
-                    class="text-xs font-bold text-rose-500 hover:text-rose-400 hover:underline px-2 py-1"
+                    class="text-xs font-bold text-rose-600 dark:text-rose-500 hover:text-rose-800 dark:hover:text-rose-400 hover:underline px-2 py-1"
                     title="Permanently remove this suggestion"
                   >
                     🗑️ Remove
@@ -1690,14 +1690,14 @@ const DailyPlanner = {
               <div class="flex items-center gap-1.5 text-xs font-bold text-[var(--foreground)]">
                 <span>📝</span>
                 <span>Day {{ activeDay.dayNumber }} Personal Notes & Journal</span>
-                <span v-if="hasNote(activeCalendarDayIndex)" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-400 font-semibold">Saved Offline</span>
+                <span v-if="hasNote(activeCalendarDayIndex)" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 font-semibold">Saved Offline</span>
               </div>
               <div class="flex items-center gap-2 text-[11px] text-[var(--muted-foreground)]">
-                <span v-if="savingNoteDay === activeCalendarDayIndex" class="text-emerald-400 font-bold animate-pulse">💾 Saved!</span>
+                <span v-if="savingNoteDay === activeCalendarDayIndex" class="text-emerald-800 dark:text-emerald-400 font-bold animate-pulse">💾 Saved!</span>
                 <button
                   v-if="hasNote(activeCalendarDayIndex)"
                   @click.stop="clearDailyNote(activeCalendarDayIndex)"
-                  class="text-rose-400 hover:text-rose-300 transition-colors"
+                  class="text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-medium transition-colors"
                   title="Clear this day's note"
                 >
                   Clear Note
@@ -1859,7 +1859,7 @@ const DailyPlanner = {
                   v-for="t in getDayTrails(day.dayNumber)"
                   :key="t.id"
                   @click.stop="jumpToTrail(t.id)"
-                  class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
+                  class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
                 >
                   <span>🥾</span>
                   <span>{{ t.name }} ({{ t.difficulty }})</span>
@@ -1869,7 +1869,7 @@ const DailyPlanner = {
                   v-for="rest in getDayRestaurants(day.dayNumber)"
                   :key="rest.id"
                   @click.stop="jumpToRestaurant(rest.id)"
-                  class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all font-semibold flex items-center gap-1"
+                  class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-900 dark:text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-all font-semibold flex items-center gap-1"
                 >
                   <span>🍴</span>
                   <span>{{ rest.name }}</span>
@@ -1895,7 +1895,7 @@ const DailyPlanner = {
                     'px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 border',
                     isRainActive(idx)
                       ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
-                      : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-400 border-amber-500/30'
+                      : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-800 dark:text-amber-400 border-amber-500/30'
                   ]"
                 >
                   <span>🌧️</span>
@@ -2057,7 +2057,7 @@ const DailyPlanner = {
                           <button
                             v-if="!isItemLocked(item)"
                             @click.stop="removeItem(item, day)"
-                            class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
+                            class="text-xs text-rose-600 dark:text-rose-500 hover:text-rose-800 dark:hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                             :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                           >
                             🗑️
@@ -2124,7 +2124,7 @@ const DailyPlanner = {
                         <button
                           v-if="item.trailId"
                           @click.stop="jumpToTrail(item.trailId)"
-                          class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                          class="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:underline flex items-center gap-1"
                         >
                           <span>🥾</span>
                           <span>View Full Hike Details →</span>
@@ -2132,7 +2132,7 @@ const DailyPlanner = {
                         <button
                           v-if="item.restaurantId"
                           @click.stop="jumpToRestaurant(item.restaurantId)"
-                          class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                          class="text-[11px] font-bold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1"
                         >
                           <span>🍴</span>
                           <span>View Dining Card & Policy →</span>
@@ -2238,7 +2238,7 @@ const DailyPlanner = {
                       <button
                         v-if="!isItemLocked(item)"
                         @click.stop="removeItem(item, day)"
-                        class="text-xs text-rose-500 hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
+                        class="text-xs text-rose-600 dark:text-rose-500 hover:text-rose-800 dark:hover:text-rose-400 font-bold px-1.5 py-1 rounded hover:bg-rose-500/10 transition-transform hover:scale-110 flex items-center justify-center"
                         :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                       >
                         🗑️
@@ -2303,7 +2303,7 @@ const DailyPlanner = {
                     <button
                       v-if="item.trailId"
                       @click.stop="jumpToTrail(item.trailId)"
-                      class="text-[11px] font-bold text-emerald-400 hover:underline flex items-center gap-1"
+                      class="text-[11px] font-bold text-emerald-800 dark:text-emerald-400 hover:underline flex items-center gap-1"
                     >
                       <span>🥾</span>
                       <span>View Trail Profile →</span>
@@ -2311,7 +2311,7 @@ const DailyPlanner = {
                     <button
                       v-if="item.restaurantId"
                       @click.stop="jumpToRestaurant(item.restaurantId)"
-                      class="text-[11px] font-bold text-amber-400 hover:underline flex items-center gap-1"
+                      class="text-[11px] font-bold text-amber-800 dark:text-amber-400 hover:underline flex items-center gap-1"
                     >
                       <span>🍴</span>
                       <span>View Restaurant Card →</span>
@@ -2345,14 +2345,14 @@ const DailyPlanner = {
                   <div class="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       @click.stop="restoreSuggestion(sug, day)"
-                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30"
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-400 border border-emerald-500/30"
                       title="Re-add to active schedule"
                     >
                       ➕ Re-add
                     </button>
                     <button
                       @click.stop="removeSuggestion(sug, day)"
-                      class="text-[10px] font-bold text-rose-400 hover:text-rose-300 px-1"
+                      class="text-[10px] font-bold text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 px-1"
                       title="Permanently remove"
                     >
                       🗑️
@@ -2368,14 +2368,14 @@ const DailyPlanner = {
                 <div class="flex items-center gap-1.5 text-xs font-bold text-[var(--foreground)]">
                   <span>📝</span>
                   <span>Day {{ day.dayNumber }} Personal Notes & Journal</span>
-                  <span v-if="hasNote(idx)" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-400 font-semibold">Saved Offline</span>
+                  <span v-if="hasNote(idx)" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 font-semibold">Saved Offline</span>
                 </div>
                 <div class="flex items-center gap-2 text-[11px] text-[var(--muted-foreground)]">
-                  <span v-if="savingNoteDay === idx" class="text-emerald-400 font-bold animate-pulse">💾 Saved!</span>
+                  <span v-if="savingNoteDay === idx" class="text-emerald-800 dark:text-emerald-400 font-bold animate-pulse">💾 Saved!</span>
                   <button
                     v-if="hasNote(idx)"
                     @click.stop="clearDailyNote(idx)"
-                    class="text-rose-400 hover:text-rose-300 transition-colors"
+                    class="text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 transition-colors"
                     title="Clear this day's note"
                   >
                     Clear Note
