@@ -2420,19 +2420,31 @@ const app = createApp({
     };
 
     onMounted(() => {
-      initTheme();
-      loadCustomStorageData();
-      loadAllNotesFromStorage();
-      loadCustomExpenses();
-      checkUrlSyncPayload();
-
-      // Dismiss initial loading screen smoothly once Vue is mounted and active
-      const loader = document.getElementById('app-loading-screen');
-      if (loader) {
-        loader.classList.add('app-loaded');
-        setTimeout(() => {
-          if (loader.parentNode) loader.remove();
-        }, 400);
+      try {
+        initTheme();
+        loadCustomStorageData();
+        loadAllNotesFromStorage();
+        loadCustomExpenses();
+        checkUrlSyncPayload();
+      } catch (err) {
+        console.warn('Non-blocking initialization warning:', err);
+      } finally {
+        // Dismiss initial loading screen smoothly once Vue is mounted and active
+        if (typeof window !== 'undefined' && typeof window.__dismissAppLoader === 'function') {
+          window.__dismissAppLoader();
+        } else {
+          const loader = document.getElementById('app-loading-screen');
+          if (loader) {
+            loader.classList.add('app-loaded');
+            setTimeout(() => {
+              if (loader.parentNode) loader.remove();
+            }, 350);
+          }
+          const appEl = document.getElementById('app');
+          if (appEl && appEl.hasAttribute('v-cloak')) {
+            appEl.removeAttribute('v-cloak');
+          }
+        }
       }
     });
 
@@ -2609,8 +2621,12 @@ const app = createApp({
   }
 });
 
-app.mount('#app');
-
-
-
-
+try {
+  app.mount('#app');
+} catch (mountErr) {
+  console.error('App mount error:', mountErr);
+} finally {
+  if (typeof window !== 'undefined' && typeof window.__dismissAppLoader === 'function') {
+    setTimeout(window.__dismissAppLoader, 150);
+  }
+}

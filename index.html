@@ -137,6 +137,33 @@
     <div class="loading-progress-bar"></div>
   </div>
 
+  <!-- Fail-Safe Loading Screen Dismissal (Strictly caps loading screen loop to max 1.8s) -->
+  <script>
+    (function() {
+      var isDismissed = false;
+      function dismissAppLoader() {
+        if (isDismissed) return;
+        isDismissed = true;
+        var loader = document.getElementById('app-loading-screen');
+        if (loader) {
+          loader.classList.add('app-loaded');
+          setTimeout(function() {
+            if (loader && loader.parentNode) {
+              loader.parentNode.removeChild(loader);
+            }
+          }, 350);
+        }
+        var appEl = document.getElementById('app');
+        if (appEl && appEl.hasAttribute('v-cloak')) {
+          appEl.removeAttribute('v-cloak');
+        }
+      }
+      window.__dismissAppLoader = dismissAppLoader;
+      // Hard cap: loading animation is strictly restricted to max ~1.8 seconds under all circumstances
+      setTimeout(dismissAppLoader, 1800);
+    })();
+  </script>
+
   <div id="app" v-cloak class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 space-y-6">
 
     <!-- Top Navigation / Header Bar -->
@@ -1222,6 +1249,7 @@
             <span>→</span>
           </div>
         </div>
+      </div>
       </div>
       <!-- End of Collapsible Body -->
     </section>
