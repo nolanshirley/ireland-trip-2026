@@ -2,6 +2,14 @@
    Ireland Trip Dashboard — Custom Styles & Theme Tokens
    ============================================================= */
 
+/* ── Cloak unmounted Vue templates & unrendered modals ──────── */
+[v-cloak] {
+  display: none !important;
+}
+[v-cloak] * {
+  display: none !important;
+}
+
 /* ── CSS Custom Properties (Chill Crisp Light Base) ─────────── */
 :root {
   --background:        #f8fafc;

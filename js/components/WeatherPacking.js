@@ -107,12 +107,12 @@ const WeatherPacking = {
   template: `
     <div class="space-y-6">
       <!-- Top Overview Banner -->
-      <div class="card p-6 bg-gradient-to-br from-blue-950/30 via-[var(--card)] to-emerald-950/30 border border-blue-500/20">
+      <div class="card p-5 sm:p-6 space-y-4">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2 mb-1">
               <span class="text-2xl">🌦️</span>
-              <h2 class="text-xl font-bold tracking-tight">October 2026 Weather Patterns & Outfit Guide</h2>
+              <h2 class="text-xl font-bold tracking-tight text-[var(--foreground)]">October 2026 Weather Patterns & Outfit Guide</h2>
             </div>
             <p class="text-sm text-[var(--muted-foreground)]">
               Comprehensive meteorological forecast for the 2 weeks of October 2026 across Ireland, with location-specific dress codes.
@@ -120,26 +120,26 @@ const WeatherPacking = {
           </div>
 
           <!-- Quick Stat Badges -->
-          <div class="flex items-center gap-3 flex-wrap text-xs">
-            <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold">
-              🌡️ Temps: <span class="text-emerald-400 font-bold">8°C – 15°C (46°F – 59°F)</span>
+          <div class="flex items-center gap-2.5 flex-wrap text-xs">
+            <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold shadow-sm">
+              🌡️ Temps: <span class="text-emerald-500 dark:text-emerald-400 font-bold">8°C – 15°C (46°F – 59°F)</span>
             </div>
-            <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold">
-              🌅 Daylight: <span class="text-amber-400 font-bold">~10.5 hrs (Sunrise 7:45 AM)</span>
+            <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold shadow-sm">
+              🌅 Daylight: <span class="text-amber-600 dark:text-amber-400 font-bold">~10.5 hrs (Sunrise 7:45 AM)</span>
             </div>
-            <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold">
-              💨 Winds: <span class="text-blue-400 font-bold">15–40 km/h (Gale gusts on cliffs)</span>
+            <div class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold shadow-sm">
+              💨 Winds: <span class="text-blue-500 dark:text-blue-400 font-bold">15–40 km/h (Gale gusts on cliffs)</span>
             </div>
           </div>
         </div>
 
         <!-- Weather Rule of Thumb Callout -->
-        <div class="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-start gap-2.5">
-          <span class="text-lg">💡</span>
-          <div>
-            <strong class="font-bold">The Golden Rule for October in Ireland:</strong>
+        <div class="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-500/60 text-xs text-amber-950 dark:text-amber-200 flex items-start gap-3 shadow-sm">
+          <span class="text-xl">💡</span>
+          <div class="leading-relaxed">
+            <strong class="font-black text-amber-950 dark:text-amber-300 block mb-0.5">The Golden Rule for October in Ireland:</strong>
             "Four seasons in one day." Always layer: <em>Base layer (moisture wicking) + Mid layer (fleece/wool) + Outer shell (100% windproof & waterproof)</em>.
-            <span class="text-rose-300 font-bold">Do not rely on umbrellas on coastal cliffs or mountains</span> — Atlantic gusts will invert them immediately!
+            <span class="text-rose-700 dark:text-rose-400 font-extrabold block mt-1">⚠️ Do not rely on umbrellas on coastal cliffs or mountains — Atlantic gusts will invert them immediately!</span>
           </div>
         </div>
       </div>

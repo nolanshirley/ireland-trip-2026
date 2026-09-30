@@ -2425,6 +2425,15 @@ const app = createApp({
       loadAllNotesFromStorage();
       loadCustomExpenses();
       checkUrlSyncPayload();
+
+      // Dismiss initial loading screen smoothly once Vue is mounted and active
+      const loader = document.getElementById('app-loading-screen');
+      if (loader) {
+        loader.classList.add('app-loaded');
+        setTimeout(() => {
+          if (loader.parentNode) loader.remove();
+        }, 400);
+      }
     });
 
     return {
