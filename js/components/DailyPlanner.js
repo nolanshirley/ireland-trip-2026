@@ -126,6 +126,10 @@ const DailyPlanner = {
       }
       return items;
     },
+    activeDaySuggestions() {
+      if (!this.activeDay) return [];
+      return this.activeDay.onHoldItems || [];
+    },
     dayScheduleConflicts() {
       const items = [...this.activeDayItems].sort((a, b) => this.getItemStartHour(a) - this.getItemStartHour(b));
       const conflicts = [];
@@ -529,14 +533,56 @@ const DailyPlanner = {
         window.TravelApp.deleteCustomItem('schedule', id);
       }
     },
-    isItemMandatory(item, day) {
+    isItemLocked(item) {
       if (!item) return false;
-      if (item.reserved || item.anchor || item.special) return true;
       if (item.tag === 'FLIGHT ARRIVAL' || item.tag === 'RETURN FLIGHT' || item.type === 'housing') return true;
-      const act = (item.activity || item.title || '').toLowerCase();
-      if (act.includes('mister s') || act.includes('birthday') || act.includes('double bday') || act.includes('bday')) return true;
-      if (day && day.special && item.type === 'dining' && item.reserved) return true;
       return false;
+    },
+    isItemMandatory(item, day) {
+      return this.isItemLocked(item);
+    },
+    isItemOnHold(item) {
+      if (!item) return false;
+      if (item.status === 'on_hold') return true;
+      if (window.TravelApp && window.TravelApp.isOnHold && item.id) {
+        return window.TravelApp.isOnHold(item.id);
+      }
+      return false;
+    },
+    toggleHoldItem(item, day) {
+      if (!item) return;
+      const id = item.id || ('day' + (day ? day.dayNumber : 1) + '_' + (item.activity || item.title || '').toLowerCase().replace(/[^a-z0-9]/g, '_'));
+      if (this.isItemOnHold(item)) {
+        if (window.TravelApp && window.TravelApp.unholdItem) {
+          window.TravelApp.unholdItem(id);
+        }
+      } else {
+        if (window.TravelApp && window.TravelApp.holdItem) {
+          window.TravelApp.holdItem('schedule', id, item);
+        }
+      }
+      this.$forceUpdate();
+    },
+    restoreSuggestion(item, day) {
+      if (!item) return;
+      const id = item.id || ('day' + (day ? day.dayNumber : 1) + '_' + (item.activity || item.title || '').toLowerCase().replace(/[^a-z0-9]/g, '_'));
+      if (window.TravelApp && window.TravelApp.unholdItem) {
+        window.TravelApp.unholdItem(id);
+      }
+      this.$forceUpdate();
+    },
+    removeSuggestion(item, day) {
+      this.removeItem(item, day);
+    },
+    openAddSuggestion(dayIndex) {
+      const dIdx = dayIndex !== undefined ? dayIndex : this.activeCalendarDayIndex;
+      if (window.TravelApp && window.TravelApp.openCreator) {
+        window.TravelApp.openCreator('schedule', { dayIndex: dIdx, onHold: true });
+      }
+    },
+    getDaySuggestions(day) {
+      if (!day) return [];
+      return day.onHoldItems || [];
     },
     removeItem(item, day) {
       if (!item) return;
@@ -1222,12 +1268,22 @@ const DailyPlanner = {
                         >
                           👎 {{ getVotes(item.id || item.activity).down }}
                         </button>
+                        <!-- Put on hold (move to suggestions) -->
+                        <button
+                          v-if="!isItemLocked(item)"
+                          @click.stop="toggleHoldItem(item, activeDay)"
+                          class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                          title="Put on hold (Move to Day Ideas & Suggestions Box)"
+                        >
+                          <span>⏸️</span>
+                          <span class="hidden sm:inline">Hold</span>
+                        </button>
                         <!-- Delete custom or non-mandatory base stop -->
                         <button
-                          v-if="!isItemMandatory(item, activeDay)"
+                          v-if="!isItemLocked(item)"
                           @click.stop="removeItem(item, activeDay)"
                           class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
-                          :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Notes/Settings)'"
+                          :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                         >
                           🗑️
                         </button>
@@ -1394,12 +1450,22 @@ const DailyPlanner = {
                     >
                       👎 {{ getVotes(item.id || item.activity).down }}
                     </button>
-                    <!-- Delete custom stop -->
+                    <!-- Put on hold (move to suggestions) -->
                     <button
-                      v-if="item.isCustom"
-                      @click.stop="deleteCustomStop(item.id)"
-                      class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1"
-                      title="Delete this custom stop"
+                      v-if="!isItemLocked(item)"
+                      @click.stop="toggleHoldItem(item, activeDay)"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                      title="Put on hold (Move to Day Ideas & Suggestions Box)"
+                    >
+                      <span>⏸️</span>
+                      <span class="hidden sm:inline">Hold</span>
+                    </button>
+                    <!-- Delete/Remove button -->
+                    <button
+                      v-if="!isItemLocked(item)"
+                      @click.stop="removeItem(item, activeDay)"
+                      class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1.5 py-0.5 rounded hover:bg-rose-500/10 transition-transform hover:scale-110"
+                      :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                     >
                       🗑️
                     </button>
@@ -1475,6 +1541,119 @@ const DailyPlanner = {
                   >
                     <span>🍴</span>
                     <span>View Restaurant Card →</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- IDEAS & SUGGESTIONS BOX (ON HOLD & OPTIONAL STOPS) -->
+          <div class="mt-5 rounded-2xl border-2 border-dashed border-amber-500/40 bg-amber-500/[0.03] dark:bg-amber-950/[0.12] p-4 sm:p-5 space-y-3.5 transition-all">
+            <!-- Box Header -->
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <div class="flex items-center gap-2.5">
+                <span class="text-xl">💡</span>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm sm:text-base font-black tracking-tight text-[var(--foreground)]">
+                      Day {{ activeDay.dayNumber }} Ideas & Suggestions Box
+                    </h3>
+                    <span
+                      class="px-2 py-0.5 rounded-full text-[11px] font-black"
+                      :class="activeDaySuggestions.length > 0 ? 'bg-amber-500 text-slate-950' : 'bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--border)]'"
+                    >
+                      {{ activeDaySuggestions.length }} {{ activeDaySuggestions.length === 1 ? 'idea' : 'ideas' }} on hold
+                    </span>
+                  </div>
+                  <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+                    Activities paused or brainstormed for this day without locking up your scheduled timeline.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action to add new suggestion -->
+              <button
+                @click="openAddSuggestion(activeCalendarDayIndex)"
+                class="px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500/20 hover:bg-amber-500/30 text-amber-950 dark:text-amber-200 border-2 border-amber-500/60 transition-all flex items-center gap-1.5 shadow-sm ml-auto"
+                title="Add a new idea or suggestion for this day"
+              >
+                <span>➕ Add Idea / Suggestion</span>
+              </button>
+            </div>
+
+            <!-- Empty State -->
+            <div
+              v-if="activeDaySuggestions.length === 0"
+              class="p-4 rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)]/50 text-center space-y-1"
+            >
+              <div class="text-xs font-bold text-[var(--foreground)]">No activities currently on hold</div>
+              <p class="text-[11px] text-[var(--muted-foreground)] max-w-md mx-auto">
+                Need to free up time on Day {{ activeDay.dayNumber }}? Click <strong>⏸️ Hold</strong> on any stop in your schedule above to pause it here as a flexible backup, or click <strong>➕ Add Idea</strong> to jot down a spot.
+              </p>
+            </div>
+
+            <!-- List of Suggestions / On-Hold Items -->
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div
+                v-for="sug in activeDaySuggestions"
+                :key="sug.id || sug.activity"
+                @click="onItemClick(sug, activeDay)"
+                class="p-3.5 rounded-xl border-2 border-amber-500/40 bg-[var(--card)] hover:border-amber-500 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-2.5 relative group"
+              >
+                <div class="space-y-1.5">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-950 dark:text-amber-200 border border-amber-500/50">
+                        ⏸️ ON HOLD
+                      </span>
+                      <span v-if="sug.tag" class="px-2 py-0.5 rounded text-[10px] font-bold bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+                        {{ sug.tag }}
+                      </span>
+                      <span v-if="sug.time" class="text-[11px] font-mono text-[var(--muted-foreground)]">
+                        Suggested: {{ sug.time }}
+                      </span>
+                    </div>
+
+                    <!-- 1-Tap Maps button -->
+                    <button
+                      v-if="sug.mapsQuery"
+                      @click.stop="openMap(sug.mapsQuery)"
+                      class="maps-btn text-[10px] py-0.5 px-2"
+                      title="Open in Maps"
+                    >
+                      📍 Map
+                    </button>
+                  </div>
+
+                  <h4 class="font-bold text-sm text-[var(--foreground)] group-hover:text-[var(--accent)] transition-colors">
+                    {{ sug.activity }}
+                  </h4>
+
+                  <p v-if="sug.desc" class="text-xs text-[var(--muted-foreground)] line-clamp-2 leading-relaxed">
+                    {{ sug.desc }}
+                  </p>
+
+                  <div v-if="sug.rainBackup" class="text-[11px] font-medium text-amber-950 dark:text-amber-300">
+                    🌧️ Rain Plan: {{ sug.rainBackup }}
+                  </div>
+                </div>
+
+                <!-- Suggestion Card Action Bar -->
+                <div class="pt-2 border-t border-[var(--border)]/60 flex items-center justify-between gap-2">
+                  <button
+                    @click.stop="restoreSuggestion(sug, activeDay)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-all flex items-center gap-1 shadow-sm"
+                    title="Restore this activity back into the active daily schedule"
+                  >
+                    <span>➕ Re-add to Schedule</span>
+                  </button>
+
+                  <button
+                    @click.stop="removeSuggestion(sug, activeDay)"
+                    class="text-xs font-bold text-rose-500 hover:text-rose-400 hover:underline px-2 py-1"
+                    title="Permanently remove this suggestion"
+                  >
+                    🗑️ Remove
                   </button>
                 </div>
               </div>
@@ -1821,12 +2000,22 @@ const DailyPlanner = {
                           >
                             👎 {{ getVotes(item.id || item.activity).down }}
                           </button>
+                          <!-- Put on hold (move to suggestions) -->
+                          <button
+                            v-if="!isItemLocked(item)"
+                            @click.stop="toggleHoldItem(item, day)"
+                            class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                            title="Put on hold (Move to Day Ideas & Suggestions Box)"
+                          >
+                            <span>⏸️</span>
+                            <span class="hidden sm:inline">Hold</span>
+                          </button>
                           <!-- Remove stop if non-mandatory -->
                           <button
-                            v-if="!isItemMandatory(item, day)"
+                            v-if="!isItemLocked(item)"
                             @click.stop="removeItem(item, day)"
                             class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
-                            :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Notes/Settings)'"
+                            :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                           >
                             🗑️
                           </button>
@@ -1955,12 +2144,22 @@ const DailyPlanner = {
                       <span v-if="item.tag" class="px-2 py-0.5 rounded text-[10px] font-extrabold tracking-wide bg-emerald-100 dark:bg-emerald-300 text-emerald-950 border border-emerald-400 shadow-sm">
                         {{ item.tag }}
                       </span>
+                      <!-- Put on hold (move to suggestions) -->
+                      <button
+                        v-if="!isItemLocked(item)"
+                        @click.stop="toggleHoldItem(item, day)"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-950 dark:text-amber-200 border border-amber-500/40 shadow-sm transition-all flex items-center gap-0.5"
+                        title="Put on hold (Move to Day Ideas & Suggestions Box)"
+                      >
+                        <span>⏸️</span>
+                        <span class="hidden sm:inline">Hold</span>
+                      </button>
                       <!-- Delete/Remove button for non-mandatory items -->
                       <button
-                        v-if="!isItemMandatory(item, day)"
+                        v-if="!isItemLocked(item)"
                         @click.stop="removeItem(item, day)"
                         class="text-[11px] text-rose-400 hover:text-rose-300 font-bold px-1 transition-transform hover:scale-110"
-                        :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Notes/Settings)'"
+                        :title="item.isCustom ? 'Delete this custom stop' : 'Remove activity from trip (can be restored in Settings)'"
                       >
                         🗑️
                       </button>
@@ -2036,6 +2235,47 @@ const DailyPlanner = {
                     >
                       <span>🍴</span>
                       <span>View Restaurant Card →</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Day Suggestions / On Hold Drawer in Accordion -->
+            <div
+              v-if="getDaySuggestions(day).length > 0"
+              class="mt-4 p-3.5 rounded-xl border border-dashed border-amber-500/50 bg-amber-500/[0.04] space-y-2.5"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-amber-950 dark:text-amber-300">
+                  <span>💡</span>
+                  <span>Day {{ day.dayNumber }} Suggestions & On-Hold Backlog ({{ getDaySuggestions(day).length }})</span>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div
+                  v-for="sug in getDaySuggestions(day)"
+                  :key="sug.id || sug.activity"
+                  class="p-2.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-xs flex items-center justify-between gap-2"
+                >
+                  <div class="truncate">
+                    <span class="font-bold text-[var(--foreground)]">{{ sug.activity }}</span>
+                    <span v-if="sug.time" class="text-[10px] text-[var(--muted-foreground)] block">Suggested: {{ sug.time }}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      @click.stop="restoreSuggestion(sug, day)"
+                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30"
+                      title="Re-add to active schedule"
+                    >
+                      ➕ Re-add
+                    </button>
+                    <button
+                      @click.stop="removeSuggestion(sug, day)"
+                      class="text-[10px] font-bold text-rose-400 hover:text-rose-300 px-1"
+                      title="Permanently remove"
+                    >
+                      🗑️
                     </button>
                   </div>
                 </div>

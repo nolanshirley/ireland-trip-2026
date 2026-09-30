@@ -43,6 +43,7 @@ const app = createApp({
     const itemVotes = ref({});
     const userSenderName = ref(localStorage.getItem('ireland_user_sender_name') || 'Family Member');
     const hiddenItemIds = ref([]);
+    const onHoldItemIds = ref([]);
     const showHeaderHelp = ref(false);
     const targetSearchQuery = ref('');
 
@@ -55,6 +56,7 @@ const app = createApp({
         customNotes.value = JSON.parse(localStorage.getItem('ireland_custom_notes') || '[]');
         itemVotes.value = JSON.parse(localStorage.getItem('ireland_item_votes') || '{}');
         hiddenItemIds.value = JSON.parse(localStorage.getItem('ireland_hidden_item_ids') || '[]');
+        onHoldItemIds.value = JSON.parse(localStorage.getItem('ireland_on_hold_item_ids') || '[]');
       } catch (e) {
         console.error('Error loading custom trip data from storage', e);
       }
@@ -77,6 +79,9 @@ const app = createApp({
     };
     const saveHiddenItemIds = () => {
       localStorage.setItem('ireland_hidden_item_ids', JSON.stringify(hiddenItemIds.value));
+    };
+    const saveOnHoldItemIds = () => {
+      localStorage.setItem('ireland_on_hold_item_ids', JSON.stringify(onHoldItemIds.value));
     };
     const saveSenderName = (name) => {
       userSenderName.value = name;
@@ -117,16 +122,40 @@ const app = createApp({
 
     const isItemHidden = (id) => hiddenItemIds.value.includes(id);
 
+    const holdItem = (category, id, item = null) => {
+      if (!id) return;
+      if (!onHoldItemIds.value.includes(id)) {
+        onHoldItemIds.value = [...onHoldItemIds.value, id];
+        saveOnHoldItemIds();
+        const label = (item && (item.activity || item.title || item.name)) || 'Activity';
+        showToast(`Moved "${label}" to Suggestions Box (On Hold)`, '💡', {
+          actionText: 'Undo',
+          actionFn: () => unholdItem(id)
+        });
+      }
+    };
+
+    const unholdItem = (id) => {
+      if (!id) return;
+      onHoldItemIds.value = onHoldItemIds.value.filter(h => h !== id);
+      saveOnHoldItemIds();
+      showToast('Activity restored to schedule', '✅');
+    };
+
+    const isOnHold = (id) => onHoldItemIds.value.includes(id);
+
     // ── Dynamic Computed Merged Lists ─────────────────────────
     const timelineList = computed(() => {
       const baseTimeline = JSON.parse(JSON.stringify(timeline));
       
-      // Ensure all base items have stable IDs & filter out hidden items
+      // Ensure all base items have stable IDs & filter out hidden and held items
       baseTimeline.forEach(day => {
-        day.items = (day.items || []).map(item => {
+        const allItems = (day.items || []).map(item => {
           const id = item.id || getItemId(item, 'day' + day.dayNumber);
           return { ...item, id };
-        }).filter(item => !hiddenItemIds.value.includes(item.id));
+        });
+        day.items = allItems.filter(item => !hiddenItemIds.value.includes(item.id) && !onHoldItemIds.value.includes(item.id));
+        day.onHoldItems = allItems.filter(item => !hiddenItemIds.value.includes(item.id) && onHoldItemIds.value.includes(item.id));
       });
 
       customActivities.value.forEach(act => {
@@ -139,11 +168,21 @@ const app = createApp({
           actCopy.startHour = startH;
           actCopy.endHour = startH + Math.max(0.5, dur);
 
-          const existingIdx = baseTimeline[dIdx].items.findIndex(i => i.id === actCopy.id);
-          if (existingIdx >= 0) {
-            baseTimeline[dIdx].items[existingIdx] = actCopy;
+          if (onHoldItemIds.value.includes(actCopy.id) || actCopy.status === 'on_hold') {
+            baseTimeline[dIdx].onHoldItems = baseTimeline[dIdx].onHoldItems || [];
+            const existingIdx = baseTimeline[dIdx].onHoldItems.findIndex(i => i.id === actCopy.id);
+            if (existingIdx >= 0) {
+              baseTimeline[dIdx].onHoldItems[existingIdx] = actCopy;
+            } else {
+              baseTimeline[dIdx].onHoldItems.push(actCopy);
+            }
           } else {
-            baseTimeline[dIdx].items.push(actCopy);
+            const existingIdx = baseTimeline[dIdx].items.findIndex(i => i.id === actCopy.id);
+            if (existingIdx >= 0) {
+              baseTimeline[dIdx].items[existingIdx] = actCopy;
+            } else {
+              baseTimeline[dIdx].items.push(actCopy);
+            }
           }
         }
       });
@@ -155,6 +194,13 @@ const app = createApp({
           const bStart = parseTimeToHour(b.time || b.startHour);
           return aStart - bStart;
         });
+        if (day.onHoldItems) {
+          day.onHoldItems.sort((a, b) => {
+            const aStart = parseTimeToHour(a.time || a.startHour);
+            const bStart = parseTimeToHour(b.time || b.startHour);
+            return aStart - bStart;
+          });
+        }
       });
 
       return baseTimeline;
@@ -318,6 +364,54 @@ const app = createApp({
       selectedDetailItem.value = null;
       selectedDetailDay.value = null;
       document.body.style.overflow = '';
+    };
+
+    const isDetailItemOnHold = computed(() => {
+      if (!selectedDetailItem.value) return false;
+      const item = selectedDetailItem.value;
+      const day = selectedDetailDay.value;
+      const id = item.id || ('day' + (day ? day.dayNumber : 1) + '_' + (item.activity || item.title || '').toLowerCase().replace(/[^a-z0-9]/g, '_'));
+      return onHoldItemIds.value.includes(id) || item.status === 'on_hold';
+    });
+
+    const isDetailItemLocked = computed(() => {
+      if (!selectedDetailItem.value) return false;
+      const item = selectedDetailItem.value;
+      if (item.tag === 'FLIGHT ARRIVAL' || item.tag === 'RETURN FLIGHT' || item.type === 'housing') return true;
+      return false;
+    });
+
+    const holdDetailItem = () => {
+      if (!selectedDetailItem.value) return;
+      const item = selectedDetailItem.value;
+      const day = selectedDetailDay.value;
+      const id = item.id || ('day' + (day ? day.dayNumber : 1) + '_' + (item.activity || item.title || '').toLowerCase().replace(/[^a-z0-9]/g, '_'));
+      holdItem('schedule', id, item);
+      closeDetailModal();
+    };
+
+    const unholdDetailItem = () => {
+      if (!selectedDetailItem.value) return;
+      const item = selectedDetailItem.value;
+      const day = selectedDetailDay.value;
+      const id = item.id || ('day' + (day ? day.dayNumber : 1) + '_' + (item.activity || item.title || '').toLowerCase().replace(/[^a-z0-9]/g, '_'));
+      unholdItem(id);
+      closeDetailModal();
+    };
+
+    const deleteDetailItem = () => {
+      if (!selectedDetailItem.value) return;
+      const item = selectedDetailItem.value;
+      const day = selectedDetailDay.value;
+      const label = item.activity || item.title || 'stop';
+      if (!confirm(`Remove "${label}" from your trip itinerary? (You can restore it anytime in Settings/Notes)`)) return;
+      if (item.isCustom) {
+        deleteCustomItem('schedule', item.id);
+      } else {
+        const id = item.id || ('day' + (day ? day.dayNumber : 1) + '_' + (item.activity || item.title || '').toLowerCase().replace(/[^a-z0-9]/g, '_'));
+        hideItem('schedule', id);
+      }
+      closeDetailModal();
     };
 
     // Deep jump between tabs & scroll to target element
@@ -1242,8 +1336,13 @@ const app = createApp({
 
     const openCreator = (tab = 'schedule', initialData = null) => {
       creatorTab.value = tab;
-      if (tab === 'schedule' && initialData && initialData.dayIndex !== undefined) {
-        newScheduleForm.value.dayIndex = initialData.dayIndex;
+      if (tab === 'schedule' && initialData) {
+        if (initialData.dayIndex !== undefined) {
+          newScheduleForm.value.dayIndex = initialData.dayIndex;
+        }
+        if (initialData.onHold) {
+          newScheduleForm.value.status = 'on_hold';
+        }
       }
       isCreatorModalOpen.value = true;
       document.body.style.overflow = 'hidden';
@@ -1289,6 +1388,12 @@ const app = createApp({
         createdAt: new Date().toISOString()
       };
 
+      const isHold = newScheduleForm.value.status === 'on_hold';
+      if (isHold) {
+        onHoldItemIds.value.push(newStop.id);
+        saveOnHoldItemIds();
+      }
+
       customActivities.value.push(newStop);
       saveCustomActivities();
 
@@ -1304,10 +1409,15 @@ const app = createApp({
       newScheduleForm.value.location = '';
       newScheduleForm.value.rainBackup = '';
       newScheduleForm.value.splitOption = '';
+      newScheduleForm.value.status = 'proposed';
 
       closeCreator();
       handleSwitchTab({ tab: 'planner', dayIndex: dayIdx });
-      showToast(`Added "${savedActivityName}" to Day ${targetDay}`, '✨');
+      if (isHold) {
+        showToast(`Added "${savedActivityName}" to Day ${targetDay} Suggestions Box (On Hold)`, '💡');
+      } else {
+        showToast(`Added "${savedActivityName}" to Day ${targetDay}`, '✨');
+      }
     };
 
     const saveDiningSpot = () => {
@@ -1935,6 +2045,10 @@ const app = createApp({
       restoreAllHiddenItems,
       isItemHidden,
       getHiddenItemIds: () => hiddenItemIds.value,
+      holdItem,
+      unholdItem,
+      isOnHold,
+      getOnHoldItemIds: () => onHoldItemIds.value,
       saveRestaurantMenu: (id, menu) => {
         try {
           const existing = JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}');
@@ -1971,6 +2085,7 @@ const app = createApp({
         customTrails: customTrails.value,
         customReservations: customReservations.value,
         hiddenItemIds: hiddenItemIds.value,
+        onHoldItemIds: onHoldItemIds.value,
         itemVotes: itemVotes.value,
         packingChecklist: JSON.parse(localStorage.getItem('ireland_packing_checklist_v2') || '[]'),
         theme: localStorage.getItem('ireland_theme') || 'dark',
@@ -2006,6 +2121,10 @@ const app = createApp({
             hiddenItemIds.value = data.hiddenItemIds;
             saveHiddenItemIds();
           }
+          if (data.onHoldItemIds) {
+            onHoldItemIds.value = data.onHoldItemIds;
+            saveOnHoldItemIds();
+          }
           if (data.customActivities) {
             customActivities.value = data.customActivities;
             saveCustomActivities();
@@ -2039,6 +2158,57 @@ const app = createApp({
       };
       reader.readAsText(file);
     };
+
+    const hiddenItemsDetails = computed(() => {
+      if (!hiddenItemIds.value || hiddenItemIds.value.length === 0) return [];
+      const list = [];
+      const hiddenSet = new Set(hiddenItemIds.value);
+      
+      // Look in timeline base items
+      if (typeof timeline !== 'undefined' && Array.isArray(timeline)) {
+        timeline.forEach(day => {
+          (day.items || []).forEach(item => {
+            const id = item.id || getItemId(item, 'day' + day.dayNumber);
+            if (hiddenSet.has(id)) {
+              list.push({ id, label: `Day ${day.dayNumber}: ${item.activity}`, type: 'schedule' });
+              hiddenSet.delete(id);
+            }
+          });
+        });
+      }
+      // Look in custom activities
+      customActivities.value.forEach(act => {
+        if (hiddenSet.has(act.id)) {
+          list.push({ id: act.id, label: `Custom Stop: ${act.activity}`, type: 'schedule' });
+          hiddenSet.delete(act.id);
+        }
+      });
+      // Look in restaurants
+      if (typeof restaurants !== 'undefined' && Array.isArray(restaurants)) {
+        restaurants.forEach(r => {
+          const id = r.id || getItemId(r, 'rest');
+          if (hiddenSet.has(id)) {
+            list.push({ id, label: `Dining: ${r.name}`, type: 'dining' });
+            hiddenSet.delete(id);
+          }
+        });
+      }
+      // Look in hiking trails
+      if (typeof hikingTrails !== 'undefined' && Array.isArray(hikingTrails)) {
+        hikingTrails.forEach(t => {
+          const id = t.id || getItemId(t, 'trail');
+          if (hiddenSet.has(id)) {
+            list.push({ id, label: `Trail: ${t.name}`, type: 'trail' });
+            hiddenSet.delete(id);
+          }
+        });
+      }
+      // Remaining unknown IDs
+      hiddenSet.forEach(id => {
+        list.push({ id, label: `Item (${id})`, type: 'item' });
+      });
+      return list;
+    });
 
     // ── Multi-Currency Expense & Budget Tracker ───────────────
     const isExpenseModalOpen = ref(false);
@@ -2286,6 +2456,11 @@ const app = createApp({
       isDetailModalOpen,
       openDetailModal,
       closeDetailModal,
+      isDetailItemOnHold,
+      isDetailItemLocked,
+      holdDetailItem,
+      unholdDetailItem,
+      deleteDetailItem,
       handleSwitchTab,
       targetSearchQuery,
       getGoogleMapsUrl,
@@ -2348,10 +2523,15 @@ const app = createApp({
       customTrails,
       customReservations,
       hiddenItemIds,
+      onHoldItemIds,
       hideItem,
       restoreItem,
       restoreAllHiddenItems,
       isItemHidden,
+      holdItem,
+      unholdItem,
+      isOnHold,
+      hiddenItemsDetails,
       itemVotes,
       userSenderName,
       saveSenderName,
