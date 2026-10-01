@@ -1848,55 +1848,55 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 /* Rising Pints of Guinness (Small, Subtle Float) */
 @-webkit-keyframes guinnessRise {
   0% {
-    -webkit-transform: translateY(105vh) rotate(0deg) scale(0.7);
-    transform: translateY(105vh) rotate(0deg) scale(0.7);
+    -webkit-transform: translateY(105vh) translateX(0) rotate(0deg) scale(0.85);
+    transform: translateY(105vh) translateX(0) rotate(0deg) scale(0.85);
     opacity: 0;
   }
-  25% {
-    opacity: 0.5;
-    -webkit-transform: translateY(75vh) rotate(-5deg) scale(0.85);
-    transform: translateY(75vh) rotate(-5deg) scale(0.85);
+  15% {
+    opacity: 0.85;
+    -webkit-transform: translateY(85vh) translateX(-10px) rotate(-6deg) scale(1);
+    transform: translateY(85vh) translateX(-10px) rotate(-6deg) scale(1);
   }
-  60% {
-    opacity: 0.28;
-    -webkit-transform: translateY(40vh) rotate(5deg) scale(0.75);
-    transform: translateY(40vh) rotate(5deg) scale(0.75);
+  45% {
+    opacity: 0.75;
+    -webkit-transform: translateY(55vh) translateX(12px) rotate(6deg) scale(0.95);
+    transform: translateY(55vh) translateX(12px) rotate(6deg) scale(0.95);
   }
-  85% {
-    opacity: 0.5;
-    -webkit-transform: translateY(15vh) rotate(-3deg) scale(0.85);
-    transform: translateY(15vh) rotate(-3deg) scale(0.85);
+  75% {
+    opacity: 0.85;
+    -webkit-transform: translateY(25vh) translateX(-8px) rotate(-4deg) scale(1.05);
+    transform: translateY(25vh) translateX(-8px) rotate(-4deg) scale(1.05);
   }
   100% {
-    -webkit-transform: translateY(-40px) rotate(0deg) scale(0.7);
-    transform: translateY(-40px) rotate(0deg) scale(0.7);
+    -webkit-transform: translateY(-50px) translateX(6px) rotate(4deg) scale(0.85);
+    transform: translateY(-50px) translateX(6px) rotate(4deg) scale(0.85);
     opacity: 0;
   }
 }
 @keyframes guinnessRise {
   0% {
-    -webkit-transform: translateY(105vh) rotate(0deg) scale(0.7);
-    transform: translateY(105vh) rotate(0deg) scale(0.7);
+    -webkit-transform: translateY(105vh) translateX(0) rotate(0deg) scale(0.85);
+    transform: translateY(105vh) translateX(0) rotate(0deg) scale(0.85);
     opacity: 0;
   }
-  25% {
-    opacity: 0.5;
-    -webkit-transform: translateY(75vh) rotate(-5deg) scale(0.85);
-    transform: translateY(75vh) rotate(-5deg) scale(0.85);
+  15% {
+    opacity: 0.85;
+    -webkit-transform: translateY(85vh) translateX(-10px) rotate(-6deg) scale(1);
+    transform: translateY(85vh) translateX(-10px) rotate(-6deg) scale(1);
   }
-  60% {
-    opacity: 0.28;
-    -webkit-transform: translateY(40vh) rotate(5deg) scale(0.75);
-    transform: translateY(40vh) rotate(5deg) scale(0.75);
+  45% {
+    opacity: 0.75;
+    -webkit-transform: translateY(55vh) translateX(12px) rotate(6deg) scale(0.95);
+    transform: translateY(55vh) translateX(12px) rotate(6deg) scale(0.95);
   }
-  85% {
-    opacity: 0.5;
-    -webkit-transform: translateY(15vh) rotate(-3deg) scale(0.85);
-    transform: translateY(15vh) rotate(-3deg) scale(0.85);
+  75% {
+    opacity: 0.85;
+    -webkit-transform: translateY(25vh) translateX(-8px) rotate(-4deg) scale(1.05);
+    transform: translateY(25vh) translateX(-8px) rotate(-4deg) scale(1.05);
   }
   100% {
-    -webkit-transform: translateY(-40px) rotate(0deg) scale(0.7);
-    transform: translateY(-40px) rotate(0deg) scale(0.7);
+    -webkit-transform: translateY(-50px) translateX(6px) rotate(4deg) scale(0.85);
+    transform: translateY(-50px) translateX(6px) rotate(4deg) scale(0.85);
     opacity: 0;
   }
 }
@@ -1907,7 +1907,7 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   animation: guinnessRise ease-in-out infinite;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
+  filter: drop-shadow(0 4px 10px rgba(245, 158, 11, 0.45));
 }
 
 /* Waddling Galway Oysters */

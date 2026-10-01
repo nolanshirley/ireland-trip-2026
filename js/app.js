@@ -400,23 +400,28 @@ const app = createApp({
       }
     };
 
-    // Low-density, small floating ambient items that can be clicked to pop
+    // Floating ambient items (clovers, floating beers/pints, and oysters) that can be clicked to pop
     const magicItems = ref([
-      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '12%', animationDuration: '20s', animationDelay: '0s', WebkitAnimationDuration: '20s', WebkitAnimationDelay: '0s' }, popped: false },
-      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '78%', animationDuration: '24s', animationDelay: '3s', WebkitAnimationDuration: '24s', WebkitAnimationDelay: '3s' }, popped: false },
-      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '46%', animationDuration: '22s', animationDelay: '8s', WebkitAnimationDuration: '22s', WebkitAnimationDelay: '8s' }, popped: false },
+      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '16%', animationDuration: '20s', animationDelay: '0s', WebkitAnimationDuration: '20s', WebkitAnimationDelay: '0s' }, popped: false },
+      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '34%', animationDuration: '23s', animationDelay: '2s', WebkitAnimationDuration: '23s', WebkitAnimationDelay: '2s' }, popped: false },
+      { id: 'beer-cheers-1', type: 'beer', icon: '🍻', style: { left: '52%', animationDuration: '22s', animationDelay: '6s', WebkitAnimationDuration: '22s', WebkitAnimationDelay: '6s' }, popped: false },
+      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '68%', animationDuration: '25s', animationDelay: '10s', WebkitAnimationDuration: '25s', WebkitAnimationDelay: '10s' }, popped: false },
+      { id: 'guinness-2', type: 'guinness', icon: '🍺', style: { left: '84%', animationDuration: '18s', animationDelay: '4s', WebkitAnimationDuration: '18s', WebkitAnimationDelay: '4s' }, popped: false },
       { id: 'oyster-1', type: 'oyster', icon: '🦪', style: { animationDuration: '28s', animationDelay: '1s', WebkitAnimationDuration: '28s', WebkitAnimationDelay: '1s' }, popped: false }
     ]);
 
     const popMagicItem = (item) => {
       if (!item || item.popped) return;
       item.popped = true;
-      const typeLabel = item.type === 'clover' ? 'lucky clover' : (item.type === 'guinness' ? 'pint of Guinness' : 'Galway oyster');
-      showToast(`Pop! Caught a ${typeLabel}!`, item.icon);
-      // Gently re-float after 14 seconds
+      let typeLabel = 'lucky clover';
+      if (item.type === 'guinness') typeLabel = 'fresh pint of Guinness';
+      else if (item.type === 'beer') typeLabel = 'round of celebratory beers';
+      else if (item.type === 'oyster') typeLabel = 'Galway oyster';
+      showToast(`Sláinte! Caught a ${typeLabel}!`, item.icon);
+      // Gently re-float after 12 seconds
       setTimeout(() => {
         item.popped = false;
-      }, 14000);
+      }, 12000);
     };
 
     // ── 💥 Access Code Funny Gag Engine ──

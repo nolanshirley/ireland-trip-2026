@@ -198,7 +198,7 @@
           :class="[
             'magic-item-btn',
             item.type === 'clover' ? 'magic-clover text-base sm:text-lg' : '',
-            item.type === 'guinness' ? 'magic-guinness text-base sm:text-lg' : '',
+            item.type === 'guinness' || item.type === 'beer' ? 'magic-guinness text-lg sm:text-xl' : '',
             item.type === 'oyster' ? 'magic-oyster text-base sm:text-lg' : ''
           ]"
           :style="item.style"
