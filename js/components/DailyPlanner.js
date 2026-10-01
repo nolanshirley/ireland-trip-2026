@@ -547,7 +547,7 @@ const DailyPlanner = {
       }
     },
     onItemClick(item, day) {
-      this.$emit('open-detail', { item, day, editMode: true });
+      this.$emit('open-detail', { item, day, editMode: false });
     },
     openEditItem(item, day) {
       this.$emit('open-detail', { item, day, editMode: true });
