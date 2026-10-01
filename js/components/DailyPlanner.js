@@ -633,6 +633,11 @@ const DailyPlanner = {
       }
       return false;
     },
+    nudgeActivityTime(item, day, minuteDelta) {
+      if (window.TravelApp && window.TravelApp.nudgeActivity) {
+        window.TravelApp.nudgeActivity(item, day ? day.dayNumber : null, minuteDelta);
+      }
+    },
     openAddStop(dayIndex) {
       if (window.TravelApp) {
         window.TravelApp.openCreator('schedule', { dayIndex: dayIndex !== undefined ? dayIndex : this.activeCalendarDayIndex });
@@ -1536,6 +1541,26 @@ const DailyPlanner = {
                         <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]">
                           {{ item.time }}
                         </span>
+                        <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                        <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="inline-flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                          <button
+                            type="button"
+                            @click.stop="nudgeActivityTime(item, activeDay, -15)"
+                            class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                            title="Shift 15 minutes earlier"
+                          >
+                            ◀ -15m
+                          </button>
+                          <span class="text-[9px] text-[var(--border)]">|</span>
+                          <button
+                            type="button"
+                            @click.stop="nudgeActivityTime(item, activeDay, 15)"
+                            class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                            title="Shift 15 minutes later"
+                          >
+                            +15m ▶
+                          </button>
+                        </div>
                         <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
 
                         <!-- Optional / Swappable Activity Badge -->
@@ -1729,13 +1754,35 @@ const DailyPlanner = {
                 item.type === 'housing' ? 'border-purple-500/25' : ''
               ]"
             >
-              <!-- Time Badge -->
+              <!-- Time Badge & Quick-Nudge Stepper -->
               <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
                 <span class="font-mono text-xs font-bold text-[var(--foreground)] px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] inline-block">
                   {{ item.time }}
                 </span>
-                <div class="text-[10px] text-[var(--muted-foreground)]">
-                  ⏱️ {{ item.dur }}
+                <div class="flex items-center gap-1.5 justify-between w-full sm:w-auto">
+                  <div class="text-[10px] text-[var(--muted-foreground)]">
+                    ⏱️ {{ item.dur }}
+                  </div>
+                  <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                  <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                    <button
+                      type="button"
+                      @click.stop="nudgeActivityTime(item, activeDay, -15)"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                      title="Shift 15 minutes earlier"
+                    >
+                      ◀ -15m
+                    </button>
+                    <span class="text-[9px] text-[var(--border)]">|</span>
+                    <button
+                      type="button"
+                      @click.stop="nudgeActivityTime(item, activeDay, 15)"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                      title="Shift 15 minutes later"
+                    >
+                      +15m ▶
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -2415,6 +2462,26 @@ const DailyPlanner = {
                           <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]">
                             {{ item.time }}
                           </span>
+                          <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                          <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="inline-flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                            <button
+                              type="button"
+                              @click.stop="nudgeActivityTime(item, day, -15)"
+                              class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                              title="Shift 15 minutes earlier"
+                            >
+                              ◀ -15m
+                            </button>
+                            <span class="text-[9px] text-[var(--border)]">|</span>
+                            <button
+                              type="button"
+                              @click.stop="nudgeActivityTime(item, day, 15)"
+                              class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                              title="Shift 15 minutes later"
+                            >
+                              +15m ▶
+                            </button>
+                          </div>
                           <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
 
                           <!-- Optional / Swappable Activity Badge -->
@@ -2596,13 +2663,35 @@ const DailyPlanner = {
                   item.type === 'housing' ? 'border-purple-500/25' : ''
                 ]"
               >
-                <!-- Time Badge -->
+                <!-- Time Badge & Quick-Nudge Stepper -->
                 <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
                   <span class="font-mono text-xs font-bold text-[var(--foreground)] px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] inline-block">
                     {{ item.time }}
                   </span>
-                  <div class="text-[10px] text-[var(--muted-foreground)]">
-                    ⏱️ {{ item.dur }}
+                  <div class="flex items-center gap-1.5 justify-between w-full sm:w-auto">
+                    <div class="text-[10px] text-[var(--muted-foreground)]">
+                      ⏱️ {{ item.dur }}
+                    </div>
+                    <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                    <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                      <button
+                        type="button"
+                        @click.stop="nudgeActivityTime(item, day, -15)"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                        title="Shift 15 minutes earlier"
+                      >
+                        ◀ -15m
+                      </button>
+                      <span class="text-[9px] text-[var(--border)]">|</span>
+                      <button
+                        type="button"
+                        @click.stop="nudgeActivityTime(item, day, 15)"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                        title="Shift 15 minutes later"
+                      >
+                        +15m ▶
+                      </button>
+                    </div>
                   </div>
                 </div>
 

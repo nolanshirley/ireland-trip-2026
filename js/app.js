@@ -2318,8 +2318,71 @@ const app = createApp({
       incomingSyncPayload.value = null;
     };
 
+    const nudgeActivity = (item, dayNumber, minuteDelta) => {
+      if (!item) return;
+      if (item.anchor || item.mandatory || item.reserved) {
+        showToast(`"${item.activity}" is a confirmed mandatory booking and cannot be shifted.`, '🔒');
+        return;
+      }
+      const tag = (item.tag || '').toUpperCase();
+      if (tag.includes('CONFIRMED') || tag.includes('FLIGHT') || tag.includes('CHECK-IN') || tag.includes('CHECK-OUT') || tag.includes('CAR RETURN') || tag.includes('HOUSING') || tag.includes('BASE MOVE')) {
+        showToast(`"${item.activity}" is fixed logistics and cannot be shifted.`, '🔒');
+        return;
+      }
+
+      const range = (typeof getItemTimeRange === 'function')
+        ? getItemTimeRange(item)
+        : { start: parseTimeToHour(item.time || item.startHour), end: 11.5, dur: 1.5 };
+      
+      const currentStart = range.start;
+      const currentDur = range.dur;
+      const deltaHours = minuteDelta / 60;
+      const newStart = Math.min(23.75, Math.max(6.0, parseFloat((currentStart + deltaHours).toFixed(3))));
+      const newEnd = Math.min(24.0, parseFloat((newStart + currentDur).toFixed(3)));
+
+      const durStr = currentDur >= 1
+        ? (currentDur % 1 === 0 ? `${currentDur}h` : `${currentDur.toFixed(1)} hrs`)
+        : `${Math.round(currentDur * 60)}m`;
+      const timeStr = `${formatHourToTime(newStart)} – ${formatHourToTime(newEnd)}`;
+
+      const dayIdx = dayNumber ? dayNumber - 1 : (item.dayIndex !== undefined ? item.dayIndex : 0);
+
+      const updatedItem = {
+        ...item,
+        id: item.id || getItemId(item, 'day' + (dayIdx + 1)),
+        dayIndex: dayIdx,
+        dayNumber: dayIdx + 1,
+        startHour: newStart,
+        endHour: newEnd,
+        time: timeStr,
+        dur: durStr,
+        durHours: currentDur,
+        isCustom: true
+      };
+
+      const existingIdx = customActivities.value.findIndex(a => a.id === updatedItem.id);
+      if (existingIdx >= 0) {
+        customActivities.value[existingIdx] = updatedItem;
+      } else {
+        customActivities.value.push(updatedItem);
+      }
+      saveCustomActivities();
+
+      // Directly update in-memory item for instantaneous Vue reactivity
+      item.startHour = newStart;
+      item.endHour = newEnd;
+      item.time = timeStr;
+      item.dur = durStr;
+      item.durHours = currentDur;
+      item.isCustom = true;
+
+      const direction = minuteDelta > 0 ? `+${minuteDelta}m (${formatHourToTime(newStart)})` : `${minuteDelta}m (${formatHourToTime(newStart)})`;
+      showToast(`Shifted "${item.activity}" ${direction}`, '⏱️');
+    };
+
     // Attach extended API to window.TravelApp for cross-component calls
     window.TravelApp = {
+      nudgeActivity,
       triggerMap,
       triggerRoute,
       triggerCalendar,
@@ -2777,6 +2840,7 @@ const app = createApp({
       snapToNextFreeSlot,
       adjustDetailStartTime,
       adjustDetailDuration,
+      nudgeActivity,
       saveDetailActivity,
       startEditingDetailActivity,
       cancelEditingDetailActivity,

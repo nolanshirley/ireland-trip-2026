@@ -7302,6 +7302,11 @@ const DailyPlanner = {
       }
       return false;
     },
+    nudgeActivityTime(item, day, minuteDelta) {
+      if (window.TravelApp && window.TravelApp.nudgeActivity) {
+        window.TravelApp.nudgeActivity(item, day ? day.dayNumber : null, minuteDelta);
+      }
+    },
     openAddStop(dayIndex) {
       if (window.TravelApp) {
         window.TravelApp.openCreator('schedule', { dayIndex: dayIndex !== undefined ? dayIndex : this.activeCalendarDayIndex });
@@ -8205,6 +8210,26 @@ const DailyPlanner = {
                         <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]">
                           {{ item.time }}
                         </span>
+                        <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                        <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="inline-flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                          <button
+                            type="button"
+                            @click.stop="nudgeActivityTime(item, activeDay, -15)"
+                            class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                            title="Shift 15 minutes earlier"
+                          >
+                            ◀ -15m
+                          </button>
+                          <span class="text-[9px] text-[var(--border)]">|</span>
+                          <button
+                            type="button"
+                            @click.stop="nudgeActivityTime(item, activeDay, 15)"
+                            class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                            title="Shift 15 minutes later"
+                          >
+                            +15m ▶
+                          </button>
+                        </div>
                         <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
 
                         <!-- Optional / Swappable Activity Badge -->
@@ -8398,13 +8423,35 @@ const DailyPlanner = {
                 item.type === 'housing' ? 'border-purple-500/25' : ''
               ]"
             >
-              <!-- Time Badge -->
+              <!-- Time Badge & Quick-Nudge Stepper -->
               <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
                 <span class="font-mono text-xs font-bold text-[var(--foreground)] px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] inline-block">
                   {{ item.time }}
                 </span>
-                <div class="text-[10px] text-[var(--muted-foreground)]">
-                  ⏱️ {{ item.dur }}
+                <div class="flex items-center gap-1.5 justify-between w-full sm:w-auto">
+                  <div class="text-[10px] text-[var(--muted-foreground)]">
+                    ⏱️ {{ item.dur }}
+                  </div>
+                  <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                  <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                    <button
+                      type="button"
+                      @click.stop="nudgeActivityTime(item, activeDay, -15)"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                      title="Shift 15 minutes earlier"
+                    >
+                      ◀ -15m
+                    </button>
+                    <span class="text-[9px] text-[var(--border)]">|</span>
+                    <button
+                      type="button"
+                      @click.stop="nudgeActivityTime(item, activeDay, 15)"
+                      class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                      title="Shift 15 minutes later"
+                    >
+                      +15m ▶
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -9084,6 +9131,26 @@ const DailyPlanner = {
                           <span class="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]">
                             {{ item.time }}
                           </span>
+                          <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                          <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="inline-flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                            <button
+                              type="button"
+                              @click.stop="nudgeActivityTime(item, day, -15)"
+                              class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                              title="Shift 15 minutes earlier"
+                            >
+                              ◀ -15m
+                            </button>
+                            <span class="text-[9px] text-[var(--border)]">|</span>
+                            <button
+                              type="button"
+                              @click.stop="nudgeActivityTime(item, day, 15)"
+                              class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                              title="Shift 15 minutes later"
+                            >
+                              +15m ▶
+                            </button>
+                          </div>
                           <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
 
                           <!-- Optional / Swappable Activity Badge -->
@@ -9265,13 +9332,35 @@ const DailyPlanner = {
                   item.type === 'housing' ? 'border-purple-500/25' : ''
                 ]"
               >
-                <!-- Time Badge -->
+                <!-- Time Badge & Quick-Nudge Stepper -->
                 <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
                   <span class="font-mono text-xs font-bold text-[var(--foreground)] px-2 py-1 rounded bg-[var(--card)] border border-[var(--border)] inline-block">
                     {{ item.time }}
                   </span>
-                  <div class="text-[10px] text-[var(--muted-foreground)]">
-                    ⏱️ {{ item.dur }}
+                  <div class="flex items-center gap-1.5 justify-between w-full sm:w-auto">
+                    <div class="text-[10px] text-[var(--muted-foreground)]">
+                      ⏱️ {{ item.dur }}
+                    </div>
+                    <!-- 1-Tap Quick Nudge Steppers (Option A) -->
+                    <div v-if="!item.anchor && !item.mandatory && !item.reserved" class="flex items-center gap-0.5 bg-[var(--card)] p-0.5 rounded-lg border border-[var(--border)] shadow-xs">
+                      <button
+                        type="button"
+                        @click.stop="nudgeActivityTime(item, day, -15)"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                        title="Shift 15 minutes earlier"
+                      >
+                        ◀ -15m
+                      </button>
+                      <span class="text-[9px] text-[var(--border)]">|</span>
+                      <button
+                        type="button"
+                        @click.stop="nudgeActivityTime(item, day, 15)"
+                        class="px-1.5 py-0.5 rounded text-[10px] font-mono font-black text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card-hover)] active:scale-90 transition-all"
+                        title="Shift 15 minutes later"
+                      >
+                        +15m ▶
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -16232,8 +16321,71 @@ const app = createApp({
       incomingSyncPayload.value = null;
     };
 
+    const nudgeActivity = (item, dayNumber, minuteDelta) => {
+      if (!item) return;
+      if (item.anchor || item.mandatory || item.reserved) {
+        showToast(`"${item.activity}" is a confirmed mandatory booking and cannot be shifted.`, '🔒');
+        return;
+      }
+      const tag = (item.tag || '').toUpperCase();
+      if (tag.includes('CONFIRMED') || tag.includes('FLIGHT') || tag.includes('CHECK-IN') || tag.includes('CHECK-OUT') || tag.includes('CAR RETURN') || tag.includes('HOUSING') || tag.includes('BASE MOVE')) {
+        showToast(`"${item.activity}" is fixed logistics and cannot be shifted.`, '🔒');
+        return;
+      }
+
+      const range = (typeof getItemTimeRange === 'function')
+        ? getItemTimeRange(item)
+        : { start: parseTimeToHour(item.time || item.startHour), end: 11.5, dur: 1.5 };
+      
+      const currentStart = range.start;
+      const currentDur = range.dur;
+      const deltaHours = minuteDelta / 60;
+      const newStart = Math.min(23.75, Math.max(6.0, parseFloat((currentStart + deltaHours).toFixed(3))));
+      const newEnd = Math.min(24.0, parseFloat((newStart + currentDur).toFixed(3)));
+
+      const durStr = currentDur >= 1
+        ? (currentDur % 1 === 0 ? `${currentDur}h` : `${currentDur.toFixed(1)} hrs`)
+        : `${Math.round(currentDur * 60)}m`;
+      const timeStr = `${formatHourToTime(newStart)} – ${formatHourToTime(newEnd)}`;
+
+      const dayIdx = dayNumber ? dayNumber - 1 : (item.dayIndex !== undefined ? item.dayIndex : 0);
+
+      const updatedItem = {
+        ...item,
+        id: item.id || getItemId(item, 'day' + (dayIdx + 1)),
+        dayIndex: dayIdx,
+        dayNumber: dayIdx + 1,
+        startHour: newStart,
+        endHour: newEnd,
+        time: timeStr,
+        dur: durStr,
+        durHours: currentDur,
+        isCustom: true
+      };
+
+      const existingIdx = customActivities.value.findIndex(a => a.id === updatedItem.id);
+      if (existingIdx >= 0) {
+        customActivities.value[existingIdx] = updatedItem;
+      } else {
+        customActivities.value.push(updatedItem);
+      }
+      saveCustomActivities();
+
+      // Directly update in-memory item for instantaneous Vue reactivity
+      item.startHour = newStart;
+      item.endHour = newEnd;
+      item.time = timeStr;
+      item.dur = durStr;
+      item.durHours = currentDur;
+      item.isCustom = true;
+
+      const direction = minuteDelta > 0 ? `+${minuteDelta}m (${formatHourToTime(newStart)})` : `${minuteDelta}m (${formatHourToTime(newStart)})`;
+      showToast(`Shifted "${item.activity}" ${direction}`, '⏱️');
+    };
+
     // Attach extended API to window.TravelApp for cross-component calls
     window.TravelApp = {
+      nudgeActivity,
       triggerMap,
       triggerRoute,
       triggerCalendar,
@@ -16691,6 +16843,7 @@ const app = createApp({
       snapToNextFreeSlot,
       adjustDetailStartTime,
       adjustDetailDuration,
+      nudgeActivity,
       saveDetailActivity,
       startEditingDetailActivity,
       cancelEditingDetailActivity,
