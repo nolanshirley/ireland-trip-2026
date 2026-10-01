@@ -214,6 +214,8 @@ html.font-scale-xl {
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -228,6 +230,30 @@ body {
 @media (min-width: 768px) {
   body {
     padding-bottom: 24px;
+  }
+}
+
+/* ── Tablet & iPad Touch Target Accessibility ────────────────── */
+.nudge-btn {
+  touch-action: manipulation;
+  min-height: 24px;
+  min-width: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+@media (pointer: coarse) {
+  /* On iPad & touch screens, expand touch targets for Apple HIG & WCAG 2.2 SC 2.5.8 */
+  .nudge-btn {
+    min-height: 32px;
+    min-width: 44px;
+    font-size: 11px !important;
+    padding: 3px 6px !important;
   }
 }
 
