@@ -187,6 +187,33 @@ const app = createApp({
         }
       });
 
+      // 💍 If engagement secret is unlocked, inject the Proposal milestone into Day 5 (Cliffs of Moher)
+      if (engagementUnlocked.value && baseTimeline[4]) {
+        baseTimeline[4].special = true;
+        baseTimeline[4].specialText = '💍 PROPOSAL AT THE CLIFFS! 💍';
+        const proposalItem = {
+          id: 'nolan_hannah_proposal_cliffs',
+          activity: '💍 The Question: Nolan & Hannah Engagement',
+          time: '11:15 AM – 12:00 PM',
+          startHour: 11.25,
+          endHour: 12.0,
+          dur: '45m',
+          durHours: 0.75,
+          type: 'sight',
+          anchor: true,
+          mandatory: true,
+          energyLevel: 'chill',
+          tag: '💍 SPECIAL MOMENT',
+          mapsQuery: 'Cliffs+of+Moher+O+Briens+Tower',
+          desc: 'A private walk out towards O’Brien’s Tower overlooking the wild Atlantic. Nolan asks Hannah to marry him before golden hour, leaving the rest of the day to celebrate and explore the majestic cliffs.',
+          optional: false,
+          isProposal: true
+        };
+        if (!baseTimeline[4].items.some(i => i.id === proposalItem.id)) {
+          baseTimeline[4].items.push(proposalItem);
+        }
+      }
+
       // Sort items within each day chronologically by startHour
       baseTimeline.forEach(day => {
         day.items.sort((a, b) => {
@@ -353,6 +380,12 @@ const app = createApp({
     const selectedTargetDayIndex = ref(null);
     const isSwapPanelOpen = ref(false);
 
+    // ── 💍 Secret Engagement Feature (Nolan & Hannah — Cliffs of Moher) ──
+    const ENGAGEMENT_KEY = 'bitten by a love bug';
+    const engagementUnlocked = ref(typeof localStorage !== 'undefined' && localStorage.getItem('ireland_engagement_secret') === '1');
+    const showEngagementModal = ref(false);
+    const engagementCodeInput = ref('');
+
     const detailEditForm = ref({
       id: '',
       activity: '',
@@ -399,6 +432,43 @@ const app = createApp({
         optional: isItemOpt,
         isCustom: Boolean(item.isCustom)
       };
+    };
+
+    const checkEngagementCode = () => {
+      const val = (engagementCodeInput.value || '').trim().toLowerCase();
+      if (val === ENGAGEMENT_KEY) {
+        if (engagementUnlocked.value) {
+          // If already unlocked, typing the exact password again in the same spot completely removes it
+          resetEngagementSecret();
+          engagementCodeInput.value = '';
+        } else {
+          try { localStorage.setItem('ireland_engagement_secret', '1'); } catch(e) {}
+          engagementUnlocked.value = true;
+          showEngagementModal.value = true;
+          engagementCodeInput.value = '';
+          document.body.style.overflow = 'hidden';
+          showToast('💍 Secret proposal feature unlocked!', '✨');
+        }
+      } else if (val === 'reset' || val === 'lock' || val === 'clear') {
+        resetEngagementSecret();
+        engagementCodeInput.value = '';
+      } else if (val.length > 0) {
+        // Wrong code — silently clear
+        engagementCodeInput.value = '';
+      }
+    };
+
+    const dismissEngagementModal = () => {
+      showEngagementModal.value = false;
+      document.body.style.overflow = '';
+    };
+
+    const resetEngagementSecret = () => {
+      try { localStorage.removeItem('ireland_engagement_secret'); } catch(e) {}
+      engagementUnlocked.value = false;
+      showEngagementModal.value = false;
+      document.body.style.overflow = '';
+      showToast('Feature completely locked & hidden', '🔒');
     };
 
     const openDetailModal = (payload) => {
@@ -2101,7 +2171,8 @@ const app = createApp({
         notes: customNotes.value || [],
         scratchpad: localStorage.getItem('ireland_trip_scratchpad') || '',
         hiddenItemIds: hiddenItemIds.value || [],
-        menus: JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}')
+        menus: JSON.parse(localStorage.getItem('ireland_restaurant_menus') || '{}'),
+        ...(engagementUnlocked.value ? { engagement: true } : {})
       };
 
       try {
@@ -2195,9 +2266,20 @@ const app = createApp({
 
           if (payloadStr) {
             const decoded = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(payloadStr)))));
-            if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes || decoded.hiddenItemIds || decoded.menus)) {
+            if (decoded && (decoded.activities || decoded.restaurants || decoded.trails || decoded.reservations || decoded.votes || decoded.notes || decoded.hiddenItemIds || decoded.menus || decoded.engagement)) {
               incomingSyncPayload.value = decoded;
               isIncomingSyncModalOpen.value = true;
+            }
+            // 💍 Engagement secret propagation via shared link
+            if (decoded && decoded.engagement === true) {
+              try { localStorage.setItem('ireland_engagement_secret', '1'); } catch(e) {}
+              engagementUnlocked.value = true;
+              setTimeout(() => {
+                showEngagementModal.value = true;
+                if (typeof document !== 'undefined' && document.body) {
+                  document.body.style.overflow = 'hidden';
+                }
+              }, 1200);
             }
           }
         }
@@ -2368,6 +2450,17 @@ const app = createApp({
       isIncomingSyncModalOpen.value = false;
       incomingSyncPayload.value = null;
 
+      if (p.engagement === true) {
+        try { localStorage.setItem('ireland_engagement_secret', '1'); } catch(e) {}
+        engagementUnlocked.value = true;
+        setTimeout(() => {
+          showEngagementModal.value = true;
+          if (typeof document !== 'undefined' && document.body) {
+            document.body.style.overflow = 'hidden';
+          }
+        }, 600);
+      }
+
       // Automatically jump to the merged day on the planner tab so the user sees the new stops immediately!
       if (firstMergedDayIndex !== null) {
         handleSwitchTab({ tab: 'planner', dayIndex: firstMergedDayIndex });
@@ -2456,6 +2549,9 @@ const app = createApp({
       getUserProvider: () => userProvider.value,
       openCreator,
       openShareSync,
+      checkEngagementCode,
+      isEngagementUnlocked: () => engagementUnlocked.value,
+      openEngagementModal: () => { showEngagementModal.value = true; },
       voteItem,
       getItemVotes,
       setItemStatus,
@@ -2923,6 +3019,13 @@ const app = createApp({
       swapActivity,
       getRegionAttractions,
       attractionMap,
+      // 💍 Secret Engagement Feature
+      engagementUnlocked,
+      showEngagementModal,
+      engagementCodeInput,
+      checkEngagementCode,
+      dismissEngagementModal,
+      resetEngagementSecret,
       handleSwitchTab,
       targetSearchQuery,
       getGoogleMapsUrl,

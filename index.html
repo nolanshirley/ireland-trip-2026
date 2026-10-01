@@ -1951,7 +1951,7 @@
               </div>
 
               <!-- Attraction cards grid -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="grid grid-cols-1 gap-2">
                 <button
                   v-for="(attr, aIdx) in getRegionAttractions(selectedDetailDay.region)"
                   :key="aIdx"
@@ -1960,7 +1960,7 @@
                   :class="[
                     'text-left p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)] active:scale-95',
                     attr.name === selectedDetailItem.activity
-                      ? 'bg-[var(--accent)]/15 border-[var(--accent)] cursor-default'
+                      ? 'bg-[var(--accent)]/15 border-[var(--accent)] cursor-default pointer-events-none'
                       : 'bg-[var(--card)] hover:bg-[var(--card-hover)] border-[var(--border)] hover:border-[var(--accent)]/60 cursor-pointer shadow-sm hover:shadow-md'
                   ]"
                   :title="attr.name === selectedDetailItem.activity ? 'Currently scheduled' : 'Tap to swap this activity in'"
@@ -2181,6 +2181,144 @@
           >
             Done
           </button>
+        </div>
+
+        <!-- Secret access code input (completely discreet & unmarked) -->
+        <div class="pt-2 border-t border-[var(--border)]/20 flex items-center gap-2">
+          <input
+            type="text"
+            v-model="engagementCodeInput"
+            @keydown.enter="checkEngagementCode"
+            @blur="checkEngagementCode"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            :placeholder="engagementUnlocked ? 'Feature unlocked (re-type password to lock)' : 'Access code...'"
+            class="flex-1 p-2 rounded-lg bg-transparent border border-[var(--border)]/30 text-[var(--muted-foreground)]/40 text-[11px] font-mono outline-none focus:border-[var(--accent)]/40 placeholder:text-[var(--muted-foreground)]/20"
+            aria-hidden="true"
+          />
+          <button
+            v-if="engagementUnlocked"
+            @click="resetEngagementSecret"
+            type="button"
+            class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex-shrink-0"
+            title="Lock and remove all references to feature"
+          >
+            🔒 Re-lock
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 💍 SECRET: Engagement Celebration Modal (Nolan & Hannah @ Cliffs of Moher) -->
+    <div
+      v-if="showEngagementModal"
+      class="fixed inset-0 z-[999999] flex items-center justify-center p-4"
+      @click.self="dismissEngagementModal"
+      style="background: rgba(0,0,0,0.88); backdrop-filter: blur(14px);"
+    >
+      <div
+        class="engagement-modal-card relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl text-center"
+        style="background: linear-gradient(145deg, #0f0c29, #302b63, #24243e); border: 2px solid rgba(251,191,36,0.5); box-shadow: 0 0 50px rgba(251,191,36,0.3);"
+        @click.stop
+      >
+        <!-- Gold shimmer top bar -->
+        <div style="height:5px; background: linear-gradient(90deg, #f59e0b, #fcd34d, #f59e0b, #fcd34d); background-size: 200% 100%; animation: shimmer 2s linear infinite;"></div>
+
+        <!-- Content -->
+        <div class="p-6 sm:p-8 space-y-5">
+          <!-- Ring emoji with glowing pulse -->
+          <div class="flex items-center justify-center gap-3">
+            <span class="text-3xl engagement-sparkle" style="animation-delay:0.1s">✨</span>
+            <span class="engagement-ring-emoji text-6xl">💍</span>
+            <span class="text-3xl engagement-sparkle" style="animation-delay:0.2s">✨</span>
+          </div>
+
+          <!-- Headline -->
+          <div class="space-y-1.5">
+            <p class="text-amber-300 text-xs font-black uppercase tracking-[0.25em]" style="letter-spacing:0.22em;">
+              A Moment to Remember Forever
+            </p>
+            <h2 class="text-3xl sm:text-4xl font-black text-white leading-tight" style="text-shadow: 0 0 25px rgba(251,191,36,0.65);">
+              Nolan &amp; Hannah
+            </h2>
+            <p class="text-amber-200 font-bold text-base">
+              💚 Are Getting Married! 💚
+            </p>
+          </div>
+
+          <!-- Divider -->
+          <div class="flex items-center gap-3">
+            <div class="flex-1 h-px" style="background: linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent);"></div>
+            <span class="text-amber-400 text-lg">🍀</span>
+            <div class="flex-1 h-px" style="background: linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent);"></div>
+          </div>
+
+          <!-- Location & Timing Card -->
+          <div class="rounded-2xl p-4 space-y-2 text-left" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(251,191,36,0.3);">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">🌊</span>
+              <div>
+                <div class="text-[10px] uppercase font-bold text-amber-300/80">Location</div>
+                <div class="text-white font-extrabold text-sm">Cliffs of Moher, Co. Clare</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">📅</span>
+              <div>
+                <div class="text-[10px] uppercase font-bold text-amber-300/80">Date &amp; Time</div>
+                <div class="text-amber-200 font-extrabold text-sm">Tuesday, Oct 6 · 11:15 AM (Before Golden Hour)</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">🥂</span>
+              <div>
+                <div class="text-[10px] uppercase font-bold text-amber-300/80">Plan</div>
+                <div class="text-white/90 text-xs font-semibold">Morning proposal near O'Brien's Tower with the full day ahead to celebrate &amp; explore!</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal Message -->
+          <div class="space-y-1.5 px-2">
+            <p class="text-white/90 text-xs sm:text-sm leading-relaxed font-medium">
+              Overlooking the crashing Atlantic from 700 feet high, Nolan asked Hannah to spend forever together.
+            </p>
+            <p class="text-amber-300 font-black text-lg">
+              She said YES! 💚💍
+            </p>
+          </div>
+
+          <!-- Sparkle Emojis Row -->
+          <div class="flex items-center justify-center gap-2.5 text-2xl pt-1">
+            <span class="engagement-sparkle" style="animation-delay:0.0s">🥂</span>
+            <span class="engagement-sparkle" style="animation-delay:0.12s">💚</span>
+            <span class="engagement-sparkle" style="animation-delay:0.24s">🍾</span>
+            <span class="engagement-sparkle" style="animation-delay:0.36s">💍</span>
+            <span class="engagement-sparkle" style="animation-delay:0.48s">🌊</span>
+            <span class="engagement-sparkle" style="animation-delay:0.60s">🍀</span>
+            <span class="engagement-sparkle" style="animation-delay:0.72s">🎉</span>
+          </div>
+
+          <!-- Dismiss button -->
+          <button
+            @click="dismissEngagementModal"
+            class="w-full py-3.5 rounded-2xl font-black text-sm transition-all active:scale-95 text-slate-950 shadow-lg hover:brightness-105"
+            style="background: linear-gradient(135deg, #f59e0b, #fcd34d); box-shadow: 0 4px 20px rgba(251,191,36,0.45);"
+          >
+            💚 Congratulations Nolan &amp; Hannah! 💚
+          </button>
+
+          <!-- Testing Relock Button -->
+          <div class="pt-0.5">
+            <button
+              @click="resetEngagementSecret"
+              class="text-[11px] text-white/40 hover:text-white/80 transition-colors font-medium underline"
+              title="Lock and remove all references to this feature so you can test entering the password again"
+            >
+              🔒 Re-lock &amp; Hide Feature (Test Mode)
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -333,6 +333,7 @@ const DailyPlanner = {
       }
     },
     getMilestoneBadge(day) {
+      if (day.dayNumber === 5 && day.special) return '💍 Proposal';
       if (day.dayNumber === 6) return '🎂 Dad & Erin';
       if (day.dayNumber === 11) return '🍺 Guinness VIP';
       if (day.dayNumber === 12) return '🎂 Mom\'s Bday';
@@ -936,6 +937,13 @@ const DailyPlanner = {
             <!-- Milestone Quick Jumps -->
             <div class="hidden sm:flex items-center gap-1.5 text-xs">
               <span class="text-[10px] text-[var(--muted-foreground)] font-bold uppercase">Milestones:</span>
+              <button
+                v-if="timeline && timeline[4] && timeline[4].special"
+                @click="jumpToMilestone(5)"
+                class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 hover:opacity-90"
+              >
+                💍 Oct 6: Proposal
+              </button>
               <button
                 @click="jumpToMilestone(6)"
                 class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-200 dark:bg-blue-300 text-blue-950 border border-blue-400 hover:opacity-90"
