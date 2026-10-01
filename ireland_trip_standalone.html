@@ -350,8 +350,8 @@ Check your Browserslist config to be sure that your targets are set up correctly
   --card:              #09090b;
   --card-hover:        #18181b;
   --border:            #27272a;
-  --accent:            #f4f4f5;
-  --accent-glow:       rgba(244, 244, 245, 0.35);
+  --accent:            #38bdf8;
+  --accent-glow:       rgba(56, 189, 248, 0.35);
   --accent-secondary:  #a1a1aa;
   --muted-foreground:  #e4e4e7;
 }
@@ -1169,10 +1169,10 @@ body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  z-index: 50;
+  z-index: 9999;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1189,16 +1189,17 @@ body {
 
 .modal-sheet {
   background: var(--card);
-  border: 1px solid var(--border);
+  color: var(--foreground);
+  border: 2px solid var(--border);
   border-radius: 1.5rem 1.5rem 0 0;
   width: 100%;
   max-width: 640px;
-  max-height: 90vh;
-  max-height: 90dvh;
+  max-height: 88vh;
+  max-height: 88dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  box-shadow: var(--shadow-xl);
-  padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 16px)) 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+  padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 16px)) 20px;
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
@@ -1207,7 +1208,7 @@ body {
   .modal-sheet {
     border-radius: 1.25rem;
     max-height: 85vh;
-    padding: 20px;
+    padding: 24px;
   }
 }
 
@@ -1933,10 +1934,10 @@ body {
         <!-- Theme & Palette Modal Trigger -->
         <button
           @click="openSettingsModal"
-          class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--card)] hover:bg-[var(--card-hover)] border border-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] transition-all flex items-center gap-1.5 shadow-sm min-h-[36px] active:scale-95"
           title="Customize Theme & Color Palette"
         >
-          <span>🎨</span>
+          <span class="text-sm">🎨</span>
           <span class="hidden sm:inline">Theme</span>
         </button>
 
@@ -3678,22 +3679,23 @@ body {
     <!-- Interactive Theme & Text Size Settings Bottom Sheet / Modal -->
     <div
       v-if="isSettingsModalOpen"
-      class="modal-backdrop"
+      class="modal-backdrop z-[9999]"
       @click="closeSettingsModal"
     >
-      <div class="modal-sheet space-y-5" @click.stop>
+      <div class="modal-sheet space-y-5 border-2 border-[var(--border)] shadow-2xl" @click.stop>
         <!-- Modal Header -->
         <div class="flex items-center justify-between border-b border-[var(--border)] pb-3">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2.5">
             <span class="text-2xl">🎨</span>
             <div>
-              <h3 class="text-lg font-bold text-[var(--foreground)]">Display & Theme Settings</h3>
-              <p class="text-xs text-[var(--muted-foreground)]">Customize color palette, text scale & dark mode</p>
+              <h3 class="text-lg font-black text-[var(--foreground)]">Display &amp; Theme Settings</h3>
+              <p class="text-xs text-[var(--muted-foreground)] font-semibold">Customize color palette, text scale &amp; dark mode</p>
             </div>
           </div>
           <button
             @click="closeSettingsModal"
-            class="w-8 h-8 rounded-full bg-[var(--card-hover)] hover:bg-[var(--border)] flex items-center justify-center text-sm font-bold text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+            class="min-w-[44px] min-h-[44px] rounded-xl bg-[var(--card-hover)] hover:bg-[var(--border)] border border-[var(--border)] flex items-center justify-center text-sm font-black text-[var(--foreground)] transition-colors active:scale-95"
+            aria-label="Close settings modal"
           >
             ✕
           </button>
@@ -3705,7 +3707,7 @@ body {
             <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
               Irish Color Palettes:
             </label>
-            <span class="text-xs font-semibold text-[var(--accent)]">
+            <span class="text-xs font-semibold text-[var(--accent)] font-mono">
               {{ palettes.find(p => p.id === selectedPalette)?.name }}
             </span>
           </div>
@@ -3716,8 +3718,10 @@ body {
               :key="p.id"
               @click="setPalette(p.id)"
               :class="[
-                'palette-swatch-btn flex-col items-start p-3.5 text-left rounded-xl border-2 transition-all',
-                selectedPalette === p.id ? 'active ring-2 ring-[var(--accent)] border-[var(--accent)] bg-[var(--card-hover)]' : 'border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)]'
+                'palette-swatch-btn flex-col items-start p-3.5 text-left rounded-xl border-2 transition-all min-h-[56px]',
+                selectedPalette === p.id
+                  ? 'active ring-2 ring-[var(--accent)] border-[var(--accent)] bg-[var(--card-hover)] text-[var(--foreground)]'
+                  : 'border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)]'
               ]"
             >
               <div class="flex items-center justify-between w-full">
@@ -3738,7 +3742,7 @@ body {
         <div class="space-y-2.5 pt-3 border-t border-[var(--border)]">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Text & Font Scaling:
+              Text &amp; Font Scaling:
             </label>
             <span class="text-xs font-mono font-bold text-[var(--accent)]">
               {{ fontScales.find(s => s.id === fontScale)?.scale }} Scale
@@ -3751,10 +3755,10 @@ body {
               :key="s.id"
               @click="setFontScale(s.id)"
               :class="[
-                'p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1',
+                'p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 min-h-[48px]',
                 fontScale === s.id
-                  ? 'bg-[var(--accent)] text-white border-[var(--accent)] font-bold shadow-sm'
-                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-slate-900 dark:border-white font-black shadow-sm'
+                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)] font-semibold'
               ]"
             >
               <span class="text-sm font-bold">{{ s.badge }}</span>
@@ -3766,7 +3770,7 @@ body {
           <div class="p-3 rounded-xl bg-[var(--background)] border border-[var(--border)] mt-2">
             <div class="text-xs font-bold text-[var(--accent)] mb-0.5">Live Preview:</div>
             <p class="text-xs text-[var(--foreground)] leading-relaxed">
-              🍀 <strong>Oct 2–14:</strong> Ireland autumn travel schedule with 1-tap navigation & weather alerts.
+              🍀 <strong>Oct 2–14:</strong> Ireland autumn travel schedule with 1-tap navigation &amp; weather alerts.
             </p>
           </div>
         </div>
@@ -3810,19 +3814,19 @@ body {
         </div>
 
         <!-- Section 4: Mode & Quick Actions -->
-        <div class="pt-3 border-t border-[var(--border)] flex items-center justify-between gap-3">
+        <div class="pt-3 border-t border-[var(--border)] flex items-center justify-between gap-3 flex-wrap">
           <button
             @click="toggleDark"
-            class="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] border border-[var(--border)] transition-all flex items-center gap-2"
+            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] transition-all flex items-center gap-2 min-h-[44px] active:scale-95"
           >
             <span>{{ isDark ? '☀️ Switch to Light Mode' : '🌙 Switch to Dark Mode' }}</span>
           </button>
 
           <button
             @click="closeSettingsModal"
-            class="px-5 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] text-white shadow-md hover:brightness-110 transition-all"
+            class="px-6 py-2.5 rounded-xl text-xs font-black bg-slate-900 text-white dark:bg-white dark:text-slate-950 border border-transparent shadow-md hover:brightness-110 transition-all min-h-[44px] active:scale-95"
           >
-            Done
+            ✓ Done / Save
           </button>
         </div>
 
@@ -3844,7 +3848,7 @@ body {
             v-if="engagementUnlocked"
             @click="resetEngagementSecret"
             type="button"
-            class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex-shrink-0"
+            class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex-shrink-0 min-h-[36px]"
             title="Lock and remove all references to feature"
           >
             🔒 Re-lock
