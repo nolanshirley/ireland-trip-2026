@@ -351,6 +351,7 @@ const app = createApp({
     const isDetailModalOpen = ref(false);
     const isEditingDetailActivity = ref(false);
     const selectedTargetDayIndex = ref(null);
+    const isSwapPanelOpen = ref(false);
 
     const detailEditForm = ref({
       id: '',
@@ -407,6 +408,7 @@ const app = createApp({
       initDetailEditForm(payload.item, payload.day);
       isEditingDetailActivity.value = Boolean(payload.editMode);
       isDetailModalOpen.value = true;
+      isSwapPanelOpen.value = false; // always collapse swap panel for new item
       document.body.style.overflow = 'hidden';
     };
 
@@ -658,6 +660,70 @@ const app = createApp({
       isEditingDetailActivity.value = false;
       showToast(`Updated "${updatedItem.activity}" (${updatedItem.time})`, '💾');
     };
+
+    // ── Swap Optional Activity with an Attraction Alternative ────
+
+    const getRegionAttractions = (region) => {
+      if (!region) return [];
+      return (attractions[region] || []).map(a => ({ ...a, _region: region }));
+    };
+
+    const swapActivity = (currentItem, currentDay, attractionCandidate) => {
+      if (!currentItem || !currentDay || !attractionCandidate) return;
+      const dayIdx = currentDay.dayNumber ? currentDay.dayNumber - 1 : 0;
+      const startH = parseTimeToHour(currentItem.time || currentItem.startHour) || 10;
+      const durH = parseFloat(currentItem.durHours) || parseFloat(currentItem.dur) || 1.5;
+      const endH = startH + durH;
+      const timeStr = `${formatHourToTime(startH)} – ${formatHourToTime(endH)}`;
+      const durStr = durH >= 1 ? (durH % 1 === 0 ? `${durH}h` : `${durH} hrs`) : `${Math.round(durH * 60)}m`;
+
+      // Parse approximate duration from attraction time string (e.g. "2–3h" → 2.5)
+      let attrDurH = durH;
+      if (attractionCandidate.time) {
+        const tMatch = attractionCandidate.time.match(/(\d+(?:\.\d+)?)/g);
+        if (tMatch && tMatch.length >= 1) {
+          const lo = parseFloat(tMatch[0]);
+          const hi = tMatch.length >= 2 ? parseFloat(tMatch[1]) : lo;
+          attrDurH = (lo + hi) / 2;
+        }
+      }
+      const attrEndH = startH + Math.max(0.5, attrDurH);
+      const attrTimeStr = `${formatHourToTime(startH)} – ${formatHourToTime(attrEndH)}`;
+      const attrDurStr = attrDurH >= 1 ? (attrDurH % 1 === 0 ? `${attrDurH}h` : `${attrDurH} hrs`) : `${Math.round(attrDurH * 60)}m`;
+
+      const newItem = {
+        id: currentItem.id,
+        dayIndex: dayIdx,
+        dayNumber: dayIdx + 1,
+        activity: attractionCandidate.name,
+        time: attrTimeStr,
+        startHour: startH,
+        endHour: attrEndH,
+        dur: attrDurStr,
+        durHours: attrDurH,
+        type: 'sight',
+        energyLevel: 'moderate',
+        tag: 'SWAPPED',
+        desc: `Nature: ${attractionCandidate.nature || '–'}/10 · History: ${attractionCandidate.history || '–'}/10 · Culture: ${attractionCandidate.culture || '–'}/10 · Activity: ${attractionCandidate.activity || '–'}/10. Approx ${attractionCandidate.time || attrDurStr}. Distance: ${attractionCandidate.dist || 'nearby'}.`,
+        mapsQuery: attractionCandidate.mapsQuery || attractionCandidate.name.replace(/\s+/g, '+'),
+        optional: true,
+        isCustom: true,
+        swappedFrom: currentItem.activity
+      };
+
+      const existingIdx = customActivities.value.findIndex(a => a.id === newItem.id);
+      if (existingIdx >= 0) {
+        customActivities.value[existingIdx] = newItem;
+      } else {
+        customActivities.value.push(newItem);
+      }
+      saveCustomActivities();
+
+      selectedDetailItem.value = newItem;
+      isSwapPanelOpen.value = false;
+      showToast(`Swapped to "${attractionCandidate.name}" — save schedule to lock in!`, '🔄', { duration: 4000 });
+    };
+
 
     const isDetailItemOnHold = computed(() => {
       if (!selectedDetailItem.value) return false;
@@ -2852,6 +2918,11 @@ const app = createApp({
       holdDetailItem,
       unholdDetailItem,
       deleteDetailItem,
+      // Swap Optional Activity
+      isSwapPanelOpen,
+      swapActivity,
+      getRegionAttractions,
+      attractionMap,
       handleSwitchTab,
       targetSearchQuery,
       getGoogleMapsUrl,

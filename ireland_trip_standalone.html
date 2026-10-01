@@ -3009,6 +3009,7 @@ body {
           :trails="trailList"
           :restaurants="restaurantList"
           :target-day-index="selectedTargetDayIndex"
+          :attractions="attractionMap"
           @open-detail="openDetailModal"
           @switch-tab="handleSwitchTab"
         />
@@ -3504,6 +3505,135 @@ body {
             >
               <span>🗑️ Remove from Schedule</span>
             </button>
+          </div>
+
+          <!-- ============================================== -->
+          <!-- SWAP PANEL: Alternative Activities (optional items only) -->
+          <!-- ============================================== -->
+          <div
+            v-if="selectedDetailDay && selectedDetailDay.region && !selectedDetailItem.anchor && !selectedDetailItem.mandatory && selectedDetailItem.type !== 'housing' && selectedDetailItem.type !== 'drive'"
+            class="pt-3 border-t-2 border-dashed border-[var(--accent)]/40 space-y-3"
+          >
+            <!-- Swap Panel Header / Toggle -->
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🔄</span>
+                <div>
+                  <span class="text-xs font-black text-[var(--foreground)] uppercase tracking-wider">Swap This Activity</span>
+                  <p class="text-[10px] text-[var(--muted-foreground)] font-semibold leading-tight">
+                    Replace with an alternative from your current base region
+                  </p>
+                </div>
+              </div>
+              <button
+                @click="isSwapPanelOpen = !isSwapPanelOpen"
+                :class="[
+                  'px-3 py-1.5 rounded-xl text-xs font-black border transition-all flex items-center gap-1.5 shadow-sm min-h-[36px]',
+                  isSwapPanelOpen
+                    ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                    : 'bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                ]"
+              >
+                <span>{{ isSwapPanelOpen ? '▲ Hide Options' : '▼ Show Alternatives' }}</span>
+              </button>
+            </div>
+
+            <!-- Attraction Swap Cards -->
+            <div v-if="isSwapPanelOpen" class="space-y-2 animate-fadeIn">
+              <!-- Swapped-from notice -->
+              <div
+                v-if="selectedDetailItem.swappedFrom"
+                class="px-3 py-2 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-[10px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5"
+              >
+                <span>↩️</span>
+                <span>Swapped from: <strong>{{ selectedDetailItem.swappedFrom }}</strong></span>
+              </div>
+
+              <!-- No attractions message -->
+              <div
+                v-if="!getRegionAttractions(selectedDetailDay.region).length"
+                class="px-3 py-3 rounded-xl bg-[var(--background)] border border-[var(--border)] text-xs text-[var(--muted-foreground)] text-center"
+              >
+                No alternative activities found for this region.
+              </div>
+
+              <!-- Attraction cards grid -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  v-for="(attr, aIdx) in getRegionAttractions(selectedDetailDay.region)"
+                  :key="aIdx"
+                  @click="swapActivity(selectedDetailItem, selectedDetailDay, attr)"
+                  :disabled="attr.name === selectedDetailItem.activity"
+                  :class="[
+                    'text-left p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--accent)] active:scale-95',
+                    attr.name === selectedDetailItem.activity
+                      ? 'bg-[var(--accent)]/15 border-[var(--accent)] cursor-default'
+                      : 'bg-[var(--card)] hover:bg-[var(--card-hover)] border-[var(--border)] hover:border-[var(--accent)]/60 cursor-pointer shadow-sm hover:shadow-md'
+                  ]"
+                  :title="attr.name === selectedDetailItem.activity ? 'Currently scheduled' : 'Tap to swap this activity in'"
+                >
+                  <!-- Attraction Name + Current badge -->
+                  <div class="flex items-start justify-between gap-1.5 mb-1.5">
+                    <span class="text-xs font-black text-[var(--foreground)] leading-tight">{{ attr.name }}</span>
+                    <span
+                      v-if="attr.name === selectedDetailItem.activity"
+                      class="flex-shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black bg-[var(--accent)] text-white"
+                    >NOW</span>
+                  </div>
+
+                  <!-- Rating bars row -->
+                  <div class="grid grid-cols-2 gap-x-2 gap-y-0.5 mb-1.5">
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] font-bold text-[var(--muted-foreground)] w-12 flex-shrink-0">🌿 Nature</span>
+                      <div class="flex-1 h-1.5 rounded-full bg-[var(--card-hover)] overflow-hidden">
+                        <div class="h-full rounded-full bg-emerald-500" :style="{ width: (attr.nature || 0) * 10 + '%' }"></div>
+                      </div>
+                      <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 w-4 text-right">{{ attr.nature }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] font-bold text-[var(--muted-foreground)] w-12 flex-shrink-0">🏛️ History</span>
+                      <div class="flex-1 h-1.5 rounded-full bg-[var(--card-hover)] overflow-hidden">
+                        <div class="h-full rounded-full bg-amber-500" :style="{ width: (attr.history || 0) * 10 + '%' }"></div>
+                      </div>
+                      <span class="text-[9px] font-bold text-amber-600 dark:text-amber-400 w-4 text-right">{{ attr.history }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] font-bold text-[var(--muted-foreground)] w-12 flex-shrink-0">🎭 Culture</span>
+                      <div class="flex-1 h-1.5 rounded-full bg-[var(--card-hover)] overflow-hidden">
+                        <div class="h-full rounded-full bg-purple-500" :style="{ width: (attr.culture || 0) * 10 + '%' }"></div>
+                      </div>
+                      <span class="text-[9px] font-bold text-purple-600 dark:text-purple-400 w-4 text-right">{{ attr.culture }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[9px] font-bold text-[var(--muted-foreground)] w-12 flex-shrink-0">🥾 Activity</span>
+                      <div class="flex-1 h-1.5 rounded-full bg-[var(--card-hover)] overflow-hidden">
+                        <div class="h-full rounded-full bg-blue-500" :style="{ width: (attr.activity || 0) * 10 + '%' }"></div>
+                      </div>
+                      <span class="text-[9px] font-bold text-blue-600 dark:text-blue-400 w-4 text-right">{{ attr.activity }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Time & Distance footer -->
+                  <div class="flex items-center gap-2 pt-1 border-t border-[var(--border)]/50">
+                    <span class="text-[10px] font-semibold text-[var(--muted-foreground)]">⏱️ {{ attr.time }}</span>
+                    <span class="text-[var(--muted-foreground)] opacity-40 text-[9px]">·</span>
+                    <span class="text-[10px] font-semibold text-[var(--muted-foreground)] truncate">📍 {{ attr.dist }}</span>
+                  </div>
+
+                  <!-- Swap CTA (non-current only) -->
+                  <div v-if="attr.name !== selectedDetailItem.activity" class="mt-1.5 pt-1">
+                    <span class="text-[10px] font-black text-[var(--accent)] flex items-center gap-1">
+                      <span>🔄</span>
+                      <span>Tap to swap in →</span>
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              <p class="text-[10px] text-[var(--muted-foreground)] text-center pt-1 font-medium">
+                Swapping keeps the same time slot. Edit the stop after swapping to adjust timing.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -6704,7 +6834,8 @@ const DailyPlanner = {
     timeline: { type: Array, required: true },
     trails: { type: Array, default: () => [] },
     restaurants: { type: Array, default: () => [] },
-    targetDayIndex: { type: Number, default: null }
+    targetDayIndex: { type: Number, default: null },
+    attractions: { type: Object, default: () => ({}) }
   },
   emits: ['open-detail', 'switch-tab'],
   data() {
@@ -7311,22 +7442,34 @@ const DailyPlanner = {
     },
     isOptionalItem(item) {
       if (!item) return false;
-      if (item.optional !== undefined) return Boolean(item.optional);
-      if (item.isOptional !== undefined) return Boolean(item.isOptional);
-      if (item.anchor || item.mandatory || item.reserved) return false;
+      // Explicit override: item.optional property set directly (e.g., by user in edit modal)
+      if (item.optional === true) return true;
+      if (item.optional === false) return false;
+      // Anchor / mandatory / confirmed reservation flags → always locked, never swappable
+      if (item.anchor || item.mandatory) return false;
+      // Housing / lodging type → mandatory (base camp check-ins, sleep)
+      if (item.type === 'housing') return false;
+      // Drive type → mandatory (these are transit legs, can't just skip a drive)
+      if (item.type === 'drive') return false;
       const tag = (item.tag || '').toUpperCase();
-      if (tag.includes('CONFIRMED') || tag.includes('FLIGHT') || tag.includes('CHECK-IN') || tag.includes('CHECK-OUT') || tag.includes('BASE MOVE') || tag.includes('CAR RETURN') || tag.includes('HOUSING') || tag.includes('AIRPORT DRIVE')) {
+      // Confirmed bookings / flights / logistics tags → mandatory
+      if (
+        tag.includes('CONFIRMED') ||
+        tag.includes('FLIGHT') ||
+        tag.includes('CHECK-IN') ||
+        tag.includes('CHECK-OUT') ||
+        tag.includes('BASE MOVE') ||
+        tag.includes('CAR RETURN') ||
+        tag.includes('HOUSING') ||
+        tag.includes('AIRPORT DRIVE') ||
+        tag.includes('TRANSFER') ||
+        tag.includes('SLEEP') ||
+        tag.includes('LODGING')
+      ) {
         return false;
       }
-      if (item.status === 'Optional' || item.status === 'proposed') return true;
-      if (tag.includes('OPTIONAL') || tag.includes('SUGGESTED') || tag.includes('FLEXIBLE') || tag.includes('REST') ||
-          tag.includes('NATURE') || tag.includes('EXPLORE') || tag.includes('PUB') || tag.includes('CASUAL') ||
-          tag.includes('WALK') || tag.includes('HIKE') || tag.includes('VISIT') || tag.includes('HISTORY') ||
-          tag.includes('CULTURE') || tag.includes('TOUR') || tag.includes('CASTLE') || tag.includes('RUINS') ||
-          tag.includes('WATERFALL') || tag.includes('HERITAGE')) {
-        return true;
-      }
-      return false;
+      // Everything else is optional / swappable by default
+      return true;
     },
     nudgeActivityTime(item, day, minuteDelta) {
       if (window.TravelApp && window.TravelApp.nudgeActivity) {
@@ -14380,6 +14523,7 @@ const app = createApp({
     const isDetailModalOpen = ref(false);
     const isEditingDetailActivity = ref(false);
     const selectedTargetDayIndex = ref(null);
+    const isSwapPanelOpen = ref(false);
 
     const detailEditForm = ref({
       id: '',
@@ -14436,6 +14580,7 @@ const app = createApp({
       initDetailEditForm(payload.item, payload.day);
       isEditingDetailActivity.value = Boolean(payload.editMode);
       isDetailModalOpen.value = true;
+      isSwapPanelOpen.value = false; // always collapse swap panel for new item
       document.body.style.overflow = 'hidden';
     };
 
@@ -14687,6 +14832,70 @@ const app = createApp({
       isEditingDetailActivity.value = false;
       showToast(`Updated "${updatedItem.activity}" (${updatedItem.time})`, '💾');
     };
+
+    // ── Swap Optional Activity with an Attraction Alternative ────
+
+    const getRegionAttractions = (region) => {
+      if (!region) return [];
+      return (attractions[region] || []).map(a => ({ ...a, _region: region }));
+    };
+
+    const swapActivity = (currentItem, currentDay, attractionCandidate) => {
+      if (!currentItem || !currentDay || !attractionCandidate) return;
+      const dayIdx = currentDay.dayNumber ? currentDay.dayNumber - 1 : 0;
+      const startH = parseTimeToHour(currentItem.time || currentItem.startHour) || 10;
+      const durH = parseFloat(currentItem.durHours) || parseFloat(currentItem.dur) || 1.5;
+      const endH = startH + durH;
+      const timeStr = `${formatHourToTime(startH)} – ${formatHourToTime(endH)}`;
+      const durStr = durH >= 1 ? (durH % 1 === 0 ? `${durH}h` : `${durH} hrs`) : `${Math.round(durH * 60)}m`;
+
+      // Parse approximate duration from attraction time string (e.g. "2–3h" → 2.5)
+      let attrDurH = durH;
+      if (attractionCandidate.time) {
+        const tMatch = attractionCandidate.time.match(/(\d+(?:\.\d+)?)/g);
+        if (tMatch && tMatch.length >= 1) {
+          const lo = parseFloat(tMatch[0]);
+          const hi = tMatch.length >= 2 ? parseFloat(tMatch[1]) : lo;
+          attrDurH = (lo + hi) / 2;
+        }
+      }
+      const attrEndH = startH + Math.max(0.5, attrDurH);
+      const attrTimeStr = `${formatHourToTime(startH)} – ${formatHourToTime(attrEndH)}`;
+      const attrDurStr = attrDurH >= 1 ? (attrDurH % 1 === 0 ? `${attrDurH}h` : `${attrDurH} hrs`) : `${Math.round(attrDurH * 60)}m`;
+
+      const newItem = {
+        id: currentItem.id,
+        dayIndex: dayIdx,
+        dayNumber: dayIdx + 1,
+        activity: attractionCandidate.name,
+        time: attrTimeStr,
+        startHour: startH,
+        endHour: attrEndH,
+        dur: attrDurStr,
+        durHours: attrDurH,
+        type: 'sight',
+        energyLevel: 'moderate',
+        tag: 'SWAPPED',
+        desc: `Nature: ${attractionCandidate.nature || '–'}/10 · History: ${attractionCandidate.history || '–'}/10 · Culture: ${attractionCandidate.culture || '–'}/10 · Activity: ${attractionCandidate.activity || '–'}/10. Approx ${attractionCandidate.time || attrDurStr}. Distance: ${attractionCandidate.dist || 'nearby'}.`,
+        mapsQuery: attractionCandidate.mapsQuery || attractionCandidate.name.replace(/\s+/g, '+'),
+        optional: true,
+        isCustom: true,
+        swappedFrom: currentItem.activity
+      };
+
+      const existingIdx = customActivities.value.findIndex(a => a.id === newItem.id);
+      if (existingIdx >= 0) {
+        customActivities.value[existingIdx] = newItem;
+      } else {
+        customActivities.value.push(newItem);
+      }
+      saveCustomActivities();
+
+      selectedDetailItem.value = newItem;
+      isSwapPanelOpen.value = false;
+      showToast(`Swapped to "${attractionCandidate.name}" — save schedule to lock in!`, '🔄', { duration: 4000 });
+    };
+
 
     const isDetailItemOnHold = computed(() => {
       if (!selectedDetailItem.value) return false;
@@ -16881,6 +17090,11 @@ const app = createApp({
       holdDetailItem,
       unholdDetailItem,
       deleteDetailItem,
+      // Swap Optional Activity
+      isSwapPanelOpen,
+      swapActivity,
+      getRegionAttractions,
+      attractionMap,
       handleSwitchTab,
       targetSearchQuery,
       getGoogleMapsUrl,

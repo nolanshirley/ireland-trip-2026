@@ -9,7 +9,8 @@ const DailyPlanner = {
     timeline: { type: Array, required: true },
     trails: { type: Array, default: () => [] },
     restaurants: { type: Array, default: () => [] },
-    targetDayIndex: { type: Number, default: null }
+    targetDayIndex: { type: Number, default: null },
+    attractions: { type: Object, default: () => ({}) }
   },
   emits: ['open-detail', 'switch-tab'],
   data() {
@@ -616,22 +617,34 @@ const DailyPlanner = {
     },
     isOptionalItem(item) {
       if (!item) return false;
-      if (item.optional !== undefined) return Boolean(item.optional);
-      if (item.isOptional !== undefined) return Boolean(item.isOptional);
-      if (item.anchor || item.mandatory || item.reserved) return false;
+      // Explicit override: item.optional property set directly (e.g., by user in edit modal)
+      if (item.optional === true) return true;
+      if (item.optional === false) return false;
+      // Anchor / mandatory / confirmed reservation flags → always locked, never swappable
+      if (item.anchor || item.mandatory) return false;
+      // Housing / lodging type → mandatory (base camp check-ins, sleep)
+      if (item.type === 'housing') return false;
+      // Drive type → mandatory (these are transit legs, can't just skip a drive)
+      if (item.type === 'drive') return false;
       const tag = (item.tag || '').toUpperCase();
-      if (tag.includes('CONFIRMED') || tag.includes('FLIGHT') || tag.includes('CHECK-IN') || tag.includes('CHECK-OUT') || tag.includes('BASE MOVE') || tag.includes('CAR RETURN') || tag.includes('HOUSING') || tag.includes('AIRPORT DRIVE')) {
+      // Confirmed bookings / flights / logistics tags → mandatory
+      if (
+        tag.includes('CONFIRMED') ||
+        tag.includes('FLIGHT') ||
+        tag.includes('CHECK-IN') ||
+        tag.includes('CHECK-OUT') ||
+        tag.includes('BASE MOVE') ||
+        tag.includes('CAR RETURN') ||
+        tag.includes('HOUSING') ||
+        tag.includes('AIRPORT DRIVE') ||
+        tag.includes('TRANSFER') ||
+        tag.includes('SLEEP') ||
+        tag.includes('LODGING')
+      ) {
         return false;
       }
-      if (item.status === 'Optional' || item.status === 'proposed') return true;
-      if (tag.includes('OPTIONAL') || tag.includes('SUGGESTED') || tag.includes('FLEXIBLE') || tag.includes('REST') ||
-          tag.includes('NATURE') || tag.includes('EXPLORE') || tag.includes('PUB') || tag.includes('CASUAL') ||
-          tag.includes('WALK') || tag.includes('HIKE') || tag.includes('VISIT') || tag.includes('HISTORY') ||
-          tag.includes('CULTURE') || tag.includes('TOUR') || tag.includes('CASTLE') || tag.includes('RUINS') ||
-          tag.includes('WATERFALL') || tag.includes('HERITAGE')) {
-        return true;
-      }
-      return false;
+      // Everything else is optional / swappable by default
+      return true;
     },
     nudgeActivityTime(item, day, minuteDelta) {
       if (window.TravelApp && window.TravelApp.nudgeActivity) {
