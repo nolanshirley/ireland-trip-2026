@@ -304,7 +304,7 @@ const weatherData = {
   ]
 };
 
-// ── Outfits & Packing Guidelines ─────────────────────────────
+// ── Outfits & Weather Clothing Guidelines ──────────────────────
 const outfitGuides = [
   {
     id: 'coastal',

@@ -582,7 +582,7 @@
               Tap any dimension below to customize your top summary metrics & deep links
             </p>
             <p v-else class="text-[11px] text-[var(--muted-foreground)] truncate sm:whitespace-normal">
-              Tap Expand to view milestone anchors, base hubs & packing progress
+              Tap Expand to view milestone anchors, base hubs & outfit guides
             </p>
           </div>
         </div>
@@ -990,7 +990,7 @@
         </div>
       </div>
 
-      <!-- LENS 4: Weather & Packing Readiness -->
+      <!-- LENS 4: Weather & Outfit Readiness -->
       <div v-else-if="topDashboardLens === 'weather'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 animate-fadeIn">
         <div
           @click="activeTab = 'weather'"
@@ -1021,20 +1021,17 @@
           <div>
             <div class="flex items-center justify-between gap-1 mb-1">
               <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-200 dark:bg-emerald-300 text-emerald-950 border border-emerald-400">
-                🧳 {{ packingProgress.percent }}% PACKED
+                🥾 FOOTWEAR & SHELLS
               </span>
-              <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400">{{ packingProgress.packed }}/{{ packingProgress.total }} Items</span>
+              <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400">Gear Guide</span>
             </div>
-            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Interactive Packing Checklist</h4>
-            <div class="w-full h-1.5 rounded-full bg-[var(--border)] overflow-hidden mt-1.5">
-              <div class="h-full bg-emerald-500 rounded-full" :style="{ width: packingProgress.percent + '%' }"></div>
-            </div>
+            <h4 class="font-bold text-sm text-[var(--foreground)] mt-1.5">Recommended Daily Gear</h4>
             <p class="text-xs text-[var(--muted-foreground)] mt-1">
-              Boots, shells, birthday dresses, UK Type G power adapters & fleece
+              Broken-in waterproof hiking boots, merino wool socks, Gore-Tex rain shells & city shoes
             </p>
           </div>
           <div class="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
-            <span>Check Off Items</span>
+            <span>View Outfit Guide</span>
             <span>→</span>
           </div>
         </div>
@@ -1410,7 +1407,7 @@
         />
       </section>
 
-      <!-- Weather & Packing Outfits Tab -->
+      <!-- Weather & Outfits Tab -->
       <section v-show="activeTab === 'weather'">
         <weather-packing :weather-data="weatherInfo" :outfit-guides="outfitList" />
       </section>
@@ -1886,24 +1883,24 @@
             </span>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               v-for="p in palettes"
               :key="p.id"
               @click="setPalette(p.id)"
               :class="[
-                'palette-swatch-btn flex-col items-start p-3 text-left',
-                selectedPalette === p.id ? 'active ring-2 ring-[var(--accent)]/40' : ''
+                'palette-swatch-btn flex-col items-start p-3.5 text-left rounded-xl border-2 transition-all',
+                selectedPalette === p.id ? 'active ring-2 ring-[var(--accent)] border-[var(--accent)] bg-[var(--card-hover)]' : 'border-[var(--border)] bg-[var(--card)] hover:bg-[var(--card-hover)]'
               ]"
             >
               <div class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-2">
-                  <span class="swatch-circle" :style="{ backgroundColor: p.color }"></span>
-                  <span class="font-bold text-xs">{{ p.icon }} {{ p.name }}</span>
+                  <span class="swatch-circle shadow-xs" :style="{ backgroundColor: p.color }"></span>
+                  <span class="font-black text-xs sm:text-sm text-[var(--foreground)]">{{ p.icon }} {{ p.name }}</span>
                 </div>
-                <span v-if="selectedPalette === p.id" class="text-xs text-[var(--accent)] font-bold">✓</span>
+                <span v-if="selectedPalette === p.id" class="text-sm text-[var(--accent)] font-black">✓</span>
               </div>
-              <span class="text-[10px] text-[var(--muted-foreground)] font-normal mt-1 leading-tight">
+              <span class="text-[11px] text-[var(--muted-foreground)] font-semibold mt-1.5 leading-snug">
                 {{ p.desc }}
               </span>
             </button>
@@ -2112,7 +2109,7 @@
           <!-- Note Body -->
           <textarea
             v-model="newNoteForm.content"
-            placeholder="Write your note, instructions, parking tip, packing reminder, or memories..."
+            placeholder="Write your note, instructions, parking tip, route reminder, or memories..."
             rows="3"
             class="w-full text-xs p-2.5 rounded-lg bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] focus:ring-1 focus:ring-[var(--accent)] focus:outline-none leading-relaxed"
           ></textarea>

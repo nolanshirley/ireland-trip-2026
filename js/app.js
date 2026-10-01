@@ -257,7 +257,7 @@ const app = createApp({
       { id: 'bases', label: '🏠 4 Base Camps & Currency', icon: '🏠' },
       { id: 'budget', label: '💶 Budget & Splits', icon: '💶' },
       { id: 'deadlines', label: '⚠️ Bookings & Deadlines', icon: '⚠️' },
-      { id: 'weather', label: '🌦️ Weather & Packing', icon: '🌦️' },
+      { id: 'weather', label: '🌦️ Weather & Outfits', icon: '🌦️' },
       { id: 'nature', label: '⛰️ Scenic Wonders & Trails', icon: '⛰️' },
       { id: 'sos', label: '🆘 SOS & Emergency', icon: '🆘' }
     ];
@@ -290,7 +290,7 @@ const app = createApp({
     const tabs = [
       { id: 'planner', label: '📅 Daily Schedule', shortLabel: 'Schedule', icon: '📅' },
       { id: 'budget', label: '💶 Budget & Splits', shortLabel: 'Budget', icon: '💶' },
-      { id: 'weather', label: '🌦️ Weather & Packing', shortLabel: 'Weather', icon: '🌦️' },
+      { id: 'weather', label: '🌦️ Weather & Outfits', shortLabel: 'Weather', icon: '🌦️' },
       { id: 'hiking', label: '🥾 Trails & Nature', shortLabel: 'Trails', icon: '🥾' },
       { id: 'restaurants', label: '🍴 Food & Pubs', shortLabel: 'Food', icon: '🍴' },
       { id: 'sights', label: '🗺️ Sights', shortLabel: 'Sights', icon: '🗺️' },
@@ -965,12 +965,10 @@ const app = createApp({
 
     // ── Color Palettes & Accessibility Tokens ──────────────────
     const palettes = [
-      { id: 'monochrome', name: 'Monochrome & Ice', desc: 'Crisp Obsidian & Ice Blue', color: '#38bdf8', icon: '❄️' },
-      { id: 'glacier', name: 'Glacier Cyan', desc: 'Arctic Ocean & Cyan', color: '#06b6d4', icon: '🌊' },
-      { id: 'twilight', name: 'Nordic Twilight', desc: 'Midnight & Lavender Indigo', color: '#818cf8', icon: '🌌' },
-      { id: 'sage', name: 'Muted Sage', desc: 'Gentle Pine & Earthy Sage', color: '#2dd4bf', icon: '🌲' },
-      { id: 'amber', name: 'Roasted Malt', desc: 'Irish Pub & Golden Amber', color: '#f59e0b', icon: '🍺' },
-      { id: 'pure-black', name: 'Pure OLED', desc: '100% Black & White Slate', color: '#f4f4f5', icon: '⚪' }
+      { id: 'monochrome', name: 'Monochrome & Ice', desc: 'Crisp High-Contrast Slate & Ice Blue', color: '#0284c7', icon: '❄️' },
+      { id: 'shamrock', name: 'Emerald & Celtic Forest', desc: 'Calming Forest Green & High-Contrast Pine', color: '#047857', icon: '☘️' },
+      { id: 'navy', name: 'Royal Atlantic Navy', desc: 'Deep Navy & Ocean Blue (Easy on the Eyes)', color: '#1d4ed8', icon: '🌊' },
+      { id: 'pure-black', name: 'Pure OLED High Contrast', desc: '100% Black & Pure White (Maximum Contrast)', color: '#18181b', icon: '⚪' }
     ];
 
     const selectedPalette = ref('monochrome');

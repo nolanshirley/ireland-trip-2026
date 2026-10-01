@@ -50,14 +50,14 @@
   --shadow-xl:         0 20px 45px rgba(0, 0, 0, 0.85);
 }
 
-/* ── Palette 1: Monochrome & Ice Blue (Default Chill Master) ─── */
+/* ── Palette 1: Monochrome & Ice Blue (Original Master Choice) ─── */
 .theme-monochrome {
   --background:        #ffffff;
   --foreground:        #090d16;
   --card:              #ffffff;
   --card-hover:        #f8fafc;
-  --border:            #e2e8f0;
-  --muted-foreground:  #1e293b;
+  --border:            #cbd5e1;
+  --muted-foreground:  #0f172a;
   --accent:            #0284c7;
   --accent-glow:       rgba(2, 132, 199, 0.25);
   --accent-secondary:  #4f46e5;
@@ -74,113 +74,65 @@
   --accent-secondary:  #818cf8;
 }
 
-/* ── Palette 2: Glacier Cyan & Arctic Slate ──────────────────── */
-.theme-glacier {
+/* ── Palette 2: Emerald & Celtic Forest (Calming Irish Forest & High Contrast) ─── */
+.theme-shamrock {
   --background:        #ffffff;
-  --foreground:        #082f49;
+  --foreground:        #022c22;
   --card:              #ffffff;
-  --card-hover:        #f0f9ff;
-  --border:            #bae6fd;
-  --muted-foreground:  #0c4a6e;
-  --accent:            #0284c7;
-  --accent-glow:       rgba(2, 132, 199, 0.28);
-  --accent-secondary:  #06b6d4;
-}
-.dark.theme-glacier {
-  --background:        #060e18;
-  --foreground:        #f0f9ff;
-  --card:              #0a1827;
-  --card-hover:        #10243b;
-  --border:            #173859;
-  --muted-foreground:  #7dd3fc;
-  --accent:            #00f0ff;
-  --accent-glow:       rgba(0, 240, 255, 0.38);
-  --accent-secondary:  #38bdf8;
-}
-
-/* ── Palette 3: Nordic Twilight & Lavender ───────────────────── */
-.theme-twilight {
-  --background:        #ffffff;
-  --foreground:        #2e1065;
-  --card:              #ffffff;
-  --card-hover:        #faf5ff;
-  --border:            #e9d5ff;
-  --muted-foreground:  #581c87;
-  --accent:            #7c3aed;
-  --accent-glow:       rgba(124, 58, 237, 0.25);
-  --accent-secondary:  #a855f7;
-}
-.dark.theme-twilight {
-  --background:        #0a0a14;
-  --foreground:        #faf5ff;
-  --card:              #131326;
-  --card-hover:        #1c1c38;
-  --border:            #2a2a50;
-  --muted-foreground:  #c4b5fd;
-  --accent:            #a78bfa;
-  --accent-glow:       rgba(167, 139, 250, 0.35);
-  --accent-secondary:  #818cf8;
-}
-
-/* ── Palette 4: Muted Sage & Celtic Slate (Gentle Earthy Pine) ─ */
-.theme-sage {
-  --background:        #ffffff;
-  --foreground:        #0f2e22;
-  --card:              #ffffff;
-  --card-hover:        #f4f8f6;
-  --border:            #c8ded4;
-  --muted-foreground:  #14532d;
-  --accent:            #0d9488;
-  --accent-glow:       rgba(13, 148, 136, 0.25);
+  --card-hover:        #f0fdf4;
+  --border:            #6ee7b7;
+  --muted-foreground:  #064e3b;
+  --accent:            #047857;
+  --accent-glow:       rgba(4, 120, 87, 0.25);
   --accent-secondary:  #059669;
 }
-.dark.theme-sage {
-  --background:        #070d0a;
-  --foreground:        #f2f9f5;
-  --card:              #0d1813;
-  --card-hover:        #15261f;
-  --border:            #1f3d30;
-  --muted-foreground:  #8ec5ad;
-  --accent:            #2dd4bf;
-  --accent-glow:       rgba(45, 212, 191, 0.35);
-  --accent-secondary:  #34d399;
+.dark.theme-shamrock {
+  --background:        #021a12;
+  --foreground:        #ecfdf5;
+  --card:              #052e20;
+  --card-hover:        #0a402e;
+  --border:            #134e3a;
+  --muted-foreground:  #a7f3d0;
+  --accent:            #34d399;
+  --accent-glow:       rgba(52, 211, 153, 0.35);
+  --accent-secondary:  #10b981;
 }
 
-/* ── Palette 5: Roasted Malt & Golden Amber ──────────────────── */
-.theme-amber {
+/* ── Palette 3: Royal Atlantic Navy (Senior Eye Comfort & Deep Clarity) ─── */
+.theme-navy {
   --background:        #ffffff;
-  --foreground:        #292524;
+  --foreground:        #0f172a;
   --card:              #ffffff;
-  --card-hover:        #fdfbf7;
-  --border:            #fde68a;
-  --muted-foreground:  #78350f;
-  --accent:            #d97706;
-  --accent-glow:       rgba(217, 119, 6, 0.25);
-  --accent-secondary:  #f59e0b;
+  --card-hover:        #f1f5f9;
+  --border:            #94a3b8;
+  --muted-foreground:  #1e3a8a;
+  --accent:            #1d4ed8;
+  --accent-glow:       rgba(29, 78, 216, 0.25);
+  --accent-secondary:  #2563eb;
 }
-.dark.theme-amber {
-  --background:        #0c0a08;
-  --foreground:        #fdfbf7;
-  --card:              #181410;
-  --card-hover:        #261f17;
-  --border:            #3d3122;
-  --muted-foreground:  #fcd34d;
-  --accent:            #fbbf24;
-  --accent-glow:       rgba(251, 191, 36, 0.35);
-  --accent-secondary:  #f59e0b;
+.dark.theme-navy {
+  --background:        #030712;
+  --foreground:        #f8fafc;
+  --card:              #0b1329;
+  --card-hover:        #132247;
+  --border:            #1e293b;
+  --muted-foreground:  #93c5fd;
+  --accent:            #60a5fa;
+  --accent-glow:       rgba(96, 165, 250, 0.35);
+  --accent-secondary:  #3b82f6;
 }
 
-/* ── Palette 6: Minimalist OLED Monochrome ───────────────────── */
+/* ── Palette 4: Pure OLED High Contrast (Original Master Choice) ─── */
 .theme-pure-black {
   --background:        #ffffff;
   --foreground:        #000000;
   --card:              #ffffff;
   --card-hover:        #f4f4f5;
-  --border:            #e4e4e7;
+  --border:            #a1a1aa;
   --accent:            #18181b;
   --accent-glow:       rgba(24, 24, 27, 0.25);
   --accent-secondary:  #3f3f46;
-  --muted-foreground:  #18181b;
+  --muted-foreground:  #09090b;
 }
 .dark.theme-pure-black {
   --background:        #000000;
@@ -191,7 +143,18 @@
   --accent:            #f4f4f5;
   --accent-glow:       rgba(244, 244, 245, 0.35);
   --accent-secondary:  #a1a1aa;
-  --muted-foreground:  #a1a1aa;
+  --muted-foreground:  #e4e4e7;
+}
+
+/* Legacy theme aliases for smooth backwards compatibility */
+.theme-glacier, .theme-twilight, .theme-sage, .theme-amber {
+  --background: #ffffff;
+  --foreground: #090d16;
+  --card: #ffffff;
+  --card-hover: #f8fafc;
+  --border: #cbd5e1;
+  --muted-foreground: #0f172a;
+  --accent: #0284c7;
 }
 
 /* ── Dynamic Text Size Scaling Tokens ───────────────────────── */

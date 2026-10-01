@@ -715,82 +715,103 @@ const DailyPlanner = {
       <!-- ============================================================= -->
       <div
         v-if="showDayPlanSummary && timeline && timeline[dayPlanSummaryDayIndex]"
-        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-6"
         @click.self="dismissDayPlanPopup"
       >
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="dismissDayPlanPopup"></div>
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="dismissDayPlanPopup"></div>
         
         <!-- Modal Card -->
-        <div class="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl border-2 border-[var(--accent)]/40 bg-[var(--card)] text-[var(--foreground)] animate-fadeIn" style="animation: dayPlanSlideIn 0.35s ease-out;">
+        <div class="relative w-full max-w-lg max-h-[92vh] sm:max-h-[88vh] overflow-y-auto rounded-2xl shadow-2xl border-2 border-[var(--accent)]/50 bg-[var(--card)] text-[var(--foreground)] animate-fadeIn pb-safe" style="animation: dayPlanSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);">
           
           <!-- Close Button -->
           <button
             @click="dismissDayPlanPopup"
-            class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-[var(--background)] hover:bg-[var(--card-hover)] border border-[var(--border)] flex items-center justify-center text-sm font-bold text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors shadow-sm"
+            class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-[var(--background)] hover:bg-[var(--card-hover)] border-2 border-[var(--border)] flex items-center justify-center text-sm font-black text-[var(--foreground)] transition-transform active:scale-90 shadow-md"
             title="Close daily plan"
+            aria-label="Close daily action plan"
           >✕</button>
 
           <!-- Header -->
-          <div class="p-5 pb-3 border-b border-[var(--border)]" :style="{ borderTop: '4px solid ' + timeline[dayPlanSummaryDayIndex].color }">
+          <div class="p-4 sm:p-5 pb-3 border-b border-[var(--border)]" :style="{ borderTop: '5px solid ' + timeline[dayPlanSummaryDayIndex].color }">
             <div class="flex items-center gap-2 mb-1">
               <span class="text-2xl">☀️</span>
-              <span class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Daily Action Plan</span>
+              <span class="text-xs font-black uppercase tracking-wider text-[var(--accent)]">Daily Action Plan</span>
             </div>
-            <h3 class="text-lg sm:text-xl font-extrabold leading-snug">
+            <h3 class="text-lg sm:text-xl font-black leading-snug text-[var(--foreground)]">
               Day {{ timeline[dayPlanSummaryDayIndex].dayNumber }} — {{ timeline[dayPlanSummaryDayIndex].date }}
             </h3>
-            <p class="text-sm font-semibold mt-0.5" :style="{ color: timeline[dayPlanSummaryDayIndex].color }">
+            <p class="text-sm font-bold mt-0.5" :style="{ color: timeline[dayPlanSummaryDayIndex].color }">
               {{ timeline[dayPlanSummaryDayIndex].title }}
             </p>
           </div>
 
           <!-- Body -->
-          <div class="p-5 space-y-4 text-sm">
+          <div class="p-4 sm:p-5 space-y-4 text-sm">
 
             <!-- Special Day Banner -->
-            <div v-if="timeline[dayPlanSummaryDayIndex].special" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-bold">
-              <span class="text-base">🎂</span>
+            <div v-if="timeline[dayPlanSummaryDayIndex].special" class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/20 border-2 border-amber-500/50 text-amber-950 dark:text-amber-200 text-xs sm:text-sm font-black shadow-xs">
+              <span class="text-lg">🎂</span>
               <span>{{ timeline[dayPlanSummaryDayIndex].specialText || 'Special Day!' }}</span>
             </div>
 
             <!-- Quick Stats Row -->
             <div class="grid grid-cols-3 gap-2 text-center">
-              <div class="rounded-lg bg-[var(--background)] p-2 border border-[var(--border)]">
-                <div class="text-lg font-extrabold text-[var(--accent)]">{{ (timeline[dayPlanSummaryDayIndex].items || []).length }}</div>
-                <div class="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Stops</div>
+              <div class="rounded-xl bg-[var(--background)] p-2.5 border border-[var(--border)] shadow-xs">
+                <div class="text-xl font-black text-[var(--accent)]">{{ (timeline[dayPlanSummaryDayIndex].items || []).length }}</div>
+                <div class="text-[10px] font-black text-[var(--muted-foreground)] uppercase tracking-wide">Stops</div>
               </div>
-              <div class="rounded-lg bg-[var(--background)] p-2 border border-[var(--border)]">
-                <div class="text-lg font-extrabold text-blue-700 dark:text-blue-400">{{ timeline[dayPlanSummaryDayIndex].driveHours || 0 }}h</div>
-                <div class="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Driving</div>
+              <div class="rounded-xl bg-[var(--background)] p-2.5 border border-[var(--border)] shadow-xs">
+                <div class="text-xl font-black text-blue-700 dark:text-blue-400">{{ timeline[dayPlanSummaryDayIndex].driveHours || 0 }}h</div>
+                <div class="text-[10px] font-black text-[var(--muted-foreground)] uppercase tracking-wide">Driving</div>
               </div>
-              <div class="rounded-lg bg-[var(--background)] p-2 border border-[var(--border)]">
-                <div class="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">{{ getDayDiningItems(dayPlanSummaryDayIndex).length }}</div>
-                <div class="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Meals</div>
+              <div class="rounded-xl bg-[var(--background)] p-2.5 border border-[var(--border)] shadow-xs">
+                <div class="text-xl font-black text-emerald-700 dark:text-emerald-400">{{ getDayDiningItems(dayPlanSummaryDayIndex).length }}</div>
+                <div class="text-[10px] font-black text-[var(--muted-foreground)] uppercase tracking-wide">Meals</div>
               </div>
             </div>
 
             <!-- Base Camp & Route -->
-            <div class="rounded-lg bg-[var(--background)] p-3 border border-[var(--border)] space-y-1.5">
-              <div class="flex items-center gap-1.5 text-xs">
-                <span>🏡</span>
+            <div class="rounded-xl bg-[var(--background)] p-3 sm:p-3.5 border border-[var(--border)] space-y-1.5 shadow-xs">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-base">🏡</span>
                 <span class="font-bold text-[var(--foreground)]">Base:</span>
-                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].base }}</span>
+                <span class="font-medium text-[var(--foreground)]">{{ timeline[dayPlanSummaryDayIndex].base }}</span>
               </div>
-              <div v-if="timeline[dayPlanSummaryDayIndex].route" class="flex items-center gap-1.5 text-xs">
-                <span>🗺️</span>
+              <div v-if="timeline[dayPlanSummaryDayIndex].route" class="flex items-center gap-2 text-xs">
+                <span class="text-base">🗺️</span>
                 <span class="font-bold text-[var(--foreground)]">Route:</span>
-                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].route }}</span>
+                <span class="font-medium text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].route }}</span>
               </div>
-              <div class="flex items-center gap-1.5 text-xs">
-                <span>{{ timeline[dayPlanSummaryDayIndex].weather ? timeline[dayPlanSummaryDayIndex].weather.slice(0, 2) : '🌤️' }}</span>
+              <div class="flex items-center gap-2 text-xs">
+                <span class="text-base">{{ timeline[dayPlanSummaryDayIndex].weather ? timeline[dayPlanSummaryDayIndex].weather.slice(0, 2) : '🌤️' }}</span>
                 <span class="font-bold text-[var(--foreground)]">Weather:</span>
-                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].weather || 'Check forecast' }}</span>
+                <span class="font-medium text-[var(--foreground)]">{{ timeline[dayPlanSummaryDayIndex].weather || 'Check forecast' }}</span>
               </div>
-              <div class="flex items-center gap-1.5 text-xs">
-                <span>👔</span>
-                <span class="font-bold text-[var(--foreground)]">Outfit:</span>
-                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].outfit || 'Comfortable layers' }}</span>
+            </div>
+
+            <!-- ⭐ PROMINENT SHOWCASE: What to Wear Today & Outfit Guide ⭐ -->
+            <div class="p-3.5 sm:p-4 rounded-xl border-2 border-indigo-400/60 dark:border-indigo-400/40 bg-indigo-50/80 dark:bg-indigo-950/30 text-[var(--foreground)] space-y-2 shadow-sm">
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl p-1 rounded-lg bg-indigo-200/80 dark:bg-indigo-900/50">👗</span>
+                  <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300 block">
+                      Recommended Daily Attire
+                    </span>
+                    <h4 class="text-sm sm:text-base font-black text-indigo-950 dark:text-indigo-100 leading-tight">
+                      What to Wear Today
+                    </h4>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-200 dark:bg-indigo-900/70 text-indigo-950 dark:text-indigo-200 border border-indigo-300/80 shadow-xs">
+                  Day {{ timeline[dayPlanSummaryDayIndex].dayNumber }} Outfit
+                </span>
+              </div>
+              <div class="p-3 rounded-lg bg-[var(--background)] border border-indigo-200 dark:border-indigo-900/60 shadow-xs">
+                <p class="text-xs sm:text-sm font-bold text-[var(--foreground)] leading-relaxed">
+                  {{ timeline[dayPlanSummaryDayIndex].outfit || 'Comfortable walking layers, broken-in sturdy shoes, and waterproof shell.' }}
+                </p>
               </div>
             </div>
 
