@@ -2258,13 +2258,67 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   animation: gagShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
+/* ── 🚨 Access Code Gag: Red Alert Warning Card (High Contrast WCAG AAA) ── */
+.gag-warning-card {
+  position: relative;
+  background: #fef2f2;
+  color: #7f1d1d;
+  border: 2px solid #ef4444;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.25);
+}
+.dark .gag-warning-card {
+  background: #250505;
+  color: #fee2e2;
+  border: 2px solid #f87171;
+  box-shadow: 0 4px 22px rgba(239, 68, 68, 0.45);
+}
+
+.gag-warning-card .gag-countdown-badge {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #b91c1c;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.dark .gag-warning-card .gag-countdown-badge {
+  background: #ef4444;
+  color: #450a0a;
+  border: 1px solid #fca5a5;
+  text-shadow: none;
+}
+
+.gag-warning-card .gag-hint-pill {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1.5px solid #fca5a5;
+}
+.dark .gag-warning-card .gag-hint-pill {
+  background: #450a0a;
+  color: #fecaca;
+  border: 1.5px solid #ef4444;
+}
+
+.gag-warning-card .gag-try-btn {
+  background: #dc2626;
+  color: #ffffff;
+  border: 1px solid #ef4444;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.45);
+}
+.gag-warning-card .gag-try-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+.gag-warning-card .gag-try-btn:active {
+  transform: translateY(1px);
+}
+
+/* ── 💀 Irish Red Screen of Death (Crash Modal) ── */
 .irish-crash-overlay {
   position: fixed;
   inset: 0;
   z-index: 9999999;
-  background: rgba(1, 15, 8, 0.96);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: rgba(22, 2, 2, 0.98);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2272,10 +2326,10 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 .irish-crash-card {
-  background: #021a10;
-  border: 2px solid #10b981;
-  box-shadow: 0 0 60px rgba(16, 185, 129, 0.35), inset 0 0 30px rgba(16, 185, 129, 0.12);
-  color: #a7f3d0;
+  background: #180303;
+  border: 2px solid #ef4444;
+  box-shadow: 0 0 70px rgba(239, 68, 68, 0.55), inset 0 0 35px rgba(239, 68, 68, 0.22);
+  color: #fee2e2;
   max-width: 580px;
   width: 100%;
   border-radius: 1.25rem;
@@ -4411,7 +4465,48 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
         </div>
 
         <!-- Secret access code input & funny gag container -->
-        <div class="pt-2 border-t border-[var(--border)]/20 space-y-2">
+        <div class="pt-2 border-t border-[var(--border)]/20 space-y-2.5">
+          <!-- Funny Gag Warning & Hint Card (Positioned higher, above the input for maximum visibility) -->
+          <div
+            v-if="gagShowHint && !engagementUnlocked"
+            class="gag-warning-card p-3.5 rounded-xl space-y-2.5 animate-fadeIn"
+            role="alert"
+          >
+            <div class="flex items-center justify-between text-xs gap-2">
+              <span class="font-black text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                <span class="text-base">{{ gagAttemptsLeft === 1 ? '🚨' : '⚠️' }}</span>
+                <span>{{ gagAttemptsLeft }} {{ gagAttemptsLeft === 1 ? 'Attempt' : 'Attempts' }} Left Before App Meltdown!</span>
+              </span>
+              <span class="gag-countdown-badge text-[10px] font-mono font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                Level Red
+              </span>
+            </div>
+            <div class="text-xs leading-relaxed font-mono font-semibold">
+              <span class="opacity-90">System: Oh, have you tried: </span>
+              <span class="gag-hint-pill inline-block px-2 py-0.5 rounded font-black tracking-wide">"{{ gagHint }}"</span>
+              <span class="opacity-90">?</span>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-1 border-t border-red-500/25">
+              <button
+                @click="tryGagHint"
+                type="button"
+                class="gag-try-btn px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5"
+                title="Fill in this ridiculous guess and try it!"
+              >
+                <span>🧪</span>
+                <span>Try This Guess: "{{ gagHint }}"</span>
+              </button>
+              <button
+                @click="gagShowHint = false"
+                type="button"
+                class="text-[11px] font-bold text-red-700 dark:text-red-300 hover:underline px-1.5 py-1"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+
+          <!-- Secret Access Code Input Row -->
           <div class="flex items-center gap-2">
             <input
               type="text"
@@ -4422,8 +4517,8 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
               spellcheck="false"
               :placeholder="engagementUnlocked ? 'Feature unlocked (re-type password to lock)' : 'Access code...'"
               :class="[
-                'flex-1 p-2 rounded-lg bg-transparent border border-[var(--border)]/30 text-[var(--foreground)] text-[11px] font-mono outline-none focus:border-[var(--accent)] placeholder:text-[var(--muted-foreground)]/30 transition-all',
-                gagShake ? 'gag-shake border-red-500/70 ring-2 ring-red-500/30' : ''
+                'flex-1 p-2 rounded-lg bg-transparent border border-[var(--border)]/30 text-[var(--foreground)] text-[11px] font-mono outline-none focus:border-red-500 placeholder:text-[var(--muted-foreground)]/30 transition-all',
+                gagShake ? 'gag-shake border-red-600 ring-4 ring-red-500/40 bg-red-500/10' : ''
               ]"
             />
             <button
@@ -4444,50 +4539,11 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
               🔒 Re-lock
             </button>
           </div>
-
-          <!-- Funny Gag Warning & Hint Card -->
-          <div
-            v-if="gagShowHint && !engagementUnlocked"
-            class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 space-y-2 animate-fadeIn"
-          >
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-black text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                <span>{{ gagAttemptsLeft === 1 ? '🚨' : '⚠️' }}</span>
-                <span>{{ gagAttemptsLeft }} {{ gagAttemptsLeft === 1 ? 'Attempt' : 'Attempts' }} Left Before App Meltdown!</span>
-              </span>
-              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
-                Security: Level Red
-              </span>
-            </div>
-            <div class="text-[11px] text-[var(--foreground)] leading-relaxed font-mono">
-              <span class="opacity-80">System: Oh, have you tried: </span>
-              <strong class="text-emerald-700 dark:text-emerald-400 underline decoration-dotted font-bold">"{{ gagHint }}"</strong>
-              <span class="opacity-80">?</span>
-            </div>
-            <div class="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
-              <button
-                @click="tryGagHint"
-                type="button"
-                class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all shadow-xs flex items-center gap-1"
-                title="Fill in this ridiculous guess and try it!"
-              >
-                <span>🧪</span>
-                <span>Try This Guess: "{{ gagHint }}"</span>
-              </button>
-              <button
-                @click="gagShowHint = false"
-                type="button"
-                class="text-[10px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
 
-    <!-- 💀 Irish Green Screen of Death (Access Code Crash Gag) -->
+    <!-- 💀 Irish Red Screen of Death (Access Code Crash Gag) -->
     <div
       v-if="gagIsCrashed"
       class="irish-crash-overlay"
@@ -4495,44 +4551,44 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
       aria-modal="true"
     >
       <div class="irish-crash-card space-y-4 shadow-2xl animate-fadeIn">
-        <div class="flex items-center justify-between border-b border-emerald-500/40 pb-3">
+        <div class="flex items-center justify-between border-b border-red-500/50 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-2xl animate-bounce">🍀</span>
+            <span class="text-2xl animate-bounce">🚨</span>
             <div>
-              <div class="text-xs font-black text-emerald-400 tracking-wider">IRISH_TERMINAL_KERNEL_PANIC</div>
-              <div class="text-[10px] text-emerald-500 font-mono">FATAL EXCEPTION AT 0x0000IRISH_SHAMROCK</div>
+              <div class="text-xs font-black text-red-400 tracking-wider">CRITICAL ALERT: IRISH_KERNEL_PANIC</div>
+              <div class="text-[10px] text-red-400/80 font-mono">FATAL EXCEPTION AT 0x0000IRISH_SHAMROCK</div>
             </div>
           </div>
-          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-900/60 text-red-200 border border-red-500/50">
-            CRASHED
+          <span class="px-2.5 py-1 rounded text-[10px] font-black bg-red-600 text-white border border-red-400 shadow-md">
+            CRASHED 💥
           </span>
         </div>
 
-        <div class="space-y-2 text-xs font-mono leading-relaxed bg-black/40 p-3.5 rounded-xl border border-emerald-500/30">
-          <p class="text-red-400 font-bold">
-            *** STOP: 0x00000IRISH (0xGUINNESS, 0xPOTATO, 0xSHEEP, 0xCLIFFS)
+        <div class="space-y-2.5 text-xs font-mono leading-relaxed bg-black/70 p-4 rounded-xl border border-red-500/40">
+          <p class="text-red-400 font-black text-sm">
+            *** STOP: 0x00000RED_ALERT (0xGUINNESS_SPILL, 0xPOTATO_CORRUPT, 0xDINGLE_SHEEP)
           </p>
-          <p class="text-emerald-300">
+          <p class="text-red-100 font-medium">
             CRITICAL ERROR: Excessive unauthorized guesses detected. The app has violently crashed into a sheep pasture outside Dingle.
           </p>
-          <ul class="list-disc list-inside text-emerald-400/90 text-[11px] space-y-1 pt-1">
+          <ul class="list-disc list-inside text-red-200/90 text-[11px] space-y-1 pt-1">
             <li>48 pints of Guinness detected inside the CPU cooler</li>
             <li>All Dublin flight bookings converted into cabbage coupons</li>
             <li>Self-destruct sequence aborted because a stubborn sheep refused to move off the N71 road</li>
           </ul>
-          <p class="text-amber-300 pt-2 font-semibold">
+          <p class="text-amber-300 pt-2 font-bold text-xs">
             Have you tried turning Ireland off and on again?
           </p>
         </div>
 
         <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div class="text-[10px] text-emerald-500 font-mono">
+          <div class="text-[10px] text-red-400/80 font-mono">
             Error Code: ERR_POTATO_BUFFER_OVERFLOW
           </div>
           <button
             @click="rebootFromGagCrash"
             type="button"
-            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/40 border border-red-400 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
             <span>🔄</span>
             <span>Emergency Reboot / Forgive Me St. Patrick</span>
