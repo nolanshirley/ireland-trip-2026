@@ -37,7 +37,9 @@ const DailyPlanner = {
       isRecapCollapsed: false,
       isRecapDismissed: false,
       isDayTransitioning: false,
-      showMobileFabMenu: false
+      showMobileFabMenu: false,
+      showDayPlanSummary: false,
+      dayPlanSummaryDayIndex: null
     };
   },
   created() {
@@ -53,6 +55,9 @@ const DailyPlanner = {
   },
   mounted() {
     this.scrollDayStripTo(this.activeCalendarDayIndex);
+    this.$nextTick(() => {
+      setTimeout(() => this.checkDayPlanPopup(), 600);
+    });
   },
   watch: {
     targetDayIndex: {
@@ -220,6 +225,47 @@ const DailyPlanner = {
     }
   },
   methods: {
+    // ── Daily Action Plan Popup ──────────────────────────────────
+    checkDayPlanPopup() {
+      const dayIdx = this.activeCalendarDayIndex;
+      if (!this.timeline || !this.timeline[dayIdx]) return;
+      const day = this.timeline[dayIdx];
+      const key = 'irelandTrip_dayPlanSeen_' + day.dayNumber;
+      try {
+        if (localStorage.getItem(key)) return; // Already dismissed
+      } catch(e) {}
+      this.dayPlanSummaryDayIndex = dayIdx;
+      this.showDayPlanSummary = true;
+    },
+    dismissDayPlanPopup() {
+      if (this.dayPlanSummaryDayIndex !== null && this.timeline && this.timeline[this.dayPlanSummaryDayIndex]) {
+        const day = this.timeline[this.dayPlanSummaryDayIndex];
+        const key = 'irelandTrip_dayPlanSeen_' + day.dayNumber;
+        try { localStorage.setItem(key, '1'); } catch(e) {}
+      }
+      this.showDayPlanSummary = false;
+      this.dayPlanSummaryDayIndex = null;
+    },
+    getDayPlanSummaryItems(dayIdx) {
+      if (!this.timeline || !this.timeline[dayIdx]) return [];
+      const day = this.timeline[dayIdx];
+      return (day.items || []).filter(i => i.type !== 'free');
+    },
+    getDayMandatoryItems(dayIdx) {
+      if (!this.timeline || !this.timeline[dayIdx]) return [];
+      const day = this.timeline[dayIdx];
+      return (day.items || []).filter(i => i.mandatory || i.anchor || i.reserved);
+    },
+    getDayDiningItems(dayIdx) {
+      if (!this.timeline || !this.timeline[dayIdx]) return [];
+      const day = this.timeline[dayIdx];
+      return (day.items || []).filter(i => i.type === 'dining');
+    },
+    getDayDriveCount(dayIdx) {
+      if (!this.timeline || !this.timeline[dayIdx]) return 0;
+      return (this.timeline[dayIdx].items || []).filter(i => i.type === 'drive').length;
+    },
+    // ── Day Navigation ───────────────────────────────────────────
     selectCalendarDay(idx) {
       if (this.activeCalendarDayIndex === idx) return;
       this.isDayTransitioning = true;
@@ -234,6 +280,10 @@ const DailyPlanner = {
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+      });
+      // Check if day plan popup should show for this new day
+      this.$nextTick(() => {
+        setTimeout(() => this.checkDayPlanPopup(), 400);
       });
     },
     scrollToTop() {
@@ -534,14 +584,11 @@ const DailyPlanner = {
       if (dayNumber === 12) {
         return this.restaurants.filter(r => r.name.includes('Mister S') || r.name.includes('Fade Street'));
       }
-      if (dayNumber === 1) {
-        return this.restaurants.filter(r => r.name.includes('Mourne Seafood'));
+      if (dayNumber === 2) {
+        return this.restaurants.filter(r => r.name.includes('Holohans'));
       }
       if (dayNumber === 3) {
         return this.restaurants.filter(r => r.name.includes('Harry\'s Shack'));
-      }
-      if (dayNumber === 4) {
-        return this.restaurants.filter(r => r.name.includes('Holohans'));
       }
       if (dayNumber === 8) {
         return this.restaurants.filter(r => r.name.includes('Mad Monk') || r.name.includes('Bricín'));
@@ -643,6 +690,152 @@ const DailyPlanner = {
   },
   template: `
     <div class="space-y-6">
+
+      <!-- ============================================================= -->
+      <!-- DAILY ACTION PLAN SUMMARY POPUP (Once per day, localStorage)  -->
+      <!-- ============================================================= -->
+      <div
+        v-if="showDayPlanSummary && timeline && timeline[dayPlanSummaryDayIndex]"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6"
+        @click.self="dismissDayPlanPopup"
+      >
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="dismissDayPlanPopup"></div>
+        
+        <!-- Modal Card -->
+        <div class="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl border-2 border-[var(--accent)]/40 bg-[var(--card)] text-[var(--foreground)] animate-fadeIn" style="animation: dayPlanSlideIn 0.35s ease-out;">
+          
+          <!-- Close Button -->
+          <button
+            @click="dismissDayPlanPopup"
+            class="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-[var(--background)] hover:bg-[var(--card-hover)] border border-[var(--border)] flex items-center justify-center text-sm font-bold text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors shadow-sm"
+            title="Close daily plan"
+          >✕</button>
+
+          <!-- Header -->
+          <div class="p-5 pb-3 border-b border-[var(--border)]" :style="{ borderTop: '4px solid ' + timeline[dayPlanSummaryDayIndex].color }">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-2xl">☀️</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Daily Action Plan</span>
+            </div>
+            <h3 class="text-lg sm:text-xl font-extrabold leading-snug">
+              Day {{ timeline[dayPlanSummaryDayIndex].dayNumber }} — {{ timeline[dayPlanSummaryDayIndex].date }}
+            </h3>
+            <p class="text-sm font-semibold mt-0.5" :style="{ color: timeline[dayPlanSummaryDayIndex].color }">
+              {{ timeline[dayPlanSummaryDayIndex].title }}
+            </p>
+          </div>
+
+          <!-- Body -->
+          <div class="p-5 space-y-4 text-sm">
+
+            <!-- Special Day Banner -->
+            <div v-if="timeline[dayPlanSummaryDayIndex].special" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-bold">
+              <span class="text-base">🎂</span>
+              <span>{{ timeline[dayPlanSummaryDayIndex].specialText || 'Special Day!' }}</span>
+            </div>
+
+            <!-- Quick Stats Row -->
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="rounded-lg bg-[var(--background)] p-2 border border-[var(--border)]">
+                <div class="text-lg font-extrabold text-[var(--accent)]">{{ (timeline[dayPlanSummaryDayIndex].items || []).length }}</div>
+                <div class="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Stops</div>
+              </div>
+              <div class="rounded-lg bg-[var(--background)] p-2 border border-[var(--border)]">
+                <div class="text-lg font-extrabold text-blue-700 dark:text-blue-400">{{ timeline[dayPlanSummaryDayIndex].driveHours || 0 }}h</div>
+                <div class="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Driving</div>
+              </div>
+              <div class="rounded-lg bg-[var(--background)] p-2 border border-[var(--border)]">
+                <div class="text-lg font-extrabold text-emerald-700 dark:text-emerald-400">{{ getDayDiningItems(dayPlanSummaryDayIndex).length }}</div>
+                <div class="text-[10px] font-bold text-[var(--muted-foreground)] uppercase">Meals</div>
+              </div>
+            </div>
+
+            <!-- Base Camp & Route -->
+            <div class="rounded-lg bg-[var(--background)] p-3 border border-[var(--border)] space-y-1.5">
+              <div class="flex items-center gap-1.5 text-xs">
+                <span>🏡</span>
+                <span class="font-bold text-[var(--foreground)]">Base:</span>
+                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].base }}</span>
+              </div>
+              <div v-if="timeline[dayPlanSummaryDayIndex].route" class="flex items-center gap-1.5 text-xs">
+                <span>🗺️</span>
+                <span class="font-bold text-[var(--foreground)]">Route:</span>
+                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].route }}</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-xs">
+                <span>{{ timeline[dayPlanSummaryDayIndex].weather ? timeline[dayPlanSummaryDayIndex].weather.slice(0, 2) : '🌤️' }}</span>
+                <span class="font-bold text-[var(--foreground)]">Weather:</span>
+                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].weather || 'Check forecast' }}</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-xs">
+                <span>👔</span>
+                <span class="font-bold text-[var(--foreground)]">Outfit:</span>
+                <span class="text-[var(--muted-foreground)]">{{ timeline[dayPlanSummaryDayIndex].outfit || 'Comfortable layers' }}</span>
+              </div>
+            </div>
+
+            <!-- Mandatory / Confirmed Items -->
+            <div v-if="getDayMandatoryItems(dayPlanSummaryDayIndex).length > 0" class="space-y-1.5">
+              <div class="text-xs font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                <span>📌</span> Mandatory / Confirmed
+              </div>
+              <div
+                v-for="(item, mi) in getDayMandatoryItems(dayPlanSummaryDayIndex)"
+                :key="'mand-' + mi"
+                class="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/20"
+              >
+                <span class="text-xs mt-0.5 font-mono font-bold text-rose-700 dark:text-rose-400 flex-shrink-0 w-24">{{ item.time ? item.time.split('–')[0].split('-')[0].trim() : '' }}</span>
+                <span class="text-xs font-semibold text-[var(--foreground)]">{{ item.activity }}</span>
+              </div>
+            </div>
+
+            <!-- Full Day Schedule -->
+            <div class="space-y-1.5">
+              <div class="text-xs font-extrabold uppercase tracking-wider text-[var(--muted-foreground)] flex items-center gap-1">
+                <span>📋</span> Full Schedule
+              </div>
+              <div class="space-y-1">
+                <div
+                  v-for="(item, si) in (timeline[dayPlanSummaryDayIndex].items || [])"
+                  :key="'sched-' + si"
+                  class="flex items-start gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--card-hover)] transition-colors"
+                  :class="{
+                    'bg-emerald-500/8 border border-emerald-500/15': item.type === 'dining',
+                    'bg-blue-500/8 border border-blue-500/15': item.type === 'drive',
+                    'bg-amber-500/8 border border-amber-500/15': item.type === 'sight',
+                    'bg-[var(--background)] border border-[var(--border)]/40': item.type !== 'dining' && item.type !== 'drive' && item.type !== 'sight'
+                  }"
+                >
+                  <span class="text-[11px] mt-0.5 font-mono font-bold text-[var(--muted-foreground)] flex-shrink-0 w-20 sm:w-24">{{ item.time ? item.time.split('–')[0].split('-')[0].trim() : '' }}</span>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-[var(--foreground)] truncate">{{ item.activity }}</div>
+                    <div v-if="item.mandatory || item.anchor" class="text-[10px] font-bold text-rose-600 dark:text-rose-400">✅ Confirmed</div>
+                  </div>
+                  <span v-if="item.tag" class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[var(--card-hover)] text-[var(--muted-foreground)] flex-shrink-0 hidden sm:inline">{{ item.tag }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Day Note / Alert -->
+            <div v-if="timeline[dayPlanSummaryDayIndex].note" class="flex items-start gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-800 dark:text-amber-300">
+              <span class="mt-0.5">⚠️</span>
+              <span class="font-semibold">{{ timeline[dayPlanSummaryDayIndex].note }}</span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="p-4 pt-2 border-t border-[var(--border)] flex items-center justify-between">
+            <span class="text-[10px] font-semibold text-[var(--muted-foreground)]">Tap outside or press ✕ to close</span>
+            <button
+              @click="dismissDayPlanPopup"
+              class="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] text-white hover:opacity-90 transition-opacity shadow-sm"
+            >
+              Got it, let's go! ☘️
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Top Controls & Mobile View Selector -->
       <div class="card p-4 sm:p-5">
