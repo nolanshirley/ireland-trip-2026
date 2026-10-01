@@ -408,13 +408,19 @@ const DailyPlanner = {
     },
     getItemEndHour(item) {
       if (!item) return this.dayStartHour + 1.5;
+      // Use explicit endHour if available (all timeline items have this)
+      if (item.endHour !== undefined && item.endHour !== null && !isNaN(Number(item.endHour))) {
+        return Number(item.endHour);
+      }
       const start = this.getItemStartHour(item);
       let dur = typeof item.durHours === 'number' && !isNaN(item.durHours) ? item.durHours : 1.5;
       if (item.dur && typeof item.dur === 'string') {
-        const dMatch = item.dur.match(/([\d.]+)\s*hr/i);
-        if (dMatch) dur = parseFloat(dMatch[1]);
+        const hMatch = item.dur.match(/([\d.]+)\s*h/i);
+        const mMatch = item.dur.match(/([\d.]+)\s*m/i);
+        if (hMatch) dur = parseFloat(hMatch[1]);
+        else if (mMatch) dur = parseFloat(mMatch[1]) / 60;
       }
-      return start + Math.max(0.5, dur);
+      return start + Math.max(0.25, dur);
     },
     getRibbonBlockStyle(item) {
       const totalSpan = this.dayEndHour - this.dayStartHour; // 18 hours
