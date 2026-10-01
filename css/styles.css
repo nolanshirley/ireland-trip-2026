@@ -590,14 +590,91 @@ body {
   color: #fef3c7 !important;
 }
 
-/* Explicit fallback rules for amber-950 and amber dark text */
+/* ==========================================================================
+   High-Contrast Yellow / Amber Color Engine (WCAG AAA Senior-Friendly)
+   Fix: Yellow backgrounds must NEVER have whiteish text in dark or light mode
+   ========================================================================== */
+
+/* Light mode text on yellow/amber */
 :root:not(.dark) .text-amber-950,
-:root:not(.dark) [class*="text-amber-950"] {
+:root:not(.dark) [class*="text-amber-950"],
+:root:not(.dark) .text-amber-900,
+:root:not(.dark) [class*="text-amber-900"] {
   color: #000000 !important;
 }
+
+/* Dark mode text on yellow/amber: PITCH BLACK on light yellow/amber backgrounds */
 .dark .text-amber-950,
-.dark [class*="text-amber-950"] {
-  color: #fef3c7 !important;
+.dark [class*="text-amber-950"],
+.dark .text-amber-900,
+.dark [class*="text-amber-900"] {
+  color: #000000 !important; /* Pitch black for high contrast (14:1 AAA) on yellow/amber */
+}
+
+/* Any yellow/amber solid badge or pill in dark mode: Pitch black text on vibrant yellow */
+.dark .bg-amber-100,
+.dark .bg-amber-200,
+.dark .bg-amber-300,
+.dark .bg-amber-400,
+.dark .bg-yellow-100,
+.dark .bg-yellow-200,
+.dark .bg-yellow-300,
+.dark .bg-yellow-400,
+.dark [class*="bg-amber-100"],
+.dark [class*="bg-amber-200"],
+.dark [class*="bg-amber-300"],
+.dark [class*="bg-amber-400"],
+.dark [class*="dark:bg-amber-200"],
+.dark [class*="dark:bg-amber-300"],
+.dark [class*="dark:bg-amber-400"],
+.dark [class*="dark:bg-yellow-200"],
+.dark [class*="dark:bg-yellow-300"],
+.dark [class*="dark:bg-yellow-400"],
+.dark .badge-amber,
+.dark .tag-highlight-amber {
+  background-color: #fde047 !important; /* Bright accessible yellow */
+  color: #000000 !important; /* PITCH BLACK AAA CONTRAST (14.2:1) */
+  border-color: #a16207 !important; /* Solid amber-700 border */
+  font-weight: 800 !important;
+}
+
+/* Ensure all nested text inside yellow/amber badges is pitch black */
+.dark .bg-amber-100 *,
+.dark .bg-amber-200 *,
+.dark .bg-amber-300 *,
+.dark .bg-amber-400 *,
+.dark .bg-yellow-100 *,
+.dark .bg-yellow-200 *,
+.dark .bg-yellow-300 *,
+.dark .bg-yellow-400 *,
+.dark [class*="bg-amber-100"] *,
+.dark [class*="bg-amber-200"] *,
+.dark [class*="bg-amber-300"] *,
+.dark [class*="bg-amber-400"] *,
+.dark [class*="dark:bg-amber-200"] *,
+.dark [class*="dark:bg-amber-300"] *,
+.dark [class*="dark:bg-amber-400"] *,
+.dark [class*="dark:bg-yellow-200"] *,
+.dark [class*="dark:bg-yellow-300"] *,
+.dark [class*="dark:bg-yellow-400"] *,
+.dark .badge-amber *,
+.dark .tag-highlight-amber * {
+  color: #000000 !important;
+}
+
+/* For translucent amber alert boxes/banners in dark mode (e.g. bg-amber-500/15 or bg-amber-500/20):
+   Ensure background is deep dark amber #451a03 with bright gold text #fef08a (12:1 AAA contrast) */
+.dark div[class*="bg-amber-500/20"],
+.dark div[class*="bg-amber-500/[0.15]"],
+.dark div[class*="bg-amber-500/15"] {
+  background-color: #451a03 !important; /* Deep dark amber-950 */
+  border-color: #f59e0b !important; /* Bright amber-500 border */
+  color: #fef08a !important; /* Bright gold text: 12:1 AAA contrast on dark amber */
+}
+.dark div[class*="bg-amber-500/20"] *,
+.dark div[class*="bg-amber-500/[0.15]"] *,
+.dark div[class*="bg-amber-500/15"] * {
+  color: #fef08a !important;
 }
 
 /* Ensure light mode subcontainers and nested cards stay crisp white, never muddy */

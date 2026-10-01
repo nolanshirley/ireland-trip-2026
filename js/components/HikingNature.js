@@ -16,7 +16,8 @@ const HikingNature = {
       difficultyFilter: 'all', // 'all', 'Easy', 'Moderate', 'Strenuous'
       sortBy: 'itinerary', // 'itinerary', 'difficulty', 'elevation', 'duration', 'completion', 'name'
       userTrailData: {}, // { [trailId]: { completed: false, notes: '', favorite: false } }
-      isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768)
+      isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768),
+      showStatusAndDifficulty: false // Hidden by default to cut down on screen space
     };
   },
   created() {
@@ -255,7 +256,7 @@ const HikingNature = {
             </p>
           </div>
 
-          <!-- Status Summary Badges -->
+          <!-- Status Summary Badges & Toggle -->
           <div class="flex items-center gap-2 text-xs flex-wrap">
             <button
               @click="openAddTrail"
@@ -263,7 +264,18 @@ const HikingNature = {
             >
               <span>➕ Add Trail</span>
             </button>
-            <span class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-500/20 font-bold">
+            <button
+              @click="showStatusAndDifficulty = !showStatusAndDifficulty"
+              class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 shadow-sm whitespace-nowrap"
+              :class="showStatusAndDifficulty || statusFilter !== 'all' || difficultyFilter !== 'all'
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                : 'bg-[var(--background)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]'"
+              :title="showStatusAndDifficulty ? 'Hide statuses and difficulty to cut down on screen space' : 'Show statuses and difficulty'"
+            >
+              <span>{{ showStatusAndDifficulty ? '👁️ Status & Difficulty (Shown)' : '👁️ Status & Difficulty (Hidden)' }}</span>
+              <span v-if="statusFilter !== 'all' || difficultyFilter !== 'all'" class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400 text-black font-extrabold">Active</span>
+            </button>
+            <span v-if="showStatusAndDifficulty" class="px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-500/20 font-bold">
               💡 {{ suggestedCount }} Suggested Trails
             </span>
             <span class="px-3 py-1.5 rounded-xl bg-[var(--background)] border border-[var(--border)] font-semibold">
@@ -311,10 +323,17 @@ const HikingNature = {
             >
               {{ r.label }}
             </button>
+            <button
+              v-if="!showStatusAndDifficulty && statusFilter === 'all' && difficultyFilter === 'all'"
+              @click="showStatusAndDifficulty = true"
+              class="text-[11px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] font-semibold underline sm:ml-auto"
+            >
+              + Status & Difficulty Filters
+            </button>
           </div>
 
-          <!-- Filter Row 2: Status & Difficulty -->
-          <div class="flex flex-wrap items-center gap-2 mb-4">
+          <!-- Filter Row 2: Status & Difficulty (Hidden by default to cut down on screen space) -->
+          <div v-if="showStatusAndDifficulty || statusFilter !== 'all' || difficultyFilter !== 'all'" class="flex flex-wrap items-center gap-2 mb-4 p-2.5 rounded-xl bg-[var(--card-hover)]/40 border border-[var(--border)]">
             <span class="text-[11px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Status:</span>
             <button
               v-for="st in [
@@ -433,13 +452,15 @@ const HikingNature = {
                 </div>
               </div>
               <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                <!-- Consensus Status Badge if custom -->
-                <span v-if="trail.status === 'confirmed'" class="consensus-badge-confirmed">
-                  🟢 Confirmed
-                </span>
-                <span v-else-if="trail.status === 'proposed'" class="consensus-badge-proposed">
-                  🟡 Proposed
-                </span>
+                <!-- Consensus Status Badge if custom & showStatusAndDifficulty -->
+                <template v-if="showStatusAndDifficulty">
+                  <span v-if="trail.status === 'confirmed'" class="consensus-badge-confirmed">
+                    🟢 Confirmed
+                  </span>
+                  <span v-else-if="trail.status === 'proposed'" class="consensus-badge-proposed">
+                    🟡 Proposed
+                  </span>
+                </template>
                 <!-- Voting buttons -->
                 <button
                   @click.stop="vote(trail.id || trail.name, 'up')"
@@ -490,14 +511,15 @@ const HikingNature = {
                 >
                   <span>📅 Cal</span>
                 </button>
-                <span :class="['px-2.5 py-1 rounded-full text-xs whitespace-nowrap border', getStatusBadge(trail.status).class]">
+                <!-- Trail Status Badge (Hidden by default to cut down on screen space) -->
+                <span v-if="showStatusAndDifficulty" :class="['px-2.5 py-1 rounded-full text-xs whitespace-nowrap border', getStatusBadge(trail.status).class]">
                   {{ getStatusBadge(trail.status).label }}
                 </span>
               </div>
             </div>
 
-            <!-- Stats Bar (Distance, Elev, Duration, Difficulty) -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <!-- Stats Bar (Distance, Elev, Duration, Difficulty) - 3 columns by default to cut down on screen space -->
+            <div :class="['grid gap-2 text-xs', showStatusAndDifficulty ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3']">
               <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)]">
                 <div class="text-[10px] text-[var(--muted-foreground)]">Distance</div>
                 <div class="font-mono font-bold text-[var(--foreground)]">{{ trail.distance }}</div>
@@ -510,7 +532,7 @@ const HikingNature = {
                 <div class="text-[10px] text-[var(--muted-foreground)]">Duration</div>
                 <div class="font-mono font-bold text-blue-800 dark:text-blue-400">{{ trail.duration }}</div>
               </div>
-              <div class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)] flex flex-col justify-center">
+              <div v-if="showStatusAndDifficulty" class="p-2 rounded-lg bg-[var(--background)] border border-[var(--border)] flex flex-col justify-center">
                 <div class="text-[10px] text-[var(--muted-foreground)]">Difficulty</div>
                 <span :class="['px-1.5 py-0.5 rounded text-[11px] font-bold text-center mt-0.5 border', getDifficultyBadge(trail.difficulty)]">
                   {{ trail.difficulty }}

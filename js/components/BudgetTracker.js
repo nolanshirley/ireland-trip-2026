@@ -749,14 +749,14 @@ const BudgetTracker = {
                   <button
                     type="button"
                     @click="budgetInputs.foodMode = 'per_day'; saveBudgetInputs()"
-                    :class="['px-2 py-0.5 rounded font-bold transition-all', budgetInputs.foodMode === 'per_day' ? 'bg-amber-600 text-white shadow-sm' : 'text-[var(--muted-foreground)]']"
+                    :class="['px-2 py-0.5 rounded font-extrabold transition-all', budgetInputs.foodMode === 'per_day' ? 'bg-amber-400 text-black shadow-sm' : 'text-[var(--muted-foreground)]']"
                   >
                     / Day
                   </button>
                   <button
                     type="button"
                     @click="budgetInputs.foodMode = 'total'; saveBudgetInputs()"
-                    :class="['px-2 py-0.5 rounded font-bold transition-all', budgetInputs.foodMode === 'total' ? 'bg-amber-600 text-white shadow-sm' : 'text-[var(--muted-foreground)]']"
+                    :class="['px-2 py-0.5 rounded font-extrabold transition-all', budgetInputs.foodMode === 'total' ? 'bg-amber-400 text-black shadow-sm' : 'text-[var(--muted-foreground)]']"
                   >
                     Total
                   </button>

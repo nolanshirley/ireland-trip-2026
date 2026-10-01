@@ -1277,7 +1277,7 @@ const DailyPlanner = {
                 class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
               >
                 <span>🥾</span>
-                <span>{{ t.name }} ({{ t.difficulty }})</span>
+                <span>{{ t.name }}</span>
               </button>
               <!-- Restaurant links -->
               <button
@@ -2240,7 +2240,7 @@ const DailyPlanner = {
                   class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-800 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all font-semibold flex items-center gap-1"
                 >
                   <span>🥾</span>
-                  <span>{{ t.name }} ({{ t.difficulty }})</span>
+                  <span>{{ t.name }}</span>
                 </button>
                 <!-- Restaurant links -->
                 <button
