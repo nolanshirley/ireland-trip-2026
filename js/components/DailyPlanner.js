@@ -167,11 +167,13 @@ const DailyPlanner = {
         const curr = items[i];
         const prevEnd = this.getItemEndHour(prev);
         const currStart = this.getItemStartHour(curr);
-        if (currStart < prevEnd - 0.05) {
+        // Overlap only if current activity starts before previous finishes (e.g. 2:01 PM incoming and 2:00 PM upcoming).
+        // Back-to-back times (e.g. 2:00 PM and 2:00 PM) are NOT a conflict.
+        if (currStart < prevEnd - 0.001) {
           conflicts.push({
             itemA: prev,
             itemB: curr,
-            message: `"${curr.activity}" (${curr.time || 'starts'}) overlaps with "${prev.activity}" (runs until ~${this.formatHour(Math.floor(prevEnd))})`
+            message: `"${curr.activity}" (${curr.time || 'starts'}) overlaps with "${prev.activity}" (runs until ~${typeof formatHourToTime === 'function' ? formatHourToTime(prevEnd) : this.formatHour(Math.floor(prevEnd))})`
           });
         }
       }
@@ -398,25 +400,36 @@ const DailyPlanner = {
     },
     getItemStartHour(item) {
       if (!item) return this.dayStartHour;
+      if (typeof getItemTimeRange === 'function') {
+        const range = getItemTimeRange(item);
+        if (range && typeof range.start === 'number' && !isNaN(range.start)) {
+          return range.start;
+        }
+      }
+      if (typeof item.startHour === 'number' && !isNaN(item.startHour)) {
+        return item.startHour;
+      }
       if (item.time) {
         return parseTimeToHour(item.time);
-      }
-      if (item.startHour !== undefined && item.startHour !== null && !isNaN(Number(item.startHour))) {
-        return Number(item.startHour);
       }
       return this.dayStartHour;
     },
     getItemEndHour(item) {
       if (!item) return this.dayStartHour + 1.5;
-      // Use explicit endHour if available (all timeline items have this)
-      if (item.endHour !== undefined && item.endHour !== null && !isNaN(Number(item.endHour))) {
-        return Number(item.endHour);
+      if (typeof getItemTimeRange === 'function') {
+        const range = getItemTimeRange(item);
+        if (range && typeof range.end === 'number' && !isNaN(range.end)) {
+          return range.end;
+        }
+      }
+      if (typeof item.endHour === 'number' && !isNaN(item.endHour)) {
+        return item.endHour;
       }
       const start = this.getItemStartHour(item);
       let dur = typeof item.durHours === 'number' && !isNaN(item.durHours) ? item.durHours : 1.5;
       if (item.dur && typeof item.dur === 'string') {
-        const hMatch = item.dur.match(/([\d.]+)\s*h/i);
-        const mMatch = item.dur.match(/([\d.]+)\s*m/i);
+        const hMatch = item.dur.match(/([\d.]+)\s*h(?:r|ours?)?/i);
+        const mMatch = item.dur.match(/([\d.]+)\s*m(?:in|inutes?)?/i);
         if (hMatch) dur = parseFloat(hMatch[1]);
         else if (mMatch) dur = parseFloat(mMatch[1]) / 60;
       }
