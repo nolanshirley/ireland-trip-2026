@@ -935,7 +935,7 @@ const DailyPlanner = {
               <span class="text-xs font-extrabold text-[var(--foreground)]">Oct 2 – Oct 14, 2026</span>
             </div>
             <!-- Milestone Quick Jumps -->
-            <div class="hidden sm:flex items-center gap-1.5 text-xs">
+            <div class="flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar py-0.5 max-w-full flex-shrink-0">
               <span class="text-[10px] text-[var(--muted-foreground)] font-bold uppercase">Milestones:</span>
               <button
                 v-if="timeline && timeline[4] && timeline[4].special"
@@ -2953,47 +2953,130 @@ const DailyPlanner = {
         </div>
       </div>
 
-      <!-- Floating Quick Jump FAB (Mobile & Desktop) -->
-      <div class="floating-quick-fab flex flex-col items-end gap-2">
-        <!-- Expanded Menu Pills when FAB clicked -->
-        <div v-if="showMobileFabMenu" class="flex flex-col items-end gap-2 mb-1 animate-fadeIn">
+      <!-- Backdrop for Quick Jump Sheet -->
+      <div
+        v-if="showMobileFabMenu"
+        @click="showMobileFabMenu = false"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity z-[9990]"
+        style="animation: fadeIn 0.2s ease-out;"
+      ></div>
+
+      <!-- Quick Jump Day Menu Bottom Sheet & Modal -->
+      <div
+        v-if="showMobileFabMenu"
+        class="quick-jump-sheet shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Quick Jump to Day"
+      >
+        <!-- Sheet Header -->
+        <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-[var(--border)]">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🚀</span>
+            <div>
+              <h3 class="text-sm font-extrabold text-[var(--foreground)] leading-tight">Quick Jump to Day</h3>
+              <p class="text-[10px] text-[var(--muted-foreground)]">Tap any of the 13 days or milestones</p>
+            </div>
+          </div>
           <button
-            @click="selectCalendarDay(0); showMobileFabMenu = false;"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
+            @click="showMobileFabMenu = false"
+            class="w-7 h-7 rounded-full bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center justify-center font-bold text-xs transition-colors"
+            title="Close"
           >
-            <span>⏮️</span>
-            <span>Jump to Day 1</span>
-          </button>
-          <button
-            v-if="prevDayPreview"
-            @click="prevCalendarDay(); showMobileFabMenu = false;"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
-          >
-            <span>◀</span>
-            <span>Prev (Day {{ activeCalendarDayIndex }})</span>
-          </button>
-          <button
-            v-if="nextDayPreview"
-            @click="nextCalendarDay(); showMobileFabMenu = false;"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--accent)] text-white shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
-          >
-            <span>Next (Day {{ activeCalendarDayIndex + 2 }})</span>
-            <span>▶</span>
-          </button>
-          <button
-            @click="scrollToTop"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
-          >
-            <span>⬆️</span>
-            <span>Back to Top</span>
+            ✕
           </button>
         </div>
 
-        <!-- Main Toggle FAB Button -->
+        <!-- 13 Days Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-3 max-h-[46vh] sm:max-h-[38vh] overflow-y-auto pr-0.5">
+          <button
+            v-for="(d, idx) in timeline"
+            :key="'qj-day-' + idx"
+            @click="selectCalendarDay(idx); showMobileFabMenu = false;"
+            :class="[
+              'p-2 rounded-lg text-left border text-xs transition-all flex flex-col justify-between gap-1',
+              activeCalendarDayIndex === idx
+                ? 'bg-[var(--accent)] text-white border-transparent font-bold shadow-md ring-2 ring-[var(--accent)]/50'
+                : 'bg-[var(--card-hover)]/70 hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]'
+            ]"
+          >
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[11px] font-extrabold">Day {{ d.dayNumber }}</span>
+              <span :class="[
+                'text-[9px] px-1 py-0.2 rounded font-mono',
+                activeCalendarDayIndex === idx ? 'bg-black/20 text-white' : 'bg-black/5 dark:bg-white/10 text-[var(--muted-foreground)]'
+              ]">{{ d.date }}</span>
+            </div>
+            <div class="text-[10px] truncate leading-tight opacity-90">
+              {{ d.base }}
+            </div>
+            <div v-if="d.special" class="text-[9px] font-bold text-amber-500 dark:text-amber-300 truncate">
+              💍 Proposal Day
+            </div>
+            <div v-else-if="idx === 5" class="text-[9px] font-bold text-blue-500 dark:text-blue-300 truncate">
+              🎂 Dad & Erin
+            </div>
+            <div v-else-if="idx === 10" class="text-[9px] font-bold text-amber-500 dark:text-amber-300 truncate">
+              🍺 Guinness
+            </div>
+            <div v-else-if="idx === 11" class="text-[9px] font-bold text-pink-500 dark:text-pink-300 truncate">
+              🎂 Mom's Bday
+            </div>
+          </button>
+        </div>
+
+        <!-- Bottom Quick Jump Bar (Prev, Next, Day 1, Top) -->
+        <div class="grid grid-cols-4 gap-1.5 pt-2 border-t border-[var(--border)]">
+          <button
+            @click="selectCalendarDay(0); showMobileFabMenu = false;"
+            class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] flex flex-col items-center justify-center transition-colors"
+          >
+            <span>⏮️</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Day 1</span>
+          </button>
+          <button
+            :disabled="!prevDayPreview"
+            @click="prevCalendarDay(); showMobileFabMenu = false;"
+            :class="[
+              'px-2 py-1.5 rounded-lg text-[11px] font-bold border flex flex-col items-center justify-center transition-colors',
+              prevDayPreview
+                ? 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border-[var(--border)]'
+                : 'opacity-40 cursor-not-allowed bg-[var(--card-hover)] border-[var(--border)] text-[var(--muted-foreground)]'
+            ]"
+          >
+            <span>◀</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Prev</span>
+          </button>
+          <button
+            :disabled="!nextDayPreview"
+            @click="nextCalendarDay(); showMobileFabMenu = false;"
+            :class="[
+              'px-2 py-1.5 rounded-lg text-[11px] font-bold border flex flex-col items-center justify-center transition-colors',
+              nextDayPreview
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                : 'opacity-40 cursor-not-allowed bg-[var(--card-hover)] border-[var(--border)] text-[var(--muted-foreground)]'
+            ]"
+          >
+            <span>▶</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Next</span>
+          </button>
+          <button
+            @click="scrollToTop(); showMobileFabMenu = false;"
+            class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] flex flex-col items-center justify-center transition-colors"
+          >
+            <span>⬆️</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Top</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Floating Quick Jump FAB (Mobile & Desktop) -->
+      <div class="floating-quick-fab">
         <button
           @click="showMobileFabMenu = !showMobileFabMenu"
-          class="w-11 h-11 rounded-full bg-[var(--accent)] hover:opacity-95 text-white font-extrabold shadow-xl border-2 border-white/20 flex items-center justify-center text-base transition-transform active:scale-95"
+          class="w-12 h-12 rounded-full bg-[var(--accent)] hover:opacity-95 text-white font-extrabold shadow-xl border-2 border-white/20 flex items-center justify-center text-lg transition-transform active:scale-95"
           :title="showMobileFabMenu ? 'Close quick jump menu' : 'Quick day jump menu'"
+          aria-label="Toggle Quick Day Jump Menu"
         >
           <span>{{ showMobileFabMenu ? '✕' : '🚀' }}</span>
         </button>

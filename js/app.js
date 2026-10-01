@@ -402,10 +402,10 @@ const app = createApp({
 
     // Low-density, small floating ambient items that can be clicked to pop
     const magicItems = ref([
-      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '12%', animationDuration: '20s', animationDelay: '0s' }, popped: false },
-      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '78%', animationDuration: '24s', animationDelay: '3s' }, popped: false },
-      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '46%', animationDuration: '22s', animationDelay: '8s' }, popped: false },
-      { id: 'oyster-1', type: 'oyster', icon: '🦪', style: { animationDuration: '28s', animationDelay: '1s' }, popped: false }
+      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '12%', animationDuration: '20s', animationDelay: '0s', WebkitAnimationDuration: '20s', WebkitAnimationDelay: '0s' }, popped: false },
+      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '78%', animationDuration: '24s', animationDelay: '3s', WebkitAnimationDuration: '24s', WebkitAnimationDelay: '3s' }, popped: false },
+      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '46%', animationDuration: '22s', animationDelay: '8s', WebkitAnimationDuration: '22s', WebkitAnimationDelay: '8s' }, popped: false },
+      { id: 'oyster-1', type: 'oyster', icon: '🦪', style: { animationDuration: '28s', animationDelay: '1s', WebkitAnimationDuration: '28s', WebkitAnimationDelay: '1s' }, popped: false }
     ]);
 
     const popMagicItem = (item) => {

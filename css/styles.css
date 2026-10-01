@@ -1446,9 +1446,9 @@ body {
 
 .floating-quick-fab {
   position: fixed;
-  bottom: 5.5rem;
-  right: 1.25rem;
-  z-index: 40;
+  bottom: calc(72px + env(safe-area-inset-bottom, 16px));
+  right: max(1rem, env(safe-area-inset-right, 16px));
+  z-index: 45;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1456,6 +1456,36 @@ body {
   .floating-quick-fab {
     bottom: 2.25rem;
     right: 2.25rem;
+  }
+}
+
+/* ── 🚀 Quick Jump Day Menu Bottom Sheet & Modal ── */
+.quick-jump-sheet {
+  position: fixed;
+  bottom: calc(74px + env(safe-area-inset-bottom, 16px));
+  right: max(12px, env(safe-area-inset-right, 12px));
+  left: max(12px, env(safe-area-inset-left, 12px));
+  max-width: 440px;
+  margin: 0 auto;
+  max-height: calc(78vh - env(safe-area-inset-bottom, 16px));
+  max-height: calc(78dvh - env(safe-area-inset-bottom, 16px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--card);
+  color: var(--foreground);
+  border: 2px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  padding: 1rem;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 640px) {
+  .quick-jump-sheet {
+    left: auto;
+    right: 2.25rem;
+    bottom: 5.5rem;
+    width: 400px;
   }
 }
 
@@ -1716,7 +1746,9 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 5; /* Softly floats behind main interactive cards & functionality */
+  z-index: 25; /* Softly floats behind modals/bottom nav (z-40..z-50) but in front of body/card backgrounds on iOS WebKit */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 
 /* Clickable floating icon button */
@@ -1732,35 +1764,73 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   padding: 0;
   outline: none;
   line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform, opacity;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
 }
 .magic-item-btn:hover {
+  -webkit-transform: scale(1.4) !important;
   transform: scale(1.4) !important;
   filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.8)) !important;
 }
 .magic-item-btn:active {
+  -webkit-transform: scale(0.85) !important;
   transform: scale(0.85) !important;
 }
 
 /* Fluttering Four-Leaf Clovers (Small, Soft Opacity) */
-@keyframes cloverDrift {
+@-webkit-keyframes cloverDrift {
   0% {
+    -webkit-transform: translateY(-35px) rotate(0deg) scale(0.7);
     transform: translateY(-35px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
   20% {
     opacity: 0.55;
+    -webkit-transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
     transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
   }
   50% {
     opacity: 0.3;
+    -webkit-transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
     transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
   }
   80% {
     opacity: 0.55;
+    -webkit-transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
     transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
   }
   100% {
+    -webkit-transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
+    transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
+    opacity: 0;
+  }
+}
+@keyframes cloverDrift {
+  0% {
+    -webkit-transform: translateY(-35px) rotate(0deg) scale(0.7);
+    transform: translateY(-35px) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+    -webkit-transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
+    transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
+  }
+  50% {
+    opacity: 0.3;
+    -webkit-transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
+    transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
+  }
+  80% {
+    opacity: 0.55;
+    -webkit-transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
+    transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
+  }
+  100% {
+    -webkit-transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
     transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
     opacity: 0;
   }
@@ -1768,29 +1838,64 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 .magic-clover {
   position: absolute;
   top: -30px;
+  -webkit-animation: cloverDrift linear infinite;
   animation: cloverDrift linear infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.35));
 }
 
 /* Rising Pints of Guinness (Small, Subtle Float) */
-@keyframes guinnessRise {
+@-webkit-keyframes guinnessRise {
   0% {
+    -webkit-transform: translateY(105vh) rotate(0deg) scale(0.7);
     transform: translateY(105vh) rotate(0deg) scale(0.7);
     opacity: 0;
   }
   25% {
     opacity: 0.5;
+    -webkit-transform: translateY(75vh) rotate(-5deg) scale(0.85);
     transform: translateY(75vh) rotate(-5deg) scale(0.85);
   }
   60% {
     opacity: 0.28;
+    -webkit-transform: translateY(40vh) rotate(5deg) scale(0.75);
     transform: translateY(40vh) rotate(5deg) scale(0.75);
   }
   85% {
     opacity: 0.5;
+    -webkit-transform: translateY(15vh) rotate(-3deg) scale(0.85);
     transform: translateY(15vh) rotate(-3deg) scale(0.85);
   }
   100% {
+    -webkit-transform: translateY(-40px) rotate(0deg) scale(0.7);
+    transform: translateY(-40px) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+}
+@keyframes guinnessRise {
+  0% {
+    -webkit-transform: translateY(105vh) rotate(0deg) scale(0.7);
+    transform: translateY(105vh) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.5;
+    -webkit-transform: translateY(75vh) rotate(-5deg) scale(0.85);
+    transform: translateY(75vh) rotate(-5deg) scale(0.85);
+  }
+  60% {
+    opacity: 0.28;
+    -webkit-transform: translateY(40vh) rotate(5deg) scale(0.75);
+    transform: translateY(40vh) rotate(5deg) scale(0.75);
+  }
+  85% {
+    opacity: 0.5;
+    -webkit-transform: translateY(15vh) rotate(-3deg) scale(0.85);
+    transform: translateY(15vh) rotate(-3deg) scale(0.85);
+  }
+  100% {
+    -webkit-transform: translateY(-40px) rotate(0deg) scale(0.7);
     transform: translateY(-40px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
@@ -1798,31 +1903,68 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 .magic-guinness {
   position: absolute;
   bottom: -40px;
+  -webkit-animation: guinnessRise ease-in-out infinite;
   animation: guinnessRise ease-in-out infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
 }
 
 /* Waddling Galway Oysters */
-@keyframes oysterWaddleAcross {
+@-webkit-keyframes oysterWaddleAcross {
   0% {
     left: -40px;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
     transform: translateY(0) rotate(-8deg) scale(0.75);
     opacity: 0;
   }
   15% {
     opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
     transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   50% {
     opacity: 0.3;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
     transform: translateY(0) rotate(-8deg) scale(0.75);
   }
   85% {
     opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
     transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   100% {
     left: calc(100vw + 40px);
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
+  }
+}
+@keyframes oysterWaddleAcross {
+  0% {
+    left: -40px;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
+  }
+  50% {
+    opacity: 0.3;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+  }
+  85% {
+    opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
+  }
+  100% {
+    left: calc(100vw + 40px);
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
     transform: translateY(0) rotate(-8deg) scale(0.75);
     opacity: 0;
   }
@@ -1830,7 +1972,10 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 .magic-oyster {
   position: absolute;
   bottom: calc(72px + env(safe-area-inset-bottom, 16px));
+  -webkit-animation: oysterWaddleAcross 26s linear infinite;
   animation: oysterWaddleAcross 26s linear infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
   display: flex;
   align-items: center;
@@ -1838,33 +1983,61 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 }
 
 /* Interactive Pop / Removal Burst Animation */
-@keyframes itemPop {
+@-webkit-keyframes itemPop {
   0% {
+    -webkit-transform: scale(1);
     transform: scale(1);
     opacity: 0.8;
   }
   45% {
+    -webkit-transform: scale(1.6) rotate(20deg);
     transform: scale(1.6) rotate(20deg);
     opacity: 1;
     filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.9));
   }
   100% {
+    -webkit-transform: scale(0) rotate(50deg);
+    transform: scale(0) rotate(50deg);
+    opacity: 0;
+  }
+}
+@keyframes itemPop {
+  0% {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  45% {
+    -webkit-transform: scale(1.6) rotate(20deg);
+    transform: scale(1.6) rotate(20deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.9));
+  }
+  100% {
+    -webkit-transform: scale(0) rotate(50deg);
     transform: scale(0) rotate(50deg);
     opacity: 0;
   }
 }
 .magic-item-popped {
+  -webkit-animation: itemPop 0.32s ease-out forwards !important;
   animation: itemPop 0.32s ease-out forwards !important;
   pointer-events: none !important;
 }
 
 /* ── 💥 Access Code Gag: Shake & Irish Crash Screen ── */
+@-webkit-keyframes gagShake {
+  0%, 100% { -webkit-transform: translateX(0); transform: translateX(0); }
+  20%, 60% { -webkit-transform: translateX(-8px); transform: translateX(-8px); }
+  40%, 80% { -webkit-transform: translateX(8px); transform: translateX(8px); }
+}
 @keyframes gagShake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-8px); }
-  40%, 80% { transform: translateX(8px); }
+  0%, 100% { -webkit-transform: translateX(0); transform: translateX(0); }
+  20%, 60% { -webkit-transform: translateX(-8px); transform: translateX(-8px); }
+  40%, 80% { -webkit-transform: translateX(8px); transform: translateX(8px); }
 }
 .gag-shake {
+  -webkit-animation: gagShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
   animation: gagShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
@@ -1873,6 +2046,7 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   inset: 0;
   z-index: 9999999;
   background: rgba(1, 15, 8, 0.96);
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
@@ -1893,7 +2067,8 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .magic-clover, .magic-guinness, .magic-oyster {
-    animation: none !important;
-    display: none !important;
+    -webkit-animation-duration: 40s !important;
+    animation-duration: 40s !important;
+    opacity: 0.35 !important;
   }
 }

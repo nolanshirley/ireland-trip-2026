@@ -1663,9 +1663,9 @@ body {
 
 .floating-quick-fab {
   position: fixed;
-  bottom: 5.5rem;
-  right: 1.25rem;
-  z-index: 40;
+  bottom: calc(72px + env(safe-area-inset-bottom, 16px));
+  right: max(1rem, env(safe-area-inset-right, 16px));
+  z-index: 45;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1673,6 +1673,36 @@ body {
   .floating-quick-fab {
     bottom: 2.25rem;
     right: 2.25rem;
+  }
+}
+
+/* ── 🚀 Quick Jump Day Menu Bottom Sheet & Modal ── */
+.quick-jump-sheet {
+  position: fixed;
+  bottom: calc(74px + env(safe-area-inset-bottom, 16px));
+  right: max(12px, env(safe-area-inset-right, 12px));
+  left: max(12px, env(safe-area-inset-left, 12px));
+  max-width: 440px;
+  margin: 0 auto;
+  max-height: calc(78vh - env(safe-area-inset-bottom, 16px));
+  max-height: calc(78dvh - env(safe-area-inset-bottom, 16px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--card);
+  color: var(--foreground);
+  border: 2px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.55);
+  z-index: 9999;
+  padding: 1rem;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 640px) {
+  .quick-jump-sheet {
+    left: auto;
+    right: 2.25rem;
+    bottom: 5.5rem;
+    width: 400px;
   }
 }
 
@@ -1933,7 +1963,9 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 5; /* Softly floats behind main interactive cards & functionality */
+  z-index: 25; /* Softly floats behind modals/bottom nav (z-40..z-50) but in front of body/card backgrounds on iOS WebKit */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
 }
 
 /* Clickable floating icon button */
@@ -1949,35 +1981,73 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   padding: 0;
   outline: none;
   line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform, opacity;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
 }
 .magic-item-btn:hover {
+  -webkit-transform: scale(1.4) !important;
   transform: scale(1.4) !important;
   filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.8)) !important;
 }
 .magic-item-btn:active {
+  -webkit-transform: scale(0.85) !important;
   transform: scale(0.85) !important;
 }
 
 /* Fluttering Four-Leaf Clovers (Small, Soft Opacity) */
-@keyframes cloverDrift {
+@-webkit-keyframes cloverDrift {
   0% {
+    -webkit-transform: translateY(-35px) rotate(0deg) scale(0.7);
     transform: translateY(-35px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
   20% {
     opacity: 0.55;
+    -webkit-transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
     transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
   }
   50% {
     opacity: 0.3;
+    -webkit-transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
     transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
   }
   80% {
     opacity: 0.55;
+    -webkit-transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
     transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
   }
   100% {
+    -webkit-transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
+    transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
+    opacity: 0;
+  }
+}
+@keyframes cloverDrift {
+  0% {
+    -webkit-transform: translateY(-35px) rotate(0deg) scale(0.7);
+    transform: translateY(-35px) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+    -webkit-transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
+    transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
+  }
+  50% {
+    opacity: 0.3;
+    -webkit-transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
+    transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
+  }
+  80% {
+    opacity: 0.55;
+    -webkit-transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
+    transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
+  }
+  100% {
+    -webkit-transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
     transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
     opacity: 0;
   }
@@ -1985,29 +2055,64 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 .magic-clover {
   position: absolute;
   top: -30px;
+  -webkit-animation: cloverDrift linear infinite;
   animation: cloverDrift linear infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.35));
 }
 
 /* Rising Pints of Guinness (Small, Subtle Float) */
-@keyframes guinnessRise {
+@-webkit-keyframes guinnessRise {
   0% {
+    -webkit-transform: translateY(105vh) rotate(0deg) scale(0.7);
     transform: translateY(105vh) rotate(0deg) scale(0.7);
     opacity: 0;
   }
   25% {
     opacity: 0.5;
+    -webkit-transform: translateY(75vh) rotate(-5deg) scale(0.85);
     transform: translateY(75vh) rotate(-5deg) scale(0.85);
   }
   60% {
     opacity: 0.28;
+    -webkit-transform: translateY(40vh) rotate(5deg) scale(0.75);
     transform: translateY(40vh) rotate(5deg) scale(0.75);
   }
   85% {
     opacity: 0.5;
+    -webkit-transform: translateY(15vh) rotate(-3deg) scale(0.85);
     transform: translateY(15vh) rotate(-3deg) scale(0.85);
   }
   100% {
+    -webkit-transform: translateY(-40px) rotate(0deg) scale(0.7);
+    transform: translateY(-40px) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+}
+@keyframes guinnessRise {
+  0% {
+    -webkit-transform: translateY(105vh) rotate(0deg) scale(0.7);
+    transform: translateY(105vh) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.5;
+    -webkit-transform: translateY(75vh) rotate(-5deg) scale(0.85);
+    transform: translateY(75vh) rotate(-5deg) scale(0.85);
+  }
+  60% {
+    opacity: 0.28;
+    -webkit-transform: translateY(40vh) rotate(5deg) scale(0.75);
+    transform: translateY(40vh) rotate(5deg) scale(0.75);
+  }
+  85% {
+    opacity: 0.5;
+    -webkit-transform: translateY(15vh) rotate(-3deg) scale(0.85);
+    transform: translateY(15vh) rotate(-3deg) scale(0.85);
+  }
+  100% {
+    -webkit-transform: translateY(-40px) rotate(0deg) scale(0.7);
     transform: translateY(-40px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
@@ -2015,31 +2120,68 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 .magic-guinness {
   position: absolute;
   bottom: -40px;
+  -webkit-animation: guinnessRise ease-in-out infinite;
   animation: guinnessRise ease-in-out infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
 }
 
 /* Waddling Galway Oysters */
-@keyframes oysterWaddleAcross {
+@-webkit-keyframes oysterWaddleAcross {
   0% {
     left: -40px;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
     transform: translateY(0) rotate(-8deg) scale(0.75);
     opacity: 0;
   }
   15% {
     opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
     transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   50% {
     opacity: 0.3;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
     transform: translateY(0) rotate(-8deg) scale(0.75);
   }
   85% {
     opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
     transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   100% {
     left: calc(100vw + 40px);
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
+  }
+}
+@keyframes oysterWaddleAcross {
+  0% {
+    left: -40px;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
+  }
+  50% {
+    opacity: 0.3;
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+  }
+  85% {
+    opacity: 0.55;
+    -webkit-transform: translateY(-6px) rotate(8deg) scale(0.85);
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
+  }
+  100% {
+    left: calc(100vw + 40px);
+    -webkit-transform: translateY(0) rotate(-8deg) scale(0.75);
     transform: translateY(0) rotate(-8deg) scale(0.75);
     opacity: 0;
   }
@@ -2047,7 +2189,10 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 .magic-oyster {
   position: absolute;
   bottom: calc(72px + env(safe-area-inset-bottom, 16px));
+  -webkit-animation: oysterWaddleAcross 26s linear infinite;
   animation: oysterWaddleAcross 26s linear infinite;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
   display: flex;
   align-items: center;
@@ -2055,33 +2200,61 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 }
 
 /* Interactive Pop / Removal Burst Animation */
-@keyframes itemPop {
+@-webkit-keyframes itemPop {
   0% {
+    -webkit-transform: scale(1);
     transform: scale(1);
     opacity: 0.8;
   }
   45% {
+    -webkit-transform: scale(1.6) rotate(20deg);
     transform: scale(1.6) rotate(20deg);
     opacity: 1;
     filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.9));
   }
   100% {
+    -webkit-transform: scale(0) rotate(50deg);
+    transform: scale(0) rotate(50deg);
+    opacity: 0;
+  }
+}
+@keyframes itemPop {
+  0% {
+    -webkit-transform: scale(1);
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  45% {
+    -webkit-transform: scale(1.6) rotate(20deg);
+    transform: scale(1.6) rotate(20deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.9));
+  }
+  100% {
+    -webkit-transform: scale(0) rotate(50deg);
     transform: scale(0) rotate(50deg);
     opacity: 0;
   }
 }
 .magic-item-popped {
+  -webkit-animation: itemPop 0.32s ease-out forwards !important;
   animation: itemPop 0.32s ease-out forwards !important;
   pointer-events: none !important;
 }
 
 /* ── 💥 Access Code Gag: Shake & Irish Crash Screen ── */
+@-webkit-keyframes gagShake {
+  0%, 100% { -webkit-transform: translateX(0); transform: translateX(0); }
+  20%, 60% { -webkit-transform: translateX(-8px); transform: translateX(-8px); }
+  40%, 80% { -webkit-transform: translateX(8px); transform: translateX(8px); }
+}
 @keyframes gagShake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-8px); }
-  40%, 80% { transform: translateX(8px); }
+  0%, 100% { -webkit-transform: translateX(0); transform: translateX(0); }
+  20%, 60% { -webkit-transform: translateX(-8px); transform: translateX(-8px); }
+  40%, 80% { -webkit-transform: translateX(8px); transform: translateX(8px); }
 }
 .gag-shake {
+  -webkit-animation: gagShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
   animation: gagShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
@@ -2090,6 +2263,7 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   inset: 0;
   z-index: 9999999;
   background: rgba(1, 15, 8, 0.96);
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
@@ -2110,8 +2284,9 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .magic-clover, .magic-guinness, .magic-oyster {
-    animation: none !important;
-    display: none !important;
+    -webkit-animation-duration: 40s !important;
+    animation-duration: 40s !important;
+    opacity: 0.35 !important;
   }
 }
 
@@ -8446,7 +8621,7 @@ const DailyPlanner = {
               <span class="text-xs font-extrabold text-[var(--foreground)]">Oct 2 – Oct 14, 2026</span>
             </div>
             <!-- Milestone Quick Jumps -->
-            <div class="hidden sm:flex items-center gap-1.5 text-xs">
+            <div class="flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar py-0.5 max-w-full flex-shrink-0">
               <span class="text-[10px] text-[var(--muted-foreground)] font-bold uppercase">Milestones:</span>
               <button
                 v-if="timeline && timeline[4] && timeline[4].special"
@@ -10464,47 +10639,130 @@ const DailyPlanner = {
         </div>
       </div>
 
-      <!-- Floating Quick Jump FAB (Mobile & Desktop) -->
-      <div class="floating-quick-fab flex flex-col items-end gap-2">
-        <!-- Expanded Menu Pills when FAB clicked -->
-        <div v-if="showMobileFabMenu" class="flex flex-col items-end gap-2 mb-1 animate-fadeIn">
+      <!-- Backdrop for Quick Jump Sheet -->
+      <div
+        v-if="showMobileFabMenu"
+        @click="showMobileFabMenu = false"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity z-[9990]"
+        style="animation: fadeIn 0.2s ease-out;"
+      ></div>
+
+      <!-- Quick Jump Day Menu Bottom Sheet & Modal -->
+      <div
+        v-if="showMobileFabMenu"
+        class="quick-jump-sheet shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Quick Jump to Day"
+      >
+        <!-- Sheet Header -->
+        <div class="flex items-center justify-between pb-2.5 mb-2.5 border-b border-[var(--border)]">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🚀</span>
+            <div>
+              <h3 class="text-sm font-extrabold text-[var(--foreground)] leading-tight">Quick Jump to Day</h3>
+              <p class="text-[10px] text-[var(--muted-foreground)]">Tap any of the 13 days or milestones</p>
+            </div>
+          </div>
           <button
-            @click="selectCalendarDay(0); showMobileFabMenu = false;"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
+            @click="showMobileFabMenu = false"
+            class="w-7 h-7 rounded-full bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center justify-center font-bold text-xs transition-colors"
+            title="Close"
           >
-            <span>⏮️</span>
-            <span>Jump to Day 1</span>
-          </button>
-          <button
-            v-if="prevDayPreview"
-            @click="prevCalendarDay(); showMobileFabMenu = false;"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
-          >
-            <span>◀</span>
-            <span>Prev (Day {{ activeCalendarDayIndex }})</span>
-          </button>
-          <button
-            v-if="nextDayPreview"
-            @click="nextCalendarDay(); showMobileFabMenu = false;"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--accent)] text-white shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
-          >
-            <span>Next (Day {{ activeCalendarDayIndex + 2 }})</span>
-            <span>▶</span>
-          </button>
-          <button
-            @click="scrollToTop"
-            class="px-3 py-1.5 rounded-full text-xs font-bold bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] border border-[var(--border)] shadow-lg flex items-center gap-1.5 transition-transform hover:scale-105"
-          >
-            <span>⬆️</span>
-            <span>Back to Top</span>
+            ✕
           </button>
         </div>
 
-        <!-- Main Toggle FAB Button -->
+        <!-- 13 Days Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-3 max-h-[46vh] sm:max-h-[38vh] overflow-y-auto pr-0.5">
+          <button
+            v-for="(d, idx) in timeline"
+            :key="'qj-day-' + idx"
+            @click="selectCalendarDay(idx); showMobileFabMenu = false;"
+            :class="[
+              'p-2 rounded-lg text-left border text-xs transition-all flex flex-col justify-between gap-1',
+              activeCalendarDayIndex === idx
+                ? 'bg-[var(--accent)] text-white border-transparent font-bold shadow-md ring-2 ring-[var(--accent)]/50'
+                : 'bg-[var(--card-hover)]/70 hover:bg-[var(--card-hover)] text-[var(--foreground)] border-[var(--border)]'
+            ]"
+          >
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[11px] font-extrabold">Day {{ d.dayNumber }}</span>
+              <span :class="[
+                'text-[9px] px-1 py-0.2 rounded font-mono',
+                activeCalendarDayIndex === idx ? 'bg-black/20 text-white' : 'bg-black/5 dark:bg-white/10 text-[var(--muted-foreground)]'
+              ]">{{ d.date }}</span>
+            </div>
+            <div class="text-[10px] truncate leading-tight opacity-90">
+              {{ d.base }}
+            </div>
+            <div v-if="d.special" class="text-[9px] font-bold text-amber-500 dark:text-amber-300 truncate">
+              💍 Proposal Day
+            </div>
+            <div v-else-if="idx === 5" class="text-[9px] font-bold text-blue-500 dark:text-blue-300 truncate">
+              🎂 Dad & Erin
+            </div>
+            <div v-else-if="idx === 10" class="text-[9px] font-bold text-amber-500 dark:text-amber-300 truncate">
+              🍺 Guinness
+            </div>
+            <div v-else-if="idx === 11" class="text-[9px] font-bold text-pink-500 dark:text-pink-300 truncate">
+              🎂 Mom's Bday
+            </div>
+          </button>
+        </div>
+
+        <!-- Bottom Quick Jump Bar (Prev, Next, Day 1, Top) -->
+        <div class="grid grid-cols-4 gap-1.5 pt-2 border-t border-[var(--border)]">
+          <button
+            @click="selectCalendarDay(0); showMobileFabMenu = false;"
+            class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] flex flex-col items-center justify-center transition-colors"
+          >
+            <span>⏮️</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Day 1</span>
+          </button>
+          <button
+            :disabled="!prevDayPreview"
+            @click="prevCalendarDay(); showMobileFabMenu = false;"
+            :class="[
+              'px-2 py-1.5 rounded-lg text-[11px] font-bold border flex flex-col items-center justify-center transition-colors',
+              prevDayPreview
+                ? 'bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border-[var(--border)]'
+                : 'opacity-40 cursor-not-allowed bg-[var(--card-hover)] border-[var(--border)] text-[var(--muted-foreground)]'
+            ]"
+          >
+            <span>◀</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Prev</span>
+          </button>
+          <button
+            :disabled="!nextDayPreview"
+            @click="nextCalendarDay(); showMobileFabMenu = false;"
+            :class="[
+              'px-2 py-1.5 rounded-lg text-[11px] font-bold border flex flex-col items-center justify-center transition-colors',
+              nextDayPreview
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                : 'opacity-40 cursor-not-allowed bg-[var(--card-hover)] border-[var(--border)] text-[var(--muted-foreground)]'
+            ]"
+          >
+            <span>▶</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Next</span>
+          </button>
+          <button
+            @click="scrollToTop(); showMobileFabMenu = false;"
+            class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] flex flex-col items-center justify-center transition-colors"
+          >
+            <span>⬆️</span>
+            <span class="text-[9px] mt-0.5 font-semibold">Top</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Floating Quick Jump FAB (Mobile & Desktop) -->
+      <div class="floating-quick-fab">
         <button
           @click="showMobileFabMenu = !showMobileFabMenu"
-          class="w-11 h-11 rounded-full bg-[var(--accent)] hover:opacity-95 text-white font-extrabold shadow-xl border-2 border-white/20 flex items-center justify-center text-base transition-transform active:scale-95"
+          class="w-12 h-12 rounded-full bg-[var(--accent)] hover:opacity-95 text-white font-extrabold shadow-xl border-2 border-white/20 flex items-center justify-center text-lg transition-transform active:scale-95"
           :title="showMobileFabMenu ? 'Close quick jump menu' : 'Quick day jump menu'"
+          aria-label="Toggle Quick Day Jump Menu"
         >
           <span>{{ showMobileFabMenu ? '✕' : '🚀' }}</span>
         </button>
@@ -15268,10 +15526,10 @@ const app = createApp({
 
     // Low-density, small floating ambient items that can be clicked to pop
     const magicItems = ref([
-      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '12%', animationDuration: '20s', animationDelay: '0s' }, popped: false },
-      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '78%', animationDuration: '24s', animationDelay: '3s' }, popped: false },
-      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '46%', animationDuration: '22s', animationDelay: '8s' }, popped: false },
-      { id: 'oyster-1', type: 'oyster', icon: '🦪', style: { animationDuration: '28s', animationDelay: '1s' }, popped: false }
+      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '12%', animationDuration: '20s', animationDelay: '0s', WebkitAnimationDuration: '20s', WebkitAnimationDelay: '0s' }, popped: false },
+      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '78%', animationDuration: '24s', animationDelay: '3s', WebkitAnimationDuration: '24s', WebkitAnimationDelay: '3s' }, popped: false },
+      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '46%', animationDuration: '22s', animationDelay: '8s', WebkitAnimationDuration: '22s', WebkitAnimationDelay: '8s' }, popped: false },
+      { id: 'oyster-1', type: 'oyster', icon: '🦪', style: { animationDuration: '28s', animationDelay: '1s', WebkitAnimationDuration: '28s', WebkitAnimationDelay: '1s' }, popped: false }
     ]);
 
     const popMagicItem = (item) => {
