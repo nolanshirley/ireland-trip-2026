@@ -887,6 +887,30 @@ body {
   color: #fef08a !important;
 }
 
+/* ==========================================================================
+   Optional / Swappable Itinerary Activities (Visual Opacity & Swap Signifier)
+   ========================================================================== */
+.itinerary-optional-item {
+  opacity: 0.78 !important;
+  border-style: dashed !important;
+  border-width: 2px !important;
+  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.itinerary-optional-item:hover,
+.itinerary-optional-item:focus-within {
+  opacity: 1 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.dark .itinerary-optional-item {
+  opacity: 0.72 !important;
+}
+.dark .itinerary-optional-item:hover,
+.dark .itinerary-optional-item:focus-within {
+  opacity: 1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
 /* Ensure light mode subcontainers and nested cards stay crisp white, never muddy */
 :root:not(.dark) .bg-\[var\(--background\)\] {
   background-color: #ffffff !important;
@@ -3163,6 +3187,26 @@ body {
                   <button type="button" @click="adjustDetailDuration(5)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Add 5 mins">+5m</button>
                   <button type="button" @click="adjustDetailDuration(15)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Add 15 mins">+15m</button>
                 </div>
+              </div>
+
+              <!-- Optional / Swappable Toggle -->
+              <div class="sm:col-span-2 pt-1">
+                <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[var(--card-hover)] border border-[var(--border)] cursor-pointer text-xs font-bold text-[var(--foreground)] transition-all hover:bg-[var(--border)]/30">
+                  <input
+                    type="checkbox"
+                    v-model="detailEditForm.optional"
+                    class="w-4 h-4 rounded accent-[var(--accent)] text-[var(--accent)] cursor-pointer"
+                  />
+                  <div class="flex flex-col">
+                    <span class="flex items-center gap-1.5 font-bold">
+                      <span>🔄</span>
+                      <span>Optional / Swappable Stop</span>
+                    </span>
+                    <span class="text-[10px] font-normal text-[var(--muted-foreground)]">
+                      Renders on calendar and agenda with distinct soft opacity indicating it can easily be swapped or skipped
+                    </span>
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -7239,6 +7283,25 @@ const DailyPlanner = {
       }
       return [];
     },
+    isOptionalItem(item) {
+      if (!item) return false;
+      if (item.optional !== undefined) return Boolean(item.optional);
+      if (item.isOptional !== undefined) return Boolean(item.isOptional);
+      if (item.anchor || item.mandatory || item.reserved) return false;
+      const tag = (item.tag || '').toUpperCase();
+      if (tag.includes('CONFIRMED') || tag.includes('FLIGHT') || tag.includes('CHECK-IN') || tag.includes('CHECK-OUT') || tag.includes('BASE MOVE') || tag.includes('CAR RETURN') || tag.includes('HOUSING') || tag.includes('AIRPORT DRIVE')) {
+        return false;
+      }
+      if (item.status === 'Optional' || item.status === 'proposed') return true;
+      if (tag.includes('OPTIONAL') || tag.includes('SUGGESTED') || tag.includes('FLEXIBLE') || tag.includes('REST') ||
+          tag.includes('NATURE') || tag.includes('EXPLORE') || tag.includes('PUB') || tag.includes('CASUAL') ||
+          tag.includes('WALK') || tag.includes('HIKE') || tag.includes('VISIT') || tag.includes('HISTORY') ||
+          tag.includes('CULTURE') || tag.includes('TOUR') || tag.includes('CASTLE') || tag.includes('RUINS') ||
+          tag.includes('WATERFALL') || tag.includes('HERITAGE')) {
+        return true;
+      }
+      return false;
+    },
     openAddStop(dayIndex) {
       if (window.TravelApp) {
         window.TravelApp.openCreator('schedule', { dayIndex: dayIndex !== undefined ? dayIndex : this.activeCalendarDayIndex });
@@ -7504,136 +7567,19 @@ const DailyPlanner = {
 
       <!-- Top Controls & Mobile View Selector -->
       <div class="card p-4 sm:p-5">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <!-- 1. Header Title & Subtitle -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
           <div>
             <h2 class="text-xl font-bold tracking-tight">📅 Daily Itinerary & Interactive Calendar</h2>
-            <p class="text-sm text-[var(--muted-foreground)]">
+            <p class="text-xs text-[var(--muted-foreground)]">
               Interactive 13-day calendar selector, 18-hour time-blocks & 1-tap Apple / Google navigation
             </p>
           </div>
-
-          <!-- Layout & View Mode Switcher -->
-          <div class="flex items-center gap-2 flex-wrap">
-            <!-- Global Rainy Day Mode Switcher -->
-            <button
-              @click="toggleGlobalRainMode"
-              :class="[
-                'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
-                globalRainMode
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/40 font-extrabold'
-                  : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-800 dark:text-amber-400 border-amber-500/40'
-              ]"
-              title="Toggle Rain Contingency Plans for all 13 days"
-            >
-              <span>🌧️</span>
-              <span>{{ globalRainMode ? '🌧️ Rain Mode: ON' : '🌧️ Rain Mode' }}</span>
-            </button>
-
-            <!-- Planner Layout Switcher: Day Calendar vs All Days Accordion -->
-            <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
-              <button
-                @click="plannerLayoutMode = 'day-calendar'"
-                :class="[
-                  'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
-                  plannerLayoutMode === 'day-calendar'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-                ]"
-                title="Interactive Day Calendar (No accordion expansion needed!)"
-              >
-                <span>🗓️</span>
-                <span>Day Calendar</span>
-              </button>
-              <button
-                @click="plannerLayoutMode = 'accordion'"
-                :class="[
-                  'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
-                  plannerLayoutMode === 'accordion'
-                    ? 'bg-[var(--accent)] text-white shadow-sm'
-                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-                ]"
-                title="View all 13 days in expandable accordion list"
-              >
-                <span>📜</span>
-                <span>All Days (Accordion)</span>
-              </button>
-            </div>
-
-            <!-- Schedule Hour Grid vs Agenda Switcher -->
-            <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
-              <button
-                @click="viewMode = 'calendar'"
-                :class="[
-                  'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1',
-                  viewMode === 'calendar'
-                    ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
-                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-                ]"
-              >
-                <span>📊</span>
-                <span>Hour Grid</span>
-              </button>
-              <button
-                @click="viewMode = 'agenda'"
-                :class="[
-                  'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1',
-                  viewMode === 'agenda'
-                    ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
-                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
-                ]"
-              >
-                <span>📋</span>
-                <span>Agenda</span>
-              </button>
-            </div>
-
-            <!-- Expand / Collapse All (For Accordion Mode) -->
-            <div v-if="plannerLayoutMode === 'accordion'" class="flex items-center gap-1">
-              <button
-                @click="expandAll"
-                class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors"
-                title="Expand all days"
-              >
-                Expand All
-              </button>
-              <button
-                @click="collapseAll"
-                class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors"
-                title="Collapse all days"
-              >
-                Collapse All
-              </button>
-            </div>
-          </div>
         </div>
 
-        <!-- Interactive Trip Progress Bar -->
-        <div class="mb-3 p-3 rounded-2xl bg-[var(--card)] border border-[var(--border)] shadow-xs space-y-2">
-          <div class="flex items-center justify-between gap-3 flex-wrap text-xs">
-            <div class="flex items-center gap-2 font-bold text-[var(--foreground)]">
-              <span class="text-base">🏆</span>
-              <span>Trip Progress:</span>
-              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-extrabold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30">
-                Day {{ activeCalendarDayIndex + 1 }} of 13 ({{ tripProgressPercent }}%)
-              </span>
-            </div>
-            <div class="flex items-center gap-3 text-[11px] text-[var(--muted-foreground)] font-semibold">
-              <span>🚗 Total Drive: {{ totalTripDriveHours }}h</span>
-              <span class="opacity-40">·</span>
-              <span>📍 Current Base: <strong class="text-[var(--foreground)]">{{ activeDay.base }}</strong></span>
-            </div>
-          </div>
-          <div class="w-full h-2 rounded-full bg-[var(--background)] border border-[var(--border)] overflow-hidden">
-            <div
-              class="h-full bg-gradient-to-r from-[var(--accent)] via-indigo-500 to-emerald-500 transition-all duration-500 shadow-sm"
-              :style="{ width: tripProgressPercent + '%' }"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Interactive 13-Day Calendar Scrubber Bar -->
-        <div class="space-y-2 mb-4 pt-3 border-t border-[var(--border)]">
-          <div class="flex items-center justify-between gap-2">
+        <!-- 2. Interactive 13-Day Calendar Scrubber Bar (PLACED HIGHER IN THE BOX) -->
+        <div class="space-y-2 mb-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)]">🗓️ Select Trip Day:</span>
               <span class="text-xs font-extrabold text-[var(--foreground)]">Oct 2 – Oct 14, 2026</span>
@@ -7663,7 +7609,7 @@ const DailyPlanner = {
           </div>
 
           <!-- Horizontal Scrollable Day Cards Strip -->
-          <div class="day-strip-scroll pt-1 pb-2" id="day-strip-scroll-container" ref="dayStripContainer">
+          <div class="day-strip-scroll pt-1 pb-1" id="day-strip-scroll-container" ref="dayStripContainer">
             <div
               v-for="(d, idx) in timeline"
               :key="d.dayNumber"
@@ -7708,6 +7654,128 @@ const DailyPlanner = {
               <div class="flex items-center justify-between text-[10px] text-[var(--muted-foreground)] pt-1 border-t border-[var(--border)]/50">
                 <span>🚗 {{ d.driveHours }}h</span>
                 <span>{{ d.items.length }} stops</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Compact Trip Progress Bar -->
+          <div class="p-2.5 rounded-xl bg-[var(--background)] border border-[var(--border)] shadow-xs space-y-1.5">
+            <div class="flex items-center justify-between gap-3 flex-wrap text-xs">
+              <div class="flex items-center gap-2 font-bold text-[var(--foreground)]">
+                <span class="text-base">🏆</span>
+                <span>Trip Progress:</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30">
+                  Day {{ activeCalendarDayIndex + 1 }} of 13 ({{ tripProgressPercent }}%)
+                </span>
+              </div>
+              <div class="flex items-center gap-3 text-[11px] text-[var(--muted-foreground)] font-semibold">
+                <span>🚗 Total Drive: {{ totalTripDriveHours }}h</span>
+                <span class="opacity-40">·</span>
+                <span>📍 Current Base: <strong class="text-[var(--foreground)]">{{ activeDay.base }}</strong></span>
+              </div>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-[var(--card)] border border-[var(--border)] overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-[var(--accent)] via-indigo-500 to-emerald-500 transition-all duration-500 shadow-sm"
+                :style="{ width: tripProgressPercent + '%' }"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Layout & View Mode Filters Bar (BELOW Select Trip Day) -->
+        <div class="pt-3 border-t border-[var(--border)] space-y-3">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Global Rainy Day Mode Switcher -->
+              <button
+                @click="toggleGlobalRainMode"
+                :class="[
+                  'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm',
+                  globalRainMode
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 ring-2 ring-amber-400/40 font-extrabold'
+                    : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-amber-800 dark:text-amber-400 border-amber-500/40'
+                ]"
+                title="Toggle Rain Contingency Plans for all 13 days"
+              >
+                <span>🌧️</span>
+                <span>{{ globalRainMode ? '🌧️ Rain Mode: ON' : '🌧️ Rain Mode' }}</span>
+              </button>
+
+              <!-- Planner Layout Switcher: Day Calendar vs All Days Accordion -->
+              <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
+                <button
+                  @click="plannerLayoutMode = 'day-calendar'"
+                  :class="[
+                    'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
+                    plannerLayoutMode === 'day-calendar'
+                      ? 'bg-[var(--accent)] text-white shadow-sm'
+                      : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                  ]"
+                  title="Interactive Day Calendar (No accordion expansion needed!)"
+                >
+                  <span>🗓️</span>
+                  <span>Day Calendar</span>
+                </button>
+                <button
+                  @click="plannerLayoutMode = 'accordion'"
+                  :class="[
+                    'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
+                    plannerLayoutMode === 'accordion'
+                      ? 'bg-[var(--accent)] text-white shadow-sm'
+                      : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                  ]"
+                  title="View all 13 days in expandable accordion list"
+                >
+                  <span>📜</span>
+                  <span>All Days (Accordion)</span>
+                </button>
+              </div>
+
+              <!-- Schedule Hour Grid vs Agenda Switcher -->
+              <div class="flex items-center bg-[var(--background)] p-1 rounded-xl border border-[var(--border)]">
+                <button
+                  @click="viewMode = 'calendar'"
+                  :class="[
+                    'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1',
+                    viewMode === 'calendar'
+                      ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
+                      : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                  ]"
+                >
+                  <span>📊</span>
+                  <span>Hour Grid</span>
+                </button>
+                <button
+                  @click="viewMode = 'agenda'"
+                  :class="[
+                    'px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1',
+                    viewMode === 'agenda'
+                      ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
+                      : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                  ]"
+                >
+                  <span>📋</span>
+                  <span>Agenda</span>
+                </button>
+              </div>
+
+              <!-- Expand / Collapse All (For Accordion Mode) -->
+              <div v-if="plannerLayoutMode === 'accordion'" class="flex items-center gap-1">
+                <button
+                  @click="expandAll"
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors"
+                  title="Expand all days"
+                >
+                  Expand All
+                </button>
+                <button
+                  @click="collapseAll"
+                  class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] transition-colors"
+                  title="Collapse all days"
+                >
+                  Collapse All
+                </button>
               </div>
             </div>
           </div>
@@ -8091,11 +8159,11 @@ const DailyPlanner = {
                 v-for="(item, iIdx) in activeDayItems"
                 :key="iIdx"
                 @click="onItemClick(item, activeDay)"
-                :class="['timeline-strip-block', getBlockColorClass(item)]"
+                :class="['timeline-strip-block', getBlockColorClass(item), isOptionalItem(item) ? 'opacity-70 border border-dashed border-white/60' : '']"
                 :style="getRibbonBlockStyle(item)"
-                :title="item.time + ' — ' + item.activity + (item.desc ? ': ' + item.desc : '')"
+                :title="item.time + ' — ' + item.activity + (isOptionalItem(item) ? ' [OPTIONAL SWAP]' : '') + (item.desc ? ': ' + item.desc : '')"
               >
-                <span class="truncate">{{ item.activity }}</span>
+                <span class="truncate">{{ isOptionalItem(item) ? '🌱 ' + item.activity : item.activity }}</span>
               </div>
             </div>
           </div>
@@ -8121,6 +8189,7 @@ const DailyPlanner = {
                     @click="onItemClick(item, activeDay)"
                     :class="[
                       'p-2.5 rounded-lg border text-xs transition-all cursor-pointer hover:shadow-sm hover:scale-[1.005]',
+                      isOptionalItem(item) ? 'itinerary-optional-item' : '',
                       getItemTimePeriod(item, activeDay.dayNumber).cardClass,
                       item.reserved ? 'bg-amber-500/10 border-amber-500/30' : '',
                       item.anchor && !item.reserved ? 'bg-indigo-500/10 border-indigo-500/30' : '',
@@ -8137,6 +8206,12 @@ const DailyPlanner = {
                           {{ item.time }}
                         </span>
                         <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+
+                        <!-- Optional / Swappable Activity Badge -->
+                        <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs flex items-center gap-1 leading-none" title="Optional activity: can be easily swapped out for something else">
+                          <span>🔄</span>
+                          <span>Optional Swap</span>
+                        </span>
 
                         <!-- Time of Day Atmospheric Badge -->
                         <span :class="['px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm', getItemTimePeriod(item, activeDay.dayNumber).class]">
@@ -8157,6 +8232,10 @@ const DailyPlanner = {
 
                       <!-- Action Badges & Map Button -->
                       <div class="action-badges-row">
+                        <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs hidden sm:inline-flex items-center gap-1 leading-none">
+                          <span>🔄</span>
+                          <span>Swappable</span>
+                        </span>
                         <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                           💡 SUGGESTED ITINERARY
                         </span>
@@ -8312,6 +8391,7 @@ const DailyPlanner = {
               @click="onItemClick(item, activeDay)"
               class="flex flex-col sm:flex-row sm:items-start gap-3 p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] transition-all cursor-pointer"
               :class="[
+                isOptionalItem(item) ? 'itinerary-optional-item' : '',
                 getItemTimePeriod(item, activeDay.dayNumber).cardClass,
                 item.reserved ? 'border-amber-500/30 bg-amber-500/[0.02]' : '',
                 item.type === 'drive' ? 'border-blue-500/25' : '',
@@ -8334,6 +8414,12 @@ const DailyPlanner = {
                   <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
 
+                    <!-- Optional / Swappable Activity Badge -->
+                    <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs flex items-center gap-1 leading-none" title="Optional activity: can be easily swapped out for something else">
+                      <span>🔄</span>
+                      <span>Optional Swap</span>
+                    </span>
+
                     <!-- Time of Day Atmospheric Badge -->
                     <span :class="['px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm', getItemTimePeriod(item, activeDay.dayNumber).class]">
                       <span>{{ getItemTimePeriod(item, activeDay.dayNumber).icon }}</span>
@@ -8351,6 +8437,10 @@ const DailyPlanner = {
                   </div>
 
                   <div class="action-badges-row">
+                    <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs hidden sm:inline-flex items-center gap-1 leading-none">
+                      <span>🔄</span>
+                      <span>Swappable</span>
+                    </span>
                     <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                       💡 SUGGESTED ITINERARY
                     </span>
@@ -8949,11 +9039,11 @@ const DailyPlanner = {
                   v-for="(item, iIdx) in day.items"
                   :key="iIdx"
                   @click="onItemClick(item, day)"
-                  :class="['timeline-strip-block', getBlockColorClass(item)]"
+                  :class="['timeline-strip-block', getBlockColorClass(item), isOptionalItem(item) ? 'opacity-70 border border-dashed border-white/60' : '']"
                   :style="getRibbonBlockStyle(item)"
-                  :title="item.time + ' — ' + item.activity + (item.desc ? ': ' + item.desc : '')"
+                  :title="item.time + ' — ' + item.activity + (isOptionalItem(item) ? ' [OPTIONAL SWAP]' : '') + (item.desc ? ': ' + item.desc : '')"
                 >
-                  <span class="truncate">{{ item.activity }}</span>
+                  <span class="truncate">{{ isOptionalItem(item) ? '🌱 ' + item.activity : item.activity }}</span>
                 </div>
               </div>
             </div>
@@ -8979,6 +9069,7 @@ const DailyPlanner = {
                       @click="onItemClick(item, day)"
                       :class="[
                         'p-2.5 rounded-lg border text-xs transition-all cursor-pointer hover:shadow-sm hover:scale-[1.005]',
+                        isOptionalItem(item) ? 'itinerary-optional-item' : '',
                         item.reserved ? 'bg-amber-500/10 border-amber-500/30' : '',
                         item.anchor && !item.reserved ? 'bg-indigo-500/10 border-indigo-500/30' : '',
                         item.type === 'drive' ? 'bg-blue-500/10 border-blue-500/25' : '',
@@ -8994,6 +9085,12 @@ const DailyPlanner = {
                             {{ item.time }}
                           </span>
                           <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+
+                          <!-- Optional / Swappable Activity Badge -->
+                          <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs flex items-center gap-1 leading-none" title="Optional activity: can be easily swapped out for something else">
+                            <span>🔄</span>
+                            <span>Optional Swap</span>
+                          </span>
                           
                           <!-- Energy Pacing Badge -->
                           <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
@@ -9003,6 +9100,10 @@ const DailyPlanner = {
 
                         <!-- Action Badges & Map Button -->
                         <div class="action-badges-row">
+                          <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs hidden sm:inline-flex items-center gap-1 leading-none">
+                            <span>🔄</span>
+                            <span>Swappable</span>
+                          </span>
                           <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                             💡 SUGGESTED ITINERARY
                           </span>
@@ -9157,11 +9258,12 @@ const DailyPlanner = {
                 :key="sIdx"
                 @click="onItemClick(item, day)"
                 class="flex flex-col sm:flex-row sm:items-start gap-3 p-3.5 rounded-xl border border-[var(--border)] bg-[var(--background)] hover:bg-[var(--card-hover)] transition-all cursor-pointer"
-                :class="{
-                  'border-amber-500/30 bg-amber-500/[0.02]': item.reserved,
-                  'border-blue-500/25': item.type === 'drive',
-                  'border-purple-500/25': item.type === 'housing'
-                }"
+                :class="[
+                  isOptionalItem(item) ? 'itinerary-optional-item' : '',
+                  item.reserved ? 'border-amber-500/30 bg-amber-500/[0.02]' : '',
+                  item.type === 'drive' ? 'border-blue-500/25' : '',
+                  item.type === 'housing' ? 'border-purple-500/25' : ''
+                ]"
               >
                 <!-- Time Badge -->
                 <div class="sm:w-36 flex-shrink-0 flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1">
@@ -9178,12 +9280,23 @@ const DailyPlanner = {
                   <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-bold text-sm text-[var(--foreground)]">{{ item.activity }}</span>
+
+                      <!-- Optional / Swappable Activity Badge -->
+                      <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs flex items-center gap-1 leading-none" title="Optional activity: can be easily swapped out for something else">
+                        <span>🔄</span>
+                        <span>Optional Swap</span>
+                      </span>
+
                       <span v-if="item.energyLevel" :class="['energy-badge', getEnergyBadge(item.energyLevel).class]">
                         {{ getEnergyBadge(item.energyLevel).label }}
                       </span>
                     </div>
 
                     <div class="action-badges-row">
+                      <span v-if="isOptionalItem(item)" class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200 border border-blue-400 border-dashed shadow-xs hidden sm:inline-flex items-center gap-1 leading-none">
+                        <span>🔄</span>
+                        <span>Swappable</span>
+                      </span>
                       <span v-if="item.reserved" class="px-2.5 py-1 rounded-md text-[10.5px] font-black bg-amber-200 dark:bg-amber-300 text-amber-950 border border-amber-400 shadow-sm leading-none">
                         💡 SUGGESTED ITINERARY
                       </span>
@@ -14166,6 +14279,7 @@ const app = createApp({
       rainBackup: '',
       mapsQuery: '',
       splitOption: '',
+      optional: false,
       isCustom: false
     });
 
@@ -14175,6 +14289,13 @@ const app = createApp({
         ? getItemTimeRange(item)
         : { start: parseTimeToHour(item.time || item.startHour), end: 11.5, dur: 1.5 };
       
+      const isItemOpt = Boolean(
+        item.optional ||
+        item.isOptional ||
+        item.status === 'Optional' ||
+        (item.tag && (item.tag.includes('OPTIONAL') || item.tag.includes('SUGGESTED') || item.tag.includes('FLEXIBLE')))
+      );
+
       detailEditForm.value = {
         id: item.id || getItemId(item, 'day' + (day ? day.dayNumber : 1)),
         activity: item.activity || item.title || '',
@@ -14188,6 +14309,7 @@ const app = createApp({
         rainBackup: item.rainBackup || '',
         mapsQuery: item.mapsQuery || '',
         splitOption: item.splitOption || '',
+        optional: isItemOpt,
         isCustom: Boolean(item.isCustom)
       };
     };
@@ -14434,6 +14556,7 @@ const app = createApp({
         rainBackup: detailEditForm.value.rainBackup.trim(),
         mapsQuery: detailEditForm.value.mapsQuery.trim(),
         splitOption: detailEditForm.value.splitOption.trim(),
+        optional: Boolean(detailEditForm.value.optional),
         isCustom: true
       };
 

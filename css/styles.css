@@ -677,6 +677,30 @@ body {
   color: #fef08a !important;
 }
 
+/* ==========================================================================
+   Optional / Swappable Itinerary Activities (Visual Opacity & Swap Signifier)
+   ========================================================================== */
+.itinerary-optional-item {
+  opacity: 0.78 !important;
+  border-style: dashed !important;
+  border-width: 2px !important;
+  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+.itinerary-optional-item:hover,
+.itinerary-optional-item:focus-within {
+  opacity: 1 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.dark .itinerary-optional-item {
+  opacity: 0.72 !important;
+}
+.dark .itinerary-optional-item:hover,
+.dark .itinerary-optional-item:focus-within {
+  opacity: 1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
 /* Ensure light mode subcontainers and nested cards stay crisp white, never muddy */
 :root:not(.dark) .bg-\[var\(--background\)\] {
   background-color: #ffffff !important;

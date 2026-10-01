@@ -365,6 +365,7 @@ const app = createApp({
       rainBackup: '',
       mapsQuery: '',
       splitOption: '',
+      optional: false,
       isCustom: false
     });
 
@@ -374,6 +375,13 @@ const app = createApp({
         ? getItemTimeRange(item)
         : { start: parseTimeToHour(item.time || item.startHour), end: 11.5, dur: 1.5 };
       
+      const isItemOpt = Boolean(
+        item.optional ||
+        item.isOptional ||
+        item.status === 'Optional' ||
+        (item.tag && (item.tag.includes('OPTIONAL') || item.tag.includes('SUGGESTED') || item.tag.includes('FLEXIBLE')))
+      );
+
       detailEditForm.value = {
         id: item.id || getItemId(item, 'day' + (day ? day.dayNumber : 1)),
         activity: item.activity || item.title || '',
@@ -387,6 +395,7 @@ const app = createApp({
         rainBackup: item.rainBackup || '',
         mapsQuery: item.mapsQuery || '',
         splitOption: item.splitOption || '',
+        optional: isItemOpt,
         isCustom: Boolean(item.isCustom)
       };
     };
@@ -633,6 +642,7 @@ const app = createApp({
         rainBackup: detailEditForm.value.rainBackup.trim(),
         mapsQuery: detailEditForm.value.mapsQuery.trim(),
         splitOption: detailEditForm.value.splitOption.trim(),
+        optional: Boolean(detailEditForm.value.optional),
         isCustom: true
       };
 

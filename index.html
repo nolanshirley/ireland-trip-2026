@@ -1607,6 +1607,26 @@
                   <button type="button" @click="adjustDetailDuration(15)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Add 15 mins">+15m</button>
                 </div>
               </div>
+
+              <!-- Optional / Swappable Toggle -->
+              <div class="sm:col-span-2 pt-1">
+                <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-[var(--card-hover)] border border-[var(--border)] cursor-pointer text-xs font-bold text-[var(--foreground)] transition-all hover:bg-[var(--border)]/30">
+                  <input
+                    type="checkbox"
+                    v-model="detailEditForm.optional"
+                    class="w-4 h-4 rounded accent-[var(--accent)] text-[var(--accent)] cursor-pointer"
+                  />
+                  <div class="flex flex-col">
+                    <span class="flex items-center gap-1.5 font-bold">
+                      <span>🔄</span>
+                      <span>Optional / Swappable Stop</span>
+                    </span>
+                    <span class="text-[10px] font-normal text-[var(--muted-foreground)]">
+                      Renders on calendar and agenda with distinct soft opacity indicating it can easily be swapped or skipped
+                    </span>
+                  </div>
+                </label>
+              </div>
             </div>
 
             <!-- Overlap / Conflict Alert Banner -->
