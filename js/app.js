@@ -386,6 +386,20 @@ const app = createApp({
     const showEngagementModal = ref(false);
     const engagementCodeInput = ref('');
 
+    // ── 🍀 Irish Magic Animations (Flying Clovers, Guinness & Waddling Oysters) ──
+    const irishMagicActive = ref(typeof localStorage !== 'undefined' ? localStorage.getItem('ireland_irish_magic') !== '0' : true);
+    const toggleIrishMagic = () => {
+      irishMagicActive.value = !irishMagicActive.value;
+      try {
+        localStorage.setItem('ireland_irish_magic', irishMagicActive.value ? '1' : '0');
+      } catch (e) {}
+      if (irishMagicActive.value) {
+        showToast('🍀 Irish Magic animations active!', '✨');
+      } else {
+        showToast('Irish animations paused', '⏸️');
+      }
+    };
+
     const detailEditForm = ref({
       id: '',
       activity: '',
@@ -445,6 +459,7 @@ const app = createApp({
           try { localStorage.setItem('ireland_engagement_secret', '1'); } catch(e) {}
           engagementUnlocked.value = true;
           showEngagementModal.value = true;
+          irishMagicActive.value = true;
           engagementCodeInput.value = '';
           document.body.style.overflow = 'hidden';
           showToast('💍 Secret proposal feature unlocked!', '✨');
@@ -2552,6 +2567,8 @@ const app = createApp({
       checkEngagementCode,
       isEngagementUnlocked: () => engagementUnlocked.value,
       openEngagementModal: () => { showEngagementModal.value = true; },
+      toggleIrishMagic,
+      isIrishMagicActive: () => irishMagicActive.value,
       voteItem,
       getItemVotes,
       setItemStatus,
@@ -3026,6 +3043,9 @@ const app = createApp({
       checkEngagementCode,
       dismissEngagementModal,
       resetEngagementSecret,
+      // 🍀 Irish Magic Animations
+      irishMagicActive,
+      toggleIrishMagic,
       handleSwitchTab,
       targetSearchQuery,
       getGoogleMapsUrl,

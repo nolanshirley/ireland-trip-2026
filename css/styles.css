@@ -1550,8 +1550,266 @@ body {
 }
 .engagement-modal-card {
   animation: engagementRise 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.25s ease;
 }
 .engagement-sparkle {
   animation: sparkleIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
   display: inline-block;
+}
+
+/* ── 💍 Engagement Modal Theme Adaptations ─────────────────────── */
+/* Dark Mode - Monochrome & Ice Blue (Default) */
+.dark .engagement-modal-card {
+  background: linear-gradient(145deg, #090c15, #141b2d, #0d121f);
+  border: 2px solid rgba(251, 191, 36, 0.6);
+  box-shadow: 0 0 50px rgba(251, 191, 36, 0.3);
+  color: #f8fafc;
+}
+
+/* Dark Mode - Emerald / Celtic Forest */
+.dark.theme-shamrock .engagement-modal-card {
+  background: linear-gradient(145deg, #021a12, #063826, #022016);
+  border: 2px solid rgba(52, 211, 153, 0.7);
+  box-shadow: 0 0 50px rgba(52, 211, 153, 0.35);
+  color: #ecfdf5;
+}
+
+/* Dark Mode - Royal Atlantic Navy */
+.dark.theme-navy .engagement-modal-card {
+  background: linear-gradient(145deg, #030712, #0b1d47, #07132e);
+  border: 2px solid rgba(96, 165, 250, 0.7);
+  box-shadow: 0 0 50px rgba(96, 165, 250, 0.35);
+  color: #f8fafc;
+}
+
+/* Dark Mode - Pure OLED Black */
+.dark.theme-pure-black .engagement-modal-card {
+  background: #000000;
+  border: 2px solid rgba(251, 191, 36, 0.75);
+  box-shadow: 0 0 50px rgba(251, 191, 36, 0.4);
+  color: #ffffff;
+}
+
+/* Light Mode - Monochrome (Ivory & Gold Luxury) */
+html:not(.dark) .engagement-modal-card {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7, #ffffff);
+  border: 2px solid #d97706;
+  box-shadow: 0 25px 60px -10px rgba(217, 119, 6, 0.35);
+  color: #0f172a;
+}
+
+/* Light Mode - Emerald / Celtic Forest */
+html:not(.dark).theme-shamrock .engagement-modal-card {
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7, #ffffff);
+  border: 2px solid #059669;
+  box-shadow: 0 25px 60px -10px rgba(5, 150, 105, 0.35);
+  color: #022c22;
+}
+
+/* Light Mode - Royal Atlantic Navy */
+html:not(.dark).theme-navy .engagement-modal-card {
+  background: linear-gradient(145deg, #eff6ff, #dbeafe, #ffffff);
+  border: 2px solid #2563eb;
+  box-shadow: 0 25px 60px -10px rgba(37, 99, 235, 0.35);
+  color: #0f172a;
+}
+
+/* Light Mode - Pure OLED (High-Contrast White & Gold) */
+html:not(.dark).theme-pure-black .engagement-modal-card {
+  background: #ffffff;
+  border: 2px solid #000000;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.35);
+  color: #000000;
+}
+
+/* High-Contrast Explicit Typography & Element Rules for Engagement Modal */
+.dark .engagement-modal-card .engagement-title {
+  color: #ffffff !important;
+}
+html:not(.dark) .engagement-modal-card .engagement-title {
+  color: #0f172a !important;
+}
+
+.dark .engagement-modal-card .engagement-eyebrow {
+  color: #fcd34d !important; /* amber-300 */
+}
+html:not(.dark) .engagement-modal-card .engagement-eyebrow {
+  color: #92400e !important; /* amber-800: AAA 7.5:1 */
+}
+
+.dark .engagement-modal-card .engagement-subtitle {
+  color: #6ee7b7 !important; /* emerald-300 */
+}
+html:not(.dark) .engagement-modal-card .engagement-subtitle {
+  color: #065f46 !important; /* emerald-800: AAA 8.5:1 */
+}
+
+.dark .engagement-modal-card .engagement-location-box {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  color: #f8fafc !important;
+}
+html:not(.dark) .engagement-modal-card .engagement-location-box {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(180, 83, 9, 0.35) !important;
+  color: #0f172a !important;
+}
+
+.dark .engagement-modal-card .loc-label {
+  color: #fcd34d !important; /* amber-300 */
+}
+html:not(.dark) .engagement-modal-card .loc-label {
+  color: #92400e !important; /* amber-800: AAA 7.5:1 */
+}
+
+.dark .engagement-modal-card .loc-title {
+  color: #ffffff !important;
+}
+html:not(.dark) .engagement-modal-card .loc-title {
+  color: #0f172a !important;
+}
+
+.dark .engagement-modal-card .loc-date {
+  color: #fde68a !important; /* amber-200 */
+}
+html:not(.dark) .engagement-modal-card .loc-date {
+  color: #92400e !important; /* amber-800: AAA 7.5:1 */
+}
+
+.dark .engagement-modal-card .loc-desc {
+  color: #e2e8f0 !important;
+}
+html:not(.dark) .engagement-modal-card .loc-desc {
+  color: #334155 !important;
+}
+
+.dark .engagement-modal-card .engagement-msg {
+  color: #f1f5f9 !important;
+}
+html:not(.dark) .engagement-modal-card .engagement-msg {
+  color: #1e293b !important;
+}
+
+.dark .engagement-modal-card .engagement-she-said-yes {
+  color: #fcd34d !important;
+}
+html:not(.dark) .engagement-modal-card .engagement-she-said-yes {
+  color: #b45309 !important;
+}
+
+.dark .engagement-modal-card .engagement-relock-btn {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+.dark .engagement-modal-card .engagement-relock-btn:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+html:not(.dark) .engagement-modal-card .engagement-relock-btn {
+  color: #475569 !important;
+}
+html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
+  color: #0f172a !important;
+}
+
+/* ── 🍀 Irish Magic Animations: Flying Clovers, Guinness & Waddling Oysters ── */
+.irish-magic-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 99998;
+}
+
+/* Fluttering Four-Leaf Clovers */
+@keyframes cloverDrift {
+  0% {
+    transform: translateY(-60px) rotate(0deg) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  50% {
+    transform: translateY(50vh) translateX(30px) rotate(180deg) scale(1.1);
+  }
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(105vh) translateX(-25px) rotate(360deg) scale(0.9);
+    opacity: 0;
+  }
+}
+.magic-clover {
+  position: absolute;
+  top: -40px;
+  animation: cloverDrift linear infinite;
+  user-select: none;
+  filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45));
+}
+
+/* Rising Pints of Guinness */
+@keyframes guinnessRise {
+  0% {
+    transform: translateY(105vh) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(80vh) rotate(-6deg) scale(1);
+  }
+  60% {
+    transform: translateY(40vh) rotate(6deg) scale(1.05);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-80px) rotate(-4deg) scale(0.85);
+    opacity: 0;
+  }
+}
+.magic-guinness {
+  position: absolute;
+  bottom: -60px;
+  animation: guinnessRise ease-in-out infinite;
+  user-select: none;
+  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.45));
+}
+
+/* Waddling Galway Oysters */
+@keyframes oysterWaddleAcross {
+  0% {
+    left: -80px;
+    transform: translateY(0) rotate(-14deg) scale(1);
+  }
+  25% {
+    transform: translateY(-12px) rotate(14deg) scale(1.1);
+  }
+  50% {
+    transform: translateY(0) rotate(-14deg) scale(1);
+  }
+  75% {
+    transform: translateY(-12px) rotate(14deg) scale(1.1);
+  }
+  100% {
+    left: calc(100vw + 80px);
+    transform: translateY(0) rotate(-14deg) scale(1);
+  }
+}
+.magic-oyster {
+  position: absolute;
+  bottom: calc(72px + env(safe-area-inset-bottom, 16px));
+  animation: oysterWaddleAcross 15s linear infinite;
+  user-select: none;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magic-clover, .magic-guinness, .magic-oyster {
+    animation: none !important;
+    display: none !important;
+  }
 }

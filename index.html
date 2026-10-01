@@ -118,7 +118,14 @@
     }
   </style>
 
-  <!-- Local Tailwind CSS Runtime (no internet needed) -->
+  <!-- Local Tailwind CSS Runtime Configuration: Class-based Dark Mode -->
+  <script>
+    window.tailwind = {
+      config: {
+        darkMode: 'class'
+      }
+    };
+  </script>
   <script src="lib/tailwind.min.js"></script>
 
   <!-- Local Custom Styles & Theme Variables -->
@@ -180,6 +187,30 @@
   </script>
 
   <div id="app" v-cloak class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 space-y-6">
+
+    <!-- 🍀 Irish Magic Ambient Floating Layer (Clovers, Guinness Pints & Waddling Oysters) -->
+    <div v-if="irishMagicActive" class="irish-magic-layer" aria-hidden="true">
+      <!-- Fluttering Four-Leaf Clovers -->
+      <span class="magic-clover text-2xl sm:text-3xl" style="left: 8%; animation-duration: 9s; animation-delay: 0s;">🍀</span>
+      <span class="magic-clover text-xl sm:text-2xl" style="left: 22%; animation-duration: 12s; animation-delay: 3.5s;">🍀</span>
+      <span class="magic-clover text-3xl sm:text-4xl" style="left: 45%; animation-duration: 10s; animation-delay: 1.5s;">🍀</span>
+      <span class="magic-clover text-lg sm:text-xl" style="left: 68%; animation-duration: 14s; animation-delay: 5s;">🍀</span>
+      <span class="magic-clover text-2xl sm:text-3xl" style="left: 88%; animation-duration: 11s; animation-delay: 2.2s;">🍀</span>
+
+      <!-- Rising Pints of Guinness -->
+      <span class="magic-guinness text-3xl sm:text-4xl" style="left: 14%; animation-duration: 13s; animation-delay: 1s;">🍺</span>
+      <span class="magic-guinness text-2xl sm:text-3xl" style="left: 55%; animation-duration: 15s; animation-delay: 6s;">🍺</span>
+      <span class="magic-guinness text-3xl sm:text-4xl" style="left: 80%; animation-duration: 12s; animation-delay: 4s;">🍺</span>
+
+      <!-- Waddling Galway Oysters (Day 5 Galway Seafood celebration) -->
+      <div class="magic-oyster" style="animation-duration: 18s; animation-delay: 0s;">
+        <span class="text-3xl sm:text-4xl">🦪</span>
+        <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 shadow-md">Galway Oyster!</span>
+      </div>
+      <div class="magic-oyster" style="animation-duration: 22s; animation-delay: 9s; bottom: calc(30px + env(safe-area-inset-bottom, 16px));">
+        <span class="text-2xl sm:text-3xl">🦪</span>
+      </div>
+    </div>
 
     <!-- Top Navigation / Header Bar -->
     <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
@@ -295,6 +326,17 @@
         >
           <span class="text-sm">🎨</span>
           <span class="hidden sm:inline">Theme</span>
+        </button>
+
+        <!-- Irish Magic Floating Animations Toggle -->
+        <button
+          @click="toggleIrishMagic"
+          class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shadow-sm min-h-[36px] active:scale-95"
+          :class="irishMagicActive ? 'bg-emerald-600/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-600/25' : 'bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'"
+          :title="irishMagicActive ? 'Irish Magic Animations: Active (clovers, Guinness, oysters). Tap to pause.' : 'Irish Magic Animations: Paused. Tap to activate.'"
+        >
+          <span class="text-sm">🍀</span>
+          <span class="hidden sm:inline">Magic</span>
         </button>
 
         <!-- Dark Mode Toggle -->
@@ -2169,7 +2211,30 @@
           </div>
         </div>
 
-        <!-- Section 4: Mode & Quick Actions -->
+        <!-- Section 4: Irish Magic Animations -->
+        <div class="space-y-2.5 pt-3 border-t border-[var(--border)]">
+          <div class="flex items-center justify-between">
+            <div>
+              <label class="text-xs font-bold uppercase tracking-wider text-[var(--muted-foreground)] flex items-center gap-1.5">
+                <span>🍀</span>
+                <span>Irish Magic Animations</span>
+              </label>
+              <p class="text-[11px] text-[var(--muted-foreground)] font-semibold mt-0.5">
+                Floating four-leaf clovers, rising Guinness pints &amp; Galway waddling oysters
+              </p>
+            </div>
+            <button
+              @click="toggleIrishMagic"
+              type="button"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 min-h-[38px] active:scale-95"
+              :class="irishMagicActive ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' : 'bg-[var(--card-hover)] text-[var(--muted-foreground)] border-[var(--border)]'"
+            >
+              <span>{{ irishMagicActive ? '✓ Active' : 'Off' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 5: Mode & Quick Actions -->
         <div class="pt-3 border-t border-[var(--border)] flex items-center justify-between gap-3 flex-wrap">
           <button
             @click="toggleDark"
@@ -2222,7 +2287,6 @@
     >
       <div
         class="engagement-modal-card relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl text-center"
-        style="background: linear-gradient(145deg, #0f0c29, #302b63, #24243e); border: 2px solid rgba(251,191,36,0.5); box-shadow: 0 0 50px rgba(251,191,36,0.3);"
         @click.stop
       >
         <!-- Gold shimmer top bar -->
@@ -2239,55 +2303,55 @@
 
           <!-- Headline -->
           <div class="space-y-1.5">
-            <p class="text-amber-300 text-xs font-black uppercase tracking-[0.25em]" style="letter-spacing:0.22em;">
+            <p class="engagement-eyebrow text-xs font-black uppercase tracking-[0.25em]" style="letter-spacing:0.22em;">
               A Moment to Remember Forever
             </p>
-            <h2 class="text-3xl sm:text-4xl font-black text-white leading-tight" style="text-shadow: 0 0 25px rgba(251,191,36,0.65);">
+            <h2 class="engagement-title text-3xl sm:text-4xl font-black text-slate-900 dark:text-white leading-tight">
               Nolan &amp; Hannah
             </h2>
-            <p class="text-amber-200 font-bold text-base">
+            <p class="engagement-subtitle font-bold text-base">
               💚 Are Getting Married! 💚
             </p>
           </div>
 
           <!-- Divider -->
           <div class="flex items-center gap-3">
-            <div class="flex-1 h-px" style="background: linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent);"></div>
-            <span class="text-amber-400 text-lg">🍀</span>
-            <div class="flex-1 h-px" style="background: linear-gradient(90deg, transparent, rgba(251,191,36,0.5), transparent);"></div>
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"></div>
+            <span class="text-amber-500 dark:text-amber-400 text-lg">🍀</span>
+            <div class="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent"></div>
           </div>
 
           <!-- Location & Timing Card -->
-          <div class="rounded-2xl p-4 space-y-2 text-left" style="background: rgba(255,255,255,0.07); border: 1px solid rgba(251,191,36,0.3);">
+          <div class="engagement-location-box rounded-2xl p-4 space-y-2.5 text-left border">
             <div class="flex items-center gap-2.5">
               <span class="text-xl">🌊</span>
               <div>
-                <div class="text-[10px] uppercase font-bold text-amber-300/80">Location</div>
-                <div class="text-white font-extrabold text-sm">Cliffs of Moher, Co. Clare</div>
+                <div class="loc-label text-[10px] uppercase font-bold">Location</div>
+                <div class="loc-title font-extrabold text-sm">Cliffs of Moher, Co. Clare</div>
               </div>
             </div>
             <div class="flex items-center gap-2.5">
               <span class="text-xl">📅</span>
               <div>
-                <div class="text-[10px] uppercase font-bold text-amber-300/80">Date &amp; Time</div>
-                <div class="text-amber-200 font-extrabold text-sm">Tuesday, Oct 6 · 11:15 AM (Before Golden Hour)</div>
+                <div class="loc-label text-[10px] uppercase font-bold">Date &amp; Time</div>
+                <div class="loc-date font-extrabold text-sm">Tuesday, Oct 6 · 11:15 AM (Before Golden Hour)</div>
               </div>
             </div>
             <div class="flex items-center gap-2.5">
               <span class="text-xl">🥂</span>
               <div>
-                <div class="text-[10px] uppercase font-bold text-amber-300/80">Plan</div>
-                <div class="text-white/90 text-xs font-semibold">Morning proposal near O'Brien's Tower with the full day ahead to celebrate &amp; explore!</div>
+                <div class="loc-label text-[10px] uppercase font-bold">Plan</div>
+                <div class="loc-desc text-xs font-semibold">Morning proposal near O'Brien's Tower with the full day ahead to celebrate &amp; explore!</div>
               </div>
             </div>
           </div>
 
           <!-- Personal Message -->
           <div class="space-y-1.5 px-2">
-            <p class="text-white/90 text-xs sm:text-sm leading-relaxed font-medium">
+            <p class="engagement-msg text-xs sm:text-sm leading-relaxed font-medium">
               Overlooking the crashing Atlantic from 700 feet high, Nolan asked Hannah to spend forever together.
             </p>
-            <p class="text-amber-300 font-black text-lg">
+            <p class="engagement-she-said-yes font-black text-lg">
               She said YES! 💚💍
             </p>
           </div>
@@ -2316,7 +2380,7 @@
           <div class="pt-0.5">
             <button
               @click="resetEngagementSecret"
-              class="text-[11px] text-white/40 hover:text-white/80 transition-colors font-medium underline"
+              class="engagement-relock-btn text-[11px] transition-colors font-medium underline"
               title="Lock and remove all references to this feature so you can test entering the password again"
             >
               🔒 Re-lock &amp; Hide Feature (Test Mode)
