@@ -1414,7 +1414,7 @@
 
       <!-- Hiking & Nature Trails Tab -->
       <section v-show="activeTab === 'hiking'">
-        <hiking-nature :trails="trailList" :target-search-query="targetSearchQuery" @switch-tab="handleSwitchTab" />
+        <hiking-nature :trails="trailList" @switch-tab="handleSwitchTab" />
       </section>
 
       <!-- Restaurants Tab -->
@@ -1545,21 +1545,45 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <!-- Start Time Picker -->
               <div class="space-y-1">
-                <label class="block text-[11px] font-bold text-[var(--muted-foreground)]">Start Time (24h):</label>
+                <div class="flex items-center justify-between">
+                  <label class="block text-[11px] font-bold text-[var(--muted-foreground)]">Start Time (24h / 1-min):</label>
+                  <span class="text-[11px] font-mono font-bold text-[var(--accent)]">{{ detailEditForm.startTime24 }}</span>
+                </div>
                 <input
                   type="time"
+                  step="60"
                   v-model="detailEditForm.startTime24"
                   class="w-full p-2.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] font-mono font-bold text-base sm:text-sm min-h-[44px] outline-none focus:border-[var(--accent)]"
                 />
+                <!-- Quick Steppers for exact 1-minute and 5-minute nudging -->
+                <div class="flex items-center gap-1 flex-wrap pt-1">
+                  <span class="text-[10px] font-bold text-[var(--muted-foreground)] mr-0.5">Nudge:</span>
+                  <button type="button" @click="adjustDetailStartTime(-15)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Subtract 15 mins">-15m</button>
+                  <button type="button" @click="adjustDetailStartTime(-5)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Subtract 5 mins">-5m</button>
+                  <button type="button" @click="adjustDetailStartTime(-1)" class="px-2 py-1 rounded bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 text-[11px] font-mono font-black border border-[var(--accent)]/40 shadow-xs" title="Subtract 1 min">-1m</button>
+                  <button type="button" @click="adjustDetailStartTime(1)" class="px-2 py-1 rounded bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 text-[11px] font-mono font-black border border-[var(--accent)]/40 shadow-xs" title="Add 1 min">+1m</button>
+                  <button type="button" @click="adjustDetailStartTime(5)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Add 5 mins">+5m</button>
+                  <button type="button" @click="adjustDetailStartTime(15)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Add 15 mins">+15m</button>
+                </div>
               </div>
 
               <!-- Duration Selector -->
               <div class="space-y-1">
-                <label class="block text-[11px] font-bold text-[var(--muted-foreground)]">Duration / Stop Length:</label>
+                <div class="flex items-center justify-between">
+                  <label class="block text-[11px] font-bold text-[var(--muted-foreground)]">Duration / Stop Length:</label>
+                  <span class="text-[11px] font-mono font-bold text-[var(--foreground)]">
+                    {{ Math.round((detailEditForm.durHours || 0) * 60) }} mins
+                  </span>
+                </div>
                 <select
                   v-model.number="detailEditForm.durHours"
                   class="w-full p-2.5 rounded-lg bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)] font-bold text-base sm:text-sm min-h-[44px] outline-none focus:border-[var(--accent)]"
                 >
+                  <option :value="0.083">5 mins (Photo / quick check)</option>
+                  <option :value="0.167">10 mins (Scenic overlook)</option>
+                  <option :value="0.25">15 mins (Rest stop / coffee)</option>
+                  <option :value="0.333">20 mins</option>
+                  <option :value="0.417">25 mins</option>
                   <option :value="0.5">30 mins (Quick stop)</option>
                   <option :value="0.75">45 mins</option>
                   <option :value="1.0">1 hour</option>
@@ -1572,6 +1596,16 @@
                   <option :value="4.0">4 hours (Half-day tour)</option>
                   <option :value="5.0">5 hours</option>
                 </select>
+                <!-- Quick Steppers for exact 1-minute duration adjusting -->
+                <div class="flex items-center gap-1 flex-wrap pt-1">
+                  <span class="text-[10px] font-bold text-[var(--muted-foreground)] mr-0.5">Nudge:</span>
+                  <button type="button" @click="adjustDetailDuration(-15)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Subtract 15 mins">-15m</button>
+                  <button type="button" @click="adjustDetailDuration(-5)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Subtract 5 mins">-5m</button>
+                  <button type="button" @click="adjustDetailDuration(-1)" class="px-2 py-1 rounded bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 text-[11px] font-mono font-black border border-[var(--accent)]/40 shadow-xs" title="Subtract 1 min">-1m</button>
+                  <button type="button" @click="adjustDetailDuration(1)" class="px-2 py-1 rounded bg-[var(--accent)]/15 text-[var(--accent)] hover:bg-[var(--accent)]/25 text-[11px] font-mono font-black border border-[var(--accent)]/40 shadow-xs" title="Add 1 min">+1m</button>
+                  <button type="button" @click="adjustDetailDuration(5)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Add 5 mins">+5m</button>
+                  <button type="button" @click="adjustDetailDuration(15)" class="px-2 py-1 rounded bg-[var(--card-hover)] hover:bg-[var(--border)] text-[11px] font-mono font-bold border border-[var(--border)]" title="Add 15 mins">+15m</button>
+                </div>
               </div>
             </div>
 

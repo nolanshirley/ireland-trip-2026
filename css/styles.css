@@ -559,6 +559,47 @@ body {
   color: #18181b !important; /* zinc-900: sharp dark zinc */
 }
 
+/* ── Rain Backup Pill & Box High-Contrast ADA Styling ────────── */
+.rain-backup-btn {
+  background-color: #fef3c7 !important; /* warm solid amber-100 */
+  color: #000000 !important;           /* 100% black text for 16:1 AAA contrast */
+  border: 2px solid #b45309 !important; /* bold amber-700 border */
+  font-weight: 800 !important;
+}
+.rain-backup-btn:hover {
+  background-color: #fde68a !important; /* amber-200 */
+}
+.dark .rain-backup-btn {
+  background-color: #451a03 !important; /* deep rich amber-950 */
+  color: #fef3c7 !important;           /* bright warm cream text */
+  border: 2px solid #fbbf24 !important; /* bright amber-400 border */
+  font-weight: 800 !important;
+}
+.dark .rain-backup-btn:hover {
+  background-color: #78350f !important;
+}
+
+.rain-backup-box {
+  background-color: #fffbeb !important;
+  border: 2px solid #b45309 !important;
+  color: #000000 !important;
+}
+.dark .rain-backup-box {
+  background-color: #291807 !important;
+  border: 2px solid #f59e0b !important;
+  color: #fef3c7 !important;
+}
+
+/* Explicit fallback rules for amber-950 and amber dark text */
+:root:not(.dark) .text-amber-950,
+:root:not(.dark) [class*="text-amber-950"] {
+  color: #000000 !important;
+}
+.dark .text-amber-950,
+.dark [class*="text-amber-950"] {
+  color: #fef3c7 !important;
+}
+
 /* Ensure light mode subcontainers and nested cards stay crisp white, never muddy */
 :root:not(.dark) .bg-\[var\(--background\)\] {
   background-color: #ffffff !important;

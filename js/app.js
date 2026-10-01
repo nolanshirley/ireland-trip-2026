@@ -430,9 +430,23 @@ const app = createApp({
 
     const detailEditEndHour = computed(() => {
       const start = detailEditStartHour.value;
-      const dur = parseFloat(detailEditForm.value.durHours) || 1.5;
-      return start + Math.max(0.25, dur);
+      const dur = parseFloat(detailEditForm.value.durHours) || 0.25;
+      return start + Math.max(0.0167, dur); // allow down to 1 minute (0.0167h)
     });
+
+    const adjustDetailStartTime = (minuteDelta) => {
+      if (!detailEditForm.value || !detailEditForm.value.startTime24) return;
+      const currentStart = parseTimeToHour(detailEditForm.value.startTime24);
+      const newStart = Math.min(23.983, Math.max(0, currentStart + (minuteDelta / 60)));
+      detailEditForm.value.startTime24 = formatHourTo24Time(newStart);
+    };
+
+    const adjustDetailDuration = (minuteDelta) => {
+      if (!detailEditForm.value) return;
+      const currentMins = Math.round((parseFloat(detailEditForm.value.durHours) || 1.5) * 60);
+      const newMins = Math.max(1, currentMins + minuteDelta);
+      detailEditForm.value.durHours = parseFloat((newMins / 60).toFixed(3));
+    };
 
     const detailEditFormattedTime = computed(() => {
       return `${formatHourToTime(detailEditStartHour.value)} – ${formatHourToTime(detailEditEndHour.value)}`;
@@ -2751,6 +2765,8 @@ const app = createApp({
       isDetailSunsetHazard,
       autoShiftFollowingStops,
       snapToNextFreeSlot,
+      adjustDetailStartTime,
+      adjustDetailDuration,
       saveDetailActivity,
       startEditingDetailActivity,
       cancelEditingDetailActivity,

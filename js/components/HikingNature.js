@@ -6,13 +6,11 @@
 const HikingNature = {
   name: 'HikingNature',
   props: {
-    trails: { type: Array, required: true },
-    targetSearchQuery: { type: String, default: '' }
+    trails: { type: Array, required: true }
   },
   emits: ['switch-tab'],
   data() {
     return {
-      searchQuery: '',
       regionFilter: 'all',
       statusFilter: 'all', // 'all', 'favorites', 'completed', 'Suggested', 'Planned', 'Optional'
       difficultyFilter: 'all', // 'all', 'Easy', 'Moderate', 'Strenuous'
@@ -20,19 +18,6 @@ const HikingNature = {
       userTrailData: {}, // { [trailId]: { completed: false, notes: '', favorite: false } }
       isMobileFiltersCollapsed: (typeof window !== 'undefined' && window.innerWidth < 768)
     };
-  },
-  watch: {
-    targetSearchQuery: {
-      immediate: true,
-      handler(newVal) {
-        if (newVal) {
-          this.searchQuery = newVal;
-          this.regionFilter = 'all';
-          this.statusFilter = 'all';
-          this.difficultyFilter = 'all';
-        }
-      }
-    }
   },
   created() {
     this.loadUserTrailData();
@@ -57,19 +42,7 @@ const HikingNature = {
         // Difficulty
         if (this.difficultyFilter !== 'all' && !t.difficulty.toLowerCase().includes(this.difficultyFilter.toLowerCase())) return false;
 
-        // Search
-        if (!this.searchQuery.trim()) return true;
-        const q = this.searchQuery.toLowerCase();
-        const userNotes = this.getTrailNotes(t).toLowerCase();
-        return (
-          t.name.toLowerCase().includes(q) ||
-          t.regionName.toLowerCase().includes(q) ||
-          t.highlights.toLowerCase().includes(q) ||
-          t.gear.toLowerCase().includes(q) ||
-          t.base.toLowerCase().includes(q) ||
-          (t.rainBackup && t.rainBackup.toLowerCase().includes(q)) ||
-          userNotes.includes(q)
-        );
+        return true;
       });
 
       return list.sort((a, b) => {
@@ -246,7 +219,6 @@ const HikingNature = {
       }
     },
     resetAllFilters() {
-      this.searchQuery = '';
       this.regionFilter = 'all';
       this.statusFilter = 'all';
       this.difficultyFilter = 'all';
@@ -309,7 +281,7 @@ const HikingNature = {
             <span class="flex items-center gap-1.5">
               <span>⚙️</span>
               <span>Filter & Sort Trails</span>
-              <span v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all' || searchQuery.trim()" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-white font-bold">Active</span>
+              <span v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all'" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-white font-bold">Active</span>
             </span>
             <span>{{ isMobileFiltersCollapsed ? '▼ Show Filters' : '▲ Hide Filters' }}</span>
           </button>
@@ -415,40 +387,16 @@ const HikingNature = {
             </button>
           </div>
 
-          <!-- Search Bar & Active Reset -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[var(--border)]">
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="🔍 Search trails by name, terrain, highlights (e.g. 'Diamond Hill', 'Cliffs', 'Waterfall', 'Basalt')..."
-              class="w-full sm:max-w-md px-3.5 py-2 text-sm rounded-lg bg-[var(--background)] border border-[var(--border)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] text-[var(--foreground)]"
-            />
+          <!-- Filter Actions Row -->
+          <div v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all' || sortBy !== 'itinerary'" class="flex items-center justify-end pt-2 border-t border-[var(--border)]">
             <button
-              v-if="regionFilter !== 'all' || statusFilter !== 'all' || difficultyFilter !== 'all' || sortBy !== 'itinerary' || searchQuery.trim()"
               @click="resetAllFilters"
-              class="text-xs text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-semibold self-start sm:self-auto"
+              class="text-xs text-rose-700 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 font-semibold flex items-center gap-1"
             >
               ✕ Reset All Filters
             </button>
           </div>
         </div>
-      </div>
-
-      <!-- Active Search Filter Banner -->
-      <div
-        v-if="searchQuery.trim()"
-        class="p-3 rounded-xl bg-[var(--card)] border border-[var(--accent)] flex items-center justify-between text-xs animate-fadeIn"
-      >
-        <div class="flex items-center gap-2">
-          <span class="text-base">🔍</span>
-          <span>Showing results for <strong class="text-[var(--accent)]">"{{ searchQuery }}"</strong> ({{ filteredTrails.length }} {{ filteredTrails.length === 1 ? 'trail' : 'trails' }} found)</span>
-        </div>
-        <button
-          @click="searchQuery = ''"
-          class="px-2.5 py-1 rounded-lg bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] font-bold text-xs"
-        >
-          Clear ✕
-        </button>
       </div>
 
       <!-- Trails Grid -->
@@ -628,8 +576,8 @@ const HikingNature = {
       <!-- Empty State -->
       <div v-else class="card p-8 text-center space-y-3">
         <span class="text-3xl">🥾</span>
-        <h4 class="font-bold text-sm text-[var(--foreground)]">No hiking trails match your search or filter criteria</h4>
-        <p class="text-xs text-[var(--muted-foreground)]">Try clearing active search keywords, region filters, or status selections.</p>
+        <h4 class="font-bold text-sm text-[var(--foreground)]">No hiking trails match your filter criteria</h4>
+        <p class="text-xs text-[var(--muted-foreground)]">Try clearing active region filters, difficulty selections, or sort order.</p>
         <div class="pt-2">
           <button
             @click="resetAllFilters"
