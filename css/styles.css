@@ -681,7 +681,7 @@ body {
    Optional / Swappable Itinerary Activities (Visual Opacity & Swap Signifier)
    ========================================================================== */
 .itinerary-optional-item {
-  opacity: 0.78 !important;
+  opacity: 0.70 !important;
   border-style: dashed !important;
   border-width: 2px !important;
   transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
@@ -693,7 +693,7 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 .dark .itinerary-optional-item {
-  opacity: 0.72 !important;
+  opacity: 0.65 !important;
 }
 .dark .itinerary-optional-item:hover,
 .dark .itinerary-optional-item:focus-within {
