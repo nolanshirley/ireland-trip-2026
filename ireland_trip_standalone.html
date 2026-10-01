@@ -1927,101 +1927,185 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   color: #0f172a !important;
 }
 
-/* ── 🍀 Irish Magic Animations: Flying Clovers, Guinness & Waddling Oysters ── */
+/* ── 🍀 Irish Magic Ambient Floating Layer (Subtle, Background, Click-to-Pop) ── */
 .irish-magic-layer {
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 99998;
+  z-index: 5; /* Softly floats behind main interactive cards & functionality */
 }
 
-/* Fluttering Four-Leaf Clovers */
+/* Clickable floating icon button */
+.magic-item-btn {
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  outline: none;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+}
+.magic-item-btn:hover {
+  transform: scale(1.4) !important;
+  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.8)) !important;
+}
+.magic-item-btn:active {
+  transform: scale(0.85) !important;
+}
+
+/* Fluttering Four-Leaf Clovers (Small, Soft Opacity) */
 @keyframes cloverDrift {
   0% {
-    transform: translateY(-60px) rotate(0deg) scale(0.8);
+    transform: translateY(-35px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
-  15% {
-    opacity: 0.95;
+  20% {
+    opacity: 0.55;
+    transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
   }
   50% {
-    transform: translateY(50vh) translateX(30px) rotate(180deg) scale(1.1);
+    opacity: 0.3;
+    transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
   }
-  85% {
-    opacity: 0.95;
+  80% {
+    opacity: 0.55;
+    transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
   }
   100% {
-    transform: translateY(105vh) translateX(-25px) rotate(360deg) scale(0.9);
+    transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
     opacity: 0;
   }
 }
 .magic-clover {
   position: absolute;
-  top: -40px;
+  top: -30px;
   animation: cloverDrift linear infinite;
-  user-select: none;
-  filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45));
+  filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.35));
 }
 
-/* Rising Pints of Guinness */
+/* Rising Pints of Guinness (Small, Subtle Float) */
 @keyframes guinnessRise {
   0% {
     transform: translateY(105vh) rotate(0deg) scale(0.7);
     opacity: 0;
   }
-  20% {
-    opacity: 1;
-    transform: translateY(80vh) rotate(-6deg) scale(1);
+  25% {
+    opacity: 0.5;
+    transform: translateY(75vh) rotate(-5deg) scale(0.85);
   }
   60% {
-    transform: translateY(40vh) rotate(6deg) scale(1.05);
+    opacity: 0.28;
+    transform: translateY(40vh) rotate(5deg) scale(0.75);
   }
-  90% {
-    opacity: 1;
+  85% {
+    opacity: 0.5;
+    transform: translateY(15vh) rotate(-3deg) scale(0.85);
   }
   100% {
-    transform: translateY(-80px) rotate(-4deg) scale(0.85);
+    transform: translateY(-40px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
 }
 .magic-guinness {
   position: absolute;
-  bottom: -60px;
+  bottom: -40px;
   animation: guinnessRise ease-in-out infinite;
-  user-select: none;
-  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.45));
+  filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
 }
 
 /* Waddling Galway Oysters */
 @keyframes oysterWaddleAcross {
   0% {
-    left: -80px;
-    transform: translateY(0) rotate(-14deg) scale(1);
+    left: -40px;
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
   }
-  25% {
-    transform: translateY(-12px) rotate(14deg) scale(1.1);
+  15% {
+    opacity: 0.55;
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   50% {
-    transform: translateY(0) rotate(-14deg) scale(1);
+    opacity: 0.3;
+    transform: translateY(0) rotate(-8deg) scale(0.75);
   }
-  75% {
-    transform: translateY(-12px) rotate(14deg) scale(1.1);
+  85% {
+    opacity: 0.55;
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   100% {
-    left: calc(100vw + 80px);
-    transform: translateY(0) rotate(-14deg) scale(1);
+    left: calc(100vw + 40px);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
   }
 }
 .magic-oyster {
   position: absolute;
   bottom: calc(72px + env(safe-area-inset-bottom, 16px));
-  animation: oysterWaddleAcross 15s linear infinite;
-  user-select: none;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  animation: oysterWaddleAcross 26s linear infinite;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+}
+
+/* Interactive Pop / Removal Burst Animation */
+@keyframes itemPop {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  45% {
+    transform: scale(1.6) rotate(20deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.9));
+  }
+  100% {
+    transform: scale(0) rotate(50deg);
+    opacity: 0;
+  }
+}
+.magic-item-popped {
+  animation: itemPop 0.32s ease-out forwards !important;
+  pointer-events: none !important;
+}
+
+/* ── 💥 Access Code Gag: Shake & Irish Crash Screen ── */
+@keyframes gagShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.gag-shake {
+  animation: gagShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.irish-crash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background: rgba(1, 15, 8, 0.96);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.irish-crash-card {
+  background: #021a10;
+  border: 2px solid #10b981;
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.35), inset 0 0 30px rgba(16, 185, 129, 0.12);
+  color: #a7f3d0;
+  max-width: 580px;
+  width: 100%;
+  border-radius: 1.25rem;
+  padding: 1.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2090,28 +2174,26 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
 
   <div id="app" v-cloak class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 space-y-6">
 
-    <!-- 🍀 Irish Magic Ambient Floating Layer (Clovers, Guinness Pints & Waddling Oysters) -->
-    <div v-if="irishMagicActive" class="irish-magic-layer" aria-hidden="true">
-      <!-- Fluttering Four-Leaf Clovers -->
-      <span class="magic-clover text-2xl sm:text-3xl" style="left: 8%; animation-duration: 9s; animation-delay: 0s;">🍀</span>
-      <span class="magic-clover text-xl sm:text-2xl" style="left: 22%; animation-duration: 12s; animation-delay: 3.5s;">🍀</span>
-      <span class="magic-clover text-3xl sm:text-4xl" style="left: 45%; animation-duration: 10s; animation-delay: 1.5s;">🍀</span>
-      <span class="magic-clover text-lg sm:text-xl" style="left: 68%; animation-duration: 14s; animation-delay: 5s;">🍀</span>
-      <span class="magic-clover text-2xl sm:text-3xl" style="left: 88%; animation-duration: 11s; animation-delay: 2.2s;">🍀</span>
-
-      <!-- Rising Pints of Guinness -->
-      <span class="magic-guinness text-3xl sm:text-4xl" style="left: 14%; animation-duration: 13s; animation-delay: 1s;">🍺</span>
-      <span class="magic-guinness text-2xl sm:text-3xl" style="left: 55%; animation-duration: 15s; animation-delay: 6s;">🍺</span>
-      <span class="magic-guinness text-3xl sm:text-4xl" style="left: 80%; animation-duration: 12s; animation-delay: 4s;">🍺</span>
-
-      <!-- Waddling Galway Oysters (Day 5 Galway Seafood celebration) -->
-      <div class="magic-oyster" style="animation-duration: 18s; animation-delay: 0s;">
-        <span class="text-3xl sm:text-4xl">🦪</span>
-        <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 shadow-md">Galway Oyster!</span>
-      </div>
-      <div class="magic-oyster" style="animation-duration: 22s; animation-delay: 9s; bottom: calc(30px + env(safe-area-inset-bottom, 16px));">
-        <span class="text-2xl sm:text-3xl">🦪</span>
-      </div>
+    <!-- 🍀 Irish Magic Ambient Floating Layer (Subtle, Background, Click-to-Pop) -->
+    <div v-if="irishMagicActive" class="irish-magic-layer">
+      <template v-for="item in magicItems" :key="item.id">
+        <button
+          v-if="!item.popped"
+          @click.stop="popMagicItem(item)"
+          type="button"
+          :class="[
+            'magic-item-btn',
+            item.type === 'clover' ? 'magic-clover text-base sm:text-lg' : '',
+            item.type === 'guinness' ? 'magic-guinness text-base sm:text-lg' : '',
+            item.type === 'oyster' ? 'magic-oyster text-base sm:text-lg' : ''
+          ]"
+          :style="item.style"
+          :title="'Click to pop this ' + item.icon + '!'"
+          aria-label="Click to pop floating Irish icon"
+        >
+          <span>{{ item.icon }}</span>
+        </button>
+      </template>
     </div>
 
     <!-- Top Navigation / Header Bar -->
@@ -4153,28 +4235,132 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
           </button>
         </div>
 
-        <!-- Secret access code input (completely discreet & unmarked) -->
-        <div class="pt-2 border-t border-[var(--border)]/20 flex items-center gap-2">
-          <input
-            type="text"
-            v-model="engagementCodeInput"
-            @keydown.enter="checkEngagementCode"
-            @blur="checkEngagementCode"
-            autocomplete="off"
-            autocorrect="off"
-            spellcheck="false"
-            :placeholder="engagementUnlocked ? 'Feature unlocked (re-type password to lock)' : 'Access code...'"
-            class="flex-1 p-2 rounded-lg bg-transparent border border-[var(--border)]/30 text-[var(--muted-foreground)]/40 text-[11px] font-mono outline-none focus:border-[var(--accent)]/40 placeholder:text-[var(--muted-foreground)]/20"
-            aria-hidden="true"
-          />
-          <button
-            v-if="engagementUnlocked"
-            @click="resetEngagementSecret"
-            type="button"
-            class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex-shrink-0 min-h-[36px]"
-            title="Lock and remove all references to feature"
+        <!-- Secret access code input & funny gag container -->
+        <div class="pt-2 border-t border-[var(--border)]/20 space-y-2">
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              v-model="engagementCodeInput"
+              @keydown.enter="checkEngagementCode"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              :placeholder="engagementUnlocked ? 'Feature unlocked (re-type password to lock)' : 'Access code...'"
+              :class="[
+                'flex-1 p-2 rounded-lg bg-transparent border border-[var(--border)]/30 text-[var(--foreground)] text-[11px] font-mono outline-none focus:border-[var(--accent)] placeholder:text-[var(--muted-foreground)]/30 transition-all',
+                gagShake ? 'gag-shake border-red-500/70 ring-2 ring-red-500/30' : ''
+              ]"
+            />
+            <button
+              @click="checkEngagementCode"
+              type="button"
+              class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] transition-all flex-shrink-0 min-h-[34px]"
+              title="Submit access code"
+            >
+              Enter ↵
+            </button>
+            <button
+              v-if="engagementUnlocked"
+              @click="resetEngagementSecret"
+              type="button"
+              class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex-shrink-0 min-h-[34px]"
+              title="Lock and remove all references to feature"
+            >
+              🔒 Re-lock
+            </button>
+          </div>
+
+          <!-- Funny Gag Warning & Hint Card -->
+          <div
+            v-if="gagShowHint && !engagementUnlocked"
+            class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 space-y-2 animate-fadeIn"
           >
-            🔒 Re-lock
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-black text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <span>{{ gagAttemptsLeft === 1 ? '🚨' : '⚠️' }}</span>
+                <span>{{ gagAttemptsLeft }} {{ gagAttemptsLeft === 1 ? 'Attempt' : 'Attempts' }} Left Before App Meltdown!</span>
+              </span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                Security: Level Red
+              </span>
+            </div>
+            <div class="text-[11px] text-[var(--foreground)] leading-relaxed font-mono">
+              <span class="opacity-80">System: Oh, have you tried: </span>
+              <strong class="text-emerald-700 dark:text-emerald-400 underline decoration-dotted font-bold">"{{ gagHint }}"</strong>
+              <span class="opacity-80">?</span>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
+              <button
+                @click="tryGagHint"
+                type="button"
+                class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all shadow-xs flex items-center gap-1"
+                title="Fill in this ridiculous guess and try it!"
+              >
+                <span>🧪</span>
+                <span>Try This Guess: "{{ gagHint }}"</span>
+              </button>
+              <button
+                @click="gagShowHint = false"
+                type="button"
+                class="text-[10px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 💀 Irish Green Screen of Death (Access Code Crash Gag) -->
+    <div
+      v-if="gagIsCrashed"
+      class="irish-crash-overlay"
+      role="alertdialog"
+      aria-modal="true"
+    >
+      <div class="irish-crash-card space-y-4 shadow-2xl animate-fadeIn">
+        <div class="flex items-center justify-between border-b border-emerald-500/40 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl animate-bounce">🍀</span>
+            <div>
+              <div class="text-xs font-black text-emerald-400 tracking-wider">IRISH_TERMINAL_KERNEL_PANIC</div>
+              <div class="text-[10px] text-emerald-500 font-mono">FATAL EXCEPTION AT 0x0000IRISH_SHAMROCK</div>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-900/60 text-red-200 border border-red-500/50">
+            CRASHED
+          </span>
+        </div>
+
+        <div class="space-y-2 text-xs font-mono leading-relaxed bg-black/40 p-3.5 rounded-xl border border-emerald-500/30">
+          <p class="text-red-400 font-bold">
+            *** STOP: 0x00000IRISH (0xGUINNESS, 0xPOTATO, 0xSHEEP, 0xCLIFFS)
+          </p>
+          <p class="text-emerald-300">
+            CRITICAL ERROR: Excessive unauthorized guesses detected. The app has violently crashed into a sheep pasture outside Dingle.
+          </p>
+          <ul class="list-disc list-inside text-emerald-400/90 text-[11px] space-y-1 pt-1">
+            <li>48 pints of Guinness detected inside the CPU cooler</li>
+            <li>All Dublin flight bookings converted into cabbage coupons</li>
+            <li>Self-destruct sequence aborted because a stubborn sheep refused to move off the N71 road</li>
+          </ul>
+          <p class="text-amber-300 pt-2 font-semibold">
+            Have you tried turning Ireland off and on again?
+          </p>
+        </div>
+
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-[10px] text-emerald-500 font-mono">
+            Error Code: ERR_POTATO_BUFFER_OVERFLOW
+          </div>
+          <button
+            @click="rebootFromGagCrash"
+            type="button"
+            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <span>🔄</span>
+            <span>Emergency Reboot / Forgive Me St. Patrick</span>
           </button>
         </div>
       </div>
@@ -15066,7 +15252,7 @@ const app = createApp({
     const showEngagementModal = ref(false);
     const engagementCodeInput = ref('');
 
-    // ── 🍀 Irish Magic Animations (Flying Clovers, Guinness & Waddling Oysters) ──
+    // ── 🍀 Irish Magic Animations (Subtle, Background, Click-to-Pop) ──
     const irishMagicActive = ref(typeof localStorage !== 'undefined' ? localStorage.getItem('ireland_irish_magic') !== '0' : true);
     const toggleIrishMagic = () => {
       irishMagicActive.value = !irishMagicActive.value;
@@ -15078,6 +15264,72 @@ const app = createApp({
       } else {
         showToast('Irish animations paused', '⏸️');
       }
+    };
+
+    // Low-density, small floating ambient items that can be clicked to pop
+    const magicItems = ref([
+      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '12%', animationDuration: '20s', animationDelay: '0s' }, popped: false },
+      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '78%', animationDuration: '24s', animationDelay: '3s' }, popped: false },
+      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '46%', animationDuration: '22s', animationDelay: '8s' }, popped: false },
+      { id: 'oyster-1', type: 'oyster', icon: '🦪', style: { animationDuration: '28s', animationDelay: '1s' }, popped: false }
+    ]);
+
+    const popMagicItem = (item) => {
+      if (!item || item.popped) return;
+      item.popped = true;
+      const typeLabel = item.type === 'clover' ? 'lucky clover' : (item.type === 'guinness' ? 'pint of Guinness' : 'Galway oyster');
+      showToast(`Pop! Caught a ${typeLabel}!`, item.icon);
+      // Gently re-float after 14 seconds
+      setTimeout(() => {
+        item.popped = false;
+      }, 14000);
+    };
+
+    // ── 💥 Access Code Funny Gag Engine ──
+    const gagAttemptsLeft = ref(3);
+    const gagMessage = ref('');
+    const gagHint = ref('');
+    const gagShowHint = ref(false);
+    const gagIsCrashed = ref(false);
+    const gagShake = ref(false);
+
+    const FAKE_HINTS = [
+      "GuinnessIsMyFather",
+      "SheepCrossingDelay9000",
+      "potatocakes4life",
+      "BonoStoleMySunglasses",
+      "FatherTedWasRight",
+      "WhoLeftTheImmersionOn",
+      "WhisperLeprechaun123",
+      "slurping_galway_oysters",
+      "TaytoCrispsOverEverything",
+      "PaddyLosty30Pints",
+      "NoSnakesFoundInIreland",
+      "BarrySTeaVsLyonsTea",
+      "TurnIrelandOffAndOnAgain"
+    ];
+
+    const pickRandomGagHint = () => {
+      const idx = Math.floor(Math.random() * FAKE_HINTS.length);
+      return FAKE_HINTS[idx];
+    };
+
+    const tryGagHint = () => {
+      if (gagHint.value) {
+        engagementCodeInput.value = gagHint.value;
+        checkEngagementCode();
+      }
+    };
+
+    const rebootFromGagCrash = () => {
+      gagIsCrashed.value = false;
+      gagAttemptsLeft.value = 3;
+      document.body.style.overflow = '';
+      const nextHint = pickRandomGagHint();
+      gagHint.value = nextHint;
+      gagMessage.value = `🍀 Emergency reboot successful! You've been granted 3 more attempts... please do not anger the leprechauns again.\n💡 Oh, have you tried: "${nextHint}"?`;
+      gagShowHint.value = true;
+      showToast('🍀 System restored! 3 new tries granted.', '🔄');
     };
 
     const detailEditForm = ref({
@@ -15128,27 +15380,57 @@ const app = createApp({
       };
     };
 
-    const checkEngagementCode = () => {
+    const checkEngagementCode = (overrideVal) => {
+      if (typeof overrideVal === 'string') {
+        engagementCodeInput.value = overrideVal;
+      }
       const val = (engagementCodeInput.value || '').trim().toLowerCase();
       if (val === ENGAGEMENT_KEY) {
         if (engagementUnlocked.value) {
           // If already unlocked, typing the exact password again in the same spot completely removes it
           resetEngagementSecret();
           engagementCodeInput.value = '';
+          gagAttemptsLeft.value = 3;
+          gagShowHint.value = false;
+          gagIsCrashed.value = false;
         } else {
           try { localStorage.setItem('ireland_engagement_secret', '1'); } catch(e) {}
           engagementUnlocked.value = true;
           showEngagementModal.value = true;
           irishMagicActive.value = true;
           engagementCodeInput.value = '';
+          gagAttemptsLeft.value = 3;
+          gagShowHint.value = false;
+          gagIsCrashed.value = false;
           document.body.style.overflow = 'hidden';
           showToast('💍 Secret proposal feature unlocked!', '✨');
         }
       } else if (val === 'reset' || val === 'lock' || val === 'clear') {
         resetEngagementSecret();
         engagementCodeInput.value = '';
+        gagAttemptsLeft.value = 3;
+        gagShowHint.value = false;
+        gagIsCrashed.value = false;
       } else if (val.length > 0) {
-        // Wrong code — silently clear
+        // Wrong password entered! Trigger the hilarious gag
+        gagAttemptsLeft.value--;
+        const hint = pickRandomGagHint();
+        gagHint.value = hint;
+        gagShowHint.value = true;
+        gagShake.value = true;
+        setTimeout(() => { gagShake.value = false; }, 600);
+
+        if (gagAttemptsLeft.value === 2) {
+          gagMessage.value = `⚠️ ACCESS DENIED! You have 2 attempts remaining before total system self-destruct!\n💡 Oh, have you tried: "${hint}"?`;
+          showToast(`⚠️ 2 attempts left! Try: ${hint}?`, '🍀');
+        } else if (gagAttemptsLeft.value === 1) {
+          gagMessage.value = `🚨 CRITICAL SECURITY ALERT! 1 attempt remaining before catastrophic app crash!\n🐑 Desperate suggestion: Have you tried "${hint}"?`;
+          showToast(`🚨 FINAL TRY LEFT! Have you tried "${hint}"?`, '💥');
+        } else if (gagAttemptsLeft.value <= 0) {
+          gagIsCrashed.value = true;
+          document.body.style.overflow = 'hidden';
+          showToast('💥 APP CRASH: Leprechaun stack overflow error!', '💀');
+        }
         engagementCodeInput.value = '';
       }
     };
@@ -17249,6 +17531,12 @@ const app = createApp({
       openEngagementModal: () => { showEngagementModal.value = true; },
       toggleIrishMagic,
       isIrishMagicActive: () => irishMagicActive.value,
+      magicItems: () => magicItems.value,
+      popMagicItem,
+      gagAttemptsLeft: () => gagAttemptsLeft.value,
+      gagIsCrashed: () => gagIsCrashed.value,
+      rebootFromGagCrash,
+      tryGagHint,
       voteItem,
       getItemVotes,
       setItemStatus,
@@ -17726,6 +18014,17 @@ const app = createApp({
       // 🍀 Irish Magic Animations
       irishMagicActive,
       toggleIrishMagic,
+      magicItems,
+      popMagicItem,
+      // 💥 Access Code Gag
+      gagAttemptsLeft,
+      gagMessage,
+      gagHint,
+      gagShowHint,
+      gagIsCrashed,
+      gagShake,
+      tryGagHint,
+      rebootFromGagCrash,
       handleSwitchTab,
       targetSearchQuery,
       getGoogleMapsUrl,

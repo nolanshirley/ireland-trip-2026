@@ -386,7 +386,7 @@ const app = createApp({
     const showEngagementModal = ref(false);
     const engagementCodeInput = ref('');
 
-    // ── 🍀 Irish Magic Animations (Flying Clovers, Guinness & Waddling Oysters) ──
+    // ── 🍀 Irish Magic Animations (Subtle, Background, Click-to-Pop) ──
     const irishMagicActive = ref(typeof localStorage !== 'undefined' ? localStorage.getItem('ireland_irish_magic') !== '0' : true);
     const toggleIrishMagic = () => {
       irishMagicActive.value = !irishMagicActive.value;
@@ -398,6 +398,72 @@ const app = createApp({
       } else {
         showToast('Irish animations paused', '⏸️');
       }
+    };
+
+    // Low-density, small floating ambient items that can be clicked to pop
+    const magicItems = ref([
+      { id: 'clover-1', type: 'clover', icon: '🍀', style: { left: '12%', animationDuration: '20s', animationDelay: '0s' }, popped: false },
+      { id: 'guinness-1', type: 'guinness', icon: '🍺', style: { left: '78%', animationDuration: '24s', animationDelay: '3s' }, popped: false },
+      { id: 'clover-2', type: 'clover', icon: '🍀', style: { left: '46%', animationDuration: '22s', animationDelay: '8s' }, popped: false },
+      { id: 'oyster-1', type: 'oyster', icon: '🦪', style: { animationDuration: '28s', animationDelay: '1s' }, popped: false }
+    ]);
+
+    const popMagicItem = (item) => {
+      if (!item || item.popped) return;
+      item.popped = true;
+      const typeLabel = item.type === 'clover' ? 'lucky clover' : (item.type === 'guinness' ? 'pint of Guinness' : 'Galway oyster');
+      showToast(`Pop! Caught a ${typeLabel}!`, item.icon);
+      // Gently re-float after 14 seconds
+      setTimeout(() => {
+        item.popped = false;
+      }, 14000);
+    };
+
+    // ── 💥 Access Code Funny Gag Engine ──
+    const gagAttemptsLeft = ref(3);
+    const gagMessage = ref('');
+    const gagHint = ref('');
+    const gagShowHint = ref(false);
+    const gagIsCrashed = ref(false);
+    const gagShake = ref(false);
+
+    const FAKE_HINTS = [
+      "GuinnessIsMyFather",
+      "SheepCrossingDelay9000",
+      "potatocakes4life",
+      "BonoStoleMySunglasses",
+      "FatherTedWasRight",
+      "WhoLeftTheImmersionOn",
+      "WhisperLeprechaun123",
+      "slurping_galway_oysters",
+      "TaytoCrispsOverEverything",
+      "PaddyLosty30Pints",
+      "NoSnakesFoundInIreland",
+      "BarrySTeaVsLyonsTea",
+      "TurnIrelandOffAndOnAgain"
+    ];
+
+    const pickRandomGagHint = () => {
+      const idx = Math.floor(Math.random() * FAKE_HINTS.length);
+      return FAKE_HINTS[idx];
+    };
+
+    const tryGagHint = () => {
+      if (gagHint.value) {
+        engagementCodeInput.value = gagHint.value;
+        checkEngagementCode();
+      }
+    };
+
+    const rebootFromGagCrash = () => {
+      gagIsCrashed.value = false;
+      gagAttemptsLeft.value = 3;
+      document.body.style.overflow = '';
+      const nextHint = pickRandomGagHint();
+      gagHint.value = nextHint;
+      gagMessage.value = `🍀 Emergency reboot successful! You've been granted 3 more attempts... please do not anger the leprechauns again.\n💡 Oh, have you tried: "${nextHint}"?`;
+      gagShowHint.value = true;
+      showToast('🍀 System restored! 3 new tries granted.', '🔄');
     };
 
     const detailEditForm = ref({
@@ -448,27 +514,57 @@ const app = createApp({
       };
     };
 
-    const checkEngagementCode = () => {
+    const checkEngagementCode = (overrideVal) => {
+      if (typeof overrideVal === 'string') {
+        engagementCodeInput.value = overrideVal;
+      }
       const val = (engagementCodeInput.value || '').trim().toLowerCase();
       if (val === ENGAGEMENT_KEY) {
         if (engagementUnlocked.value) {
           // If already unlocked, typing the exact password again in the same spot completely removes it
           resetEngagementSecret();
           engagementCodeInput.value = '';
+          gagAttemptsLeft.value = 3;
+          gagShowHint.value = false;
+          gagIsCrashed.value = false;
         } else {
           try { localStorage.setItem('ireland_engagement_secret', '1'); } catch(e) {}
           engagementUnlocked.value = true;
           showEngagementModal.value = true;
           irishMagicActive.value = true;
           engagementCodeInput.value = '';
+          gagAttemptsLeft.value = 3;
+          gagShowHint.value = false;
+          gagIsCrashed.value = false;
           document.body.style.overflow = 'hidden';
           showToast('💍 Secret proposal feature unlocked!', '✨');
         }
       } else if (val === 'reset' || val === 'lock' || val === 'clear') {
         resetEngagementSecret();
         engagementCodeInput.value = '';
+        gagAttemptsLeft.value = 3;
+        gagShowHint.value = false;
+        gagIsCrashed.value = false;
       } else if (val.length > 0) {
-        // Wrong code — silently clear
+        // Wrong password entered! Trigger the hilarious gag
+        gagAttemptsLeft.value--;
+        const hint = pickRandomGagHint();
+        gagHint.value = hint;
+        gagShowHint.value = true;
+        gagShake.value = true;
+        setTimeout(() => { gagShake.value = false; }, 600);
+
+        if (gagAttemptsLeft.value === 2) {
+          gagMessage.value = `⚠️ ACCESS DENIED! You have 2 attempts remaining before total system self-destruct!\n💡 Oh, have you tried: "${hint}"?`;
+          showToast(`⚠️ 2 attempts left! Try: ${hint}?`, '🍀');
+        } else if (gagAttemptsLeft.value === 1) {
+          gagMessage.value = `🚨 CRITICAL SECURITY ALERT! 1 attempt remaining before catastrophic app crash!\n🐑 Desperate suggestion: Have you tried "${hint}"?`;
+          showToast(`🚨 FINAL TRY LEFT! Have you tried "${hint}"?`, '💥');
+        } else if (gagAttemptsLeft.value <= 0) {
+          gagIsCrashed.value = true;
+          document.body.style.overflow = 'hidden';
+          showToast('💥 APP CRASH: Leprechaun stack overflow error!', '💀');
+        }
         engagementCodeInput.value = '';
       }
     };
@@ -2569,6 +2665,12 @@ const app = createApp({
       openEngagementModal: () => { showEngagementModal.value = true; },
       toggleIrishMagic,
       isIrishMagicActive: () => irishMagicActive.value,
+      magicItems: () => magicItems.value,
+      popMagicItem,
+      gagAttemptsLeft: () => gagAttemptsLeft.value,
+      gagIsCrashed: () => gagIsCrashed.value,
+      rebootFromGagCrash,
+      tryGagHint,
       voteItem,
       getItemVotes,
       setItemStatus,
@@ -3046,6 +3148,17 @@ const app = createApp({
       // 🍀 Irish Magic Animations
       irishMagicActive,
       toggleIrishMagic,
+      magicItems,
+      popMagicItem,
+      // 💥 Access Code Gag
+      gagAttemptsLeft,
+      gagMessage,
+      gagHint,
+      gagShowHint,
+      gagIsCrashed,
+      gagShake,
+      tryGagHint,
+      rebootFromGagCrash,
       handleSwitchTab,
       targetSearchQuery,
       getGoogleMapsUrl,

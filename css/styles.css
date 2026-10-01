@@ -1710,101 +1710,185 @@ html:not(.dark) .engagement-modal-card .engagement-relock-btn:hover {
   color: #0f172a !important;
 }
 
-/* ── 🍀 Irish Magic Animations: Flying Clovers, Guinness & Waddling Oysters ── */
+/* ── 🍀 Irish Magic Ambient Floating Layer (Subtle, Background, Click-to-Pop) ── */
 .irish-magic-layer {
   position: fixed;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 99998;
+  z-index: 5; /* Softly floats behind main interactive cards & functionality */
 }
 
-/* Fluttering Four-Leaf Clovers */
+/* Clickable floating icon button */
+.magic-item-btn {
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  outline: none;
+  line-height: 1;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+}
+.magic-item-btn:hover {
+  transform: scale(1.4) !important;
+  filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.8)) !important;
+}
+.magic-item-btn:active {
+  transform: scale(0.85) !important;
+}
+
+/* Fluttering Four-Leaf Clovers (Small, Soft Opacity) */
 @keyframes cloverDrift {
   0% {
-    transform: translateY(-60px) rotate(0deg) scale(0.8);
+    transform: translateY(-35px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
-  15% {
-    opacity: 0.95;
+  20% {
+    opacity: 0.55;
+    transform: translateY(20vh) translateX(12px) rotate(90deg) scale(0.85);
   }
   50% {
-    transform: translateY(50vh) translateX(30px) rotate(180deg) scale(1.1);
+    opacity: 0.3;
+    transform: translateY(50vh) translateX(-12px) rotate(180deg) scale(0.75);
   }
-  85% {
-    opacity: 0.95;
+  80% {
+    opacity: 0.55;
+    transform: translateY(80vh) translateX(12px) rotate(270deg) scale(0.85);
   }
   100% {
-    transform: translateY(105vh) translateX(-25px) rotate(360deg) scale(0.9);
+    transform: translateY(105vh) translateX(-8px) rotate(360deg) scale(0.7);
     opacity: 0;
   }
 }
 .magic-clover {
   position: absolute;
-  top: -40px;
+  top: -30px;
   animation: cloverDrift linear infinite;
-  user-select: none;
-  filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.45));
+  filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.35));
 }
 
-/* Rising Pints of Guinness */
+/* Rising Pints of Guinness (Small, Subtle Float) */
 @keyframes guinnessRise {
   0% {
     transform: translateY(105vh) rotate(0deg) scale(0.7);
     opacity: 0;
   }
-  20% {
-    opacity: 1;
-    transform: translateY(80vh) rotate(-6deg) scale(1);
+  25% {
+    opacity: 0.5;
+    transform: translateY(75vh) rotate(-5deg) scale(0.85);
   }
   60% {
-    transform: translateY(40vh) rotate(6deg) scale(1.05);
+    opacity: 0.28;
+    transform: translateY(40vh) rotate(5deg) scale(0.75);
   }
-  90% {
-    opacity: 1;
+  85% {
+    opacity: 0.5;
+    transform: translateY(15vh) rotate(-3deg) scale(0.85);
   }
   100% {
-    transform: translateY(-80px) rotate(-4deg) scale(0.85);
+    transform: translateY(-40px) rotate(0deg) scale(0.7);
     opacity: 0;
   }
 }
 .magic-guinness {
   position: absolute;
-  bottom: -60px;
+  bottom: -40px;
   animation: guinnessRise ease-in-out infinite;
-  user-select: none;
-  filter: drop-shadow(0 4px 12px rgba(245, 158, 11, 0.45));
+  filter: drop-shadow(0 2px 8px rgba(245, 158, 11, 0.35));
 }
 
 /* Waddling Galway Oysters */
 @keyframes oysterWaddleAcross {
   0% {
-    left: -80px;
-    transform: translateY(0) rotate(-14deg) scale(1);
+    left: -40px;
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
   }
-  25% {
-    transform: translateY(-12px) rotate(14deg) scale(1.1);
+  15% {
+    opacity: 0.55;
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   50% {
-    transform: translateY(0) rotate(-14deg) scale(1);
+    opacity: 0.3;
+    transform: translateY(0) rotate(-8deg) scale(0.75);
   }
-  75% {
-    transform: translateY(-12px) rotate(14deg) scale(1.1);
+  85% {
+    opacity: 0.55;
+    transform: translateY(-6px) rotate(8deg) scale(0.85);
   }
   100% {
-    left: calc(100vw + 80px);
-    transform: translateY(0) rotate(-14deg) scale(1);
+    left: calc(100vw + 40px);
+    transform: translateY(0) rotate(-8deg) scale(0.75);
+    opacity: 0;
   }
 }
 .magic-oyster {
   position: absolute;
   bottom: calc(72px + env(safe-area-inset-bottom, 16px));
-  animation: oysterWaddleAcross 15s linear infinite;
-  user-select: none;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.4));
+  animation: oysterWaddleAcross 26s linear infinite;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3));
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+}
+
+/* Interactive Pop / Removal Burst Animation */
+@keyframes itemPop {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  45% {
+    transform: scale(1.6) rotate(20deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.9));
+  }
+  100% {
+    transform: scale(0) rotate(50deg);
+    opacity: 0;
+  }
+}
+.magic-item-popped {
+  animation: itemPop 0.32s ease-out forwards !important;
+  pointer-events: none !important;
+}
+
+/* ── 💥 Access Code Gag: Shake & Irish Crash Screen ── */
+@keyframes gagShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.gag-shake {
+  animation: gagShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.irish-crash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  background: rgba(1, 15, 8, 0.96);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.irish-crash-card {
+  background: #021a10;
+  border: 2px solid #10b981;
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.35), inset 0 0 30px rgba(16, 185, 129, 0.12);
+  color: #a7f3d0;
+  max-width: 580px;
+  width: 100%;
+  border-radius: 1.25rem;
+  padding: 1.75rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

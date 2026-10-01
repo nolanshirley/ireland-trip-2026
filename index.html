@@ -188,28 +188,26 @@
 
   <div id="app" v-cloak class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 space-y-6">
 
-    <!-- 🍀 Irish Magic Ambient Floating Layer (Clovers, Guinness Pints & Waddling Oysters) -->
-    <div v-if="irishMagicActive" class="irish-magic-layer" aria-hidden="true">
-      <!-- Fluttering Four-Leaf Clovers -->
-      <span class="magic-clover text-2xl sm:text-3xl" style="left: 8%; animation-duration: 9s; animation-delay: 0s;">🍀</span>
-      <span class="magic-clover text-xl sm:text-2xl" style="left: 22%; animation-duration: 12s; animation-delay: 3.5s;">🍀</span>
-      <span class="magic-clover text-3xl sm:text-4xl" style="left: 45%; animation-duration: 10s; animation-delay: 1.5s;">🍀</span>
-      <span class="magic-clover text-lg sm:text-xl" style="left: 68%; animation-duration: 14s; animation-delay: 5s;">🍀</span>
-      <span class="magic-clover text-2xl sm:text-3xl" style="left: 88%; animation-duration: 11s; animation-delay: 2.2s;">🍀</span>
-
-      <!-- Rising Pints of Guinness -->
-      <span class="magic-guinness text-3xl sm:text-4xl" style="left: 14%; animation-duration: 13s; animation-delay: 1s;">🍺</span>
-      <span class="magic-guinness text-2xl sm:text-3xl" style="left: 55%; animation-duration: 15s; animation-delay: 6s;">🍺</span>
-      <span class="magic-guinness text-3xl sm:text-4xl" style="left: 80%; animation-duration: 12s; animation-delay: 4s;">🍺</span>
-
-      <!-- Waddling Galway Oysters (Day 5 Galway Seafood celebration) -->
-      <div class="magic-oyster" style="animation-duration: 18s; animation-delay: 0s;">
-        <span class="text-3xl sm:text-4xl">🦪</span>
-        <span class="text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 shadow-md">Galway Oyster!</span>
-      </div>
-      <div class="magic-oyster" style="animation-duration: 22s; animation-delay: 9s; bottom: calc(30px + env(safe-area-inset-bottom, 16px));">
-        <span class="text-2xl sm:text-3xl">🦪</span>
-      </div>
+    <!-- 🍀 Irish Magic Ambient Floating Layer (Subtle, Background, Click-to-Pop) -->
+    <div v-if="irishMagicActive" class="irish-magic-layer">
+      <template v-for="item in magicItems" :key="item.id">
+        <button
+          v-if="!item.popped"
+          @click.stop="popMagicItem(item)"
+          type="button"
+          :class="[
+            'magic-item-btn',
+            item.type === 'clover' ? 'magic-clover text-base sm:text-lg' : '',
+            item.type === 'guinness' ? 'magic-guinness text-base sm:text-lg' : '',
+            item.type === 'oyster' ? 'magic-oyster text-base sm:text-lg' : ''
+          ]"
+          :style="item.style"
+          :title="'Click to pop this ' + item.icon + '!'"
+          aria-label="Click to pop floating Irish icon"
+        >
+          <span>{{ item.icon }}</span>
+        </button>
+      </template>
     </div>
 
     <!-- Top Navigation / Header Bar -->
@@ -2251,28 +2249,132 @@
           </button>
         </div>
 
-        <!-- Secret access code input (completely discreet & unmarked) -->
-        <div class="pt-2 border-t border-[var(--border)]/20 flex items-center gap-2">
-          <input
-            type="text"
-            v-model="engagementCodeInput"
-            @keydown.enter="checkEngagementCode"
-            @blur="checkEngagementCode"
-            autocomplete="off"
-            autocorrect="off"
-            spellcheck="false"
-            :placeholder="engagementUnlocked ? 'Feature unlocked (re-type password to lock)' : 'Access code...'"
-            class="flex-1 p-2 rounded-lg bg-transparent border border-[var(--border)]/30 text-[var(--muted-foreground)]/40 text-[11px] font-mono outline-none focus:border-[var(--accent)]/40 placeholder:text-[var(--muted-foreground)]/20"
-            aria-hidden="true"
-          />
-          <button
-            v-if="engagementUnlocked"
-            @click="resetEngagementSecret"
-            type="button"
-            class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex-shrink-0 min-h-[36px]"
-            title="Lock and remove all references to feature"
+        <!-- Secret access code input & funny gag container -->
+        <div class="pt-2 border-t border-[var(--border)]/20 space-y-2">
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              v-model="engagementCodeInput"
+              @keydown.enter="checkEngagementCode"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              :placeholder="engagementUnlocked ? 'Feature unlocked (re-type password to lock)' : 'Access code...'"
+              :class="[
+                'flex-1 p-2 rounded-lg bg-transparent border border-[var(--border)]/30 text-[var(--foreground)] text-[11px] font-mono outline-none focus:border-[var(--accent)] placeholder:text-[var(--muted-foreground)]/30 transition-all',
+                gagShake ? 'gag-shake border-red-500/70 ring-2 ring-red-500/30' : ''
+              ]"
+            />
+            <button
+              @click="checkEngagementCode"
+              type="button"
+              class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-[var(--card-hover)] hover:bg-[var(--border)] text-[var(--foreground)] border border-[var(--border)] transition-all flex-shrink-0 min-h-[34px]"
+              title="Submit access code"
+            >
+              Enter ↵
+            </button>
+            <button
+              v-if="engagementUnlocked"
+              @click="resetEngagementSecret"
+              type="button"
+              class="px-2.5 py-1.5 rounded-lg text-[10px] font-mono font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 transition-all flex-shrink-0 min-h-[34px]"
+              title="Lock and remove all references to feature"
+            >
+              🔒 Re-lock
+            </button>
+          </div>
+
+          <!-- Funny Gag Warning & Hint Card -->
+          <div
+            v-if="gagShowHint && !engagementUnlocked"
+            class="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30 space-y-2 animate-fadeIn"
           >
-            🔒 Re-lock
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-black text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <span>{{ gagAttemptsLeft === 1 ? '🚨' : '⚠️' }}</span>
+                <span>{{ gagAttemptsLeft }} {{ gagAttemptsLeft === 1 ? 'Attempt' : 'Attempts' }} Left Before App Meltdown!</span>
+              </span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                Security: Level Red
+              </span>
+            </div>
+            <div class="text-[11px] text-[var(--foreground)] leading-relaxed font-mono">
+              <span class="opacity-80">System: Oh, have you tried: </span>
+              <strong class="text-emerald-700 dark:text-emerald-400 underline decoration-dotted font-bold">"{{ gagHint }}"</strong>
+              <span class="opacity-80">?</span>
+            </div>
+            <div class="flex items-center justify-between gap-2 pt-1 border-t border-amber-500/20">
+              <button
+                @click="tryGagHint"
+                type="button"
+                class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all shadow-xs flex items-center gap-1"
+                title="Fill in this ridiculous guess and try it!"
+              >
+                <span>🧪</span>
+                <span>Try This Guess: "{{ gagHint }}"</span>
+              </button>
+              <button
+                @click="gagShowHint = false"
+                type="button"
+                class="text-[10px] text-[var(--muted-foreground)] hover:text-[var(--foreground)] underline"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 💀 Irish Green Screen of Death (Access Code Crash Gag) -->
+    <div
+      v-if="gagIsCrashed"
+      class="irish-crash-overlay"
+      role="alertdialog"
+      aria-modal="true"
+    >
+      <div class="irish-crash-card space-y-4 shadow-2xl animate-fadeIn">
+        <div class="flex items-center justify-between border-b border-emerald-500/40 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl animate-bounce">🍀</span>
+            <div>
+              <div class="text-xs font-black text-emerald-400 tracking-wider">IRISH_TERMINAL_KERNEL_PANIC</div>
+              <div class="text-[10px] text-emerald-500 font-mono">FATAL EXCEPTION AT 0x0000IRISH_SHAMROCK</div>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-900/60 text-red-200 border border-red-500/50">
+            CRASHED
+          </span>
+        </div>
+
+        <div class="space-y-2 text-xs font-mono leading-relaxed bg-black/40 p-3.5 rounded-xl border border-emerald-500/30">
+          <p class="text-red-400 font-bold">
+            *** STOP: 0x00000IRISH (0xGUINNESS, 0xPOTATO, 0xSHEEP, 0xCLIFFS)
+          </p>
+          <p class="text-emerald-300">
+            CRITICAL ERROR: Excessive unauthorized guesses detected. The app has violently crashed into a sheep pasture outside Dingle.
+          </p>
+          <ul class="list-disc list-inside text-emerald-400/90 text-[11px] space-y-1 pt-1">
+            <li>48 pints of Guinness detected inside the CPU cooler</li>
+            <li>All Dublin flight bookings converted into cabbage coupons</li>
+            <li>Self-destruct sequence aborted because a stubborn sheep refused to move off the N71 road</li>
+          </ul>
+          <p class="text-amber-300 pt-2 font-semibold">
+            Have you tried turning Ireland off and on again?
+          </p>
+        </div>
+
+        <div class="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-[10px] text-emerald-500 font-mono">
+            Error Code: ERR_POTATO_BUFFER_OVERFLOW
+          </div>
+          <button
+            @click="rebootFromGagCrash"
+            type="button"
+            class="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-black bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+          >
+            <span>🔄</span>
+            <span>Emergency Reboot / Forgive Me St. Patrick</span>
           </button>
         </div>
       </div>
